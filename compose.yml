@@ -1,0 +1,34 @@
+version: "3.8"
+services:
+  # bitcoin-node:
+  #   image: lncm/bitcoind:v25.1
+  #   container_name: btc-node
+  #   volumes:
+  #     - ./.bitcoin:/data/.bitcoin
+  #   ports:
+  #     - "8332:8332"
+  #     - "8333:8333"
+  #     - "18332:18332"
+  #     - "18333:18333"
+  #     - "28332:28332"
+  #     - "28333:28333"
+  postgres:
+    container_name: postgres
+    image: postgres:12.17
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      PGDATA: /data/postgres
+    volumes:
+      - postgres:/data/postgres
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
+  # node-service:
+  #   container_name: node
+  #   build:
+  #     context: .
+
+volumes:
+  postgres:

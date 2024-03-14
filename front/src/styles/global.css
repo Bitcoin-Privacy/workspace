@@ -1,0 +1,9 @@
+.custom-tab-bar {
+  -webkit-app-region: drag;
+  height: 30px;
+  width: 100%;
+}
+
+html {
+  height: 100vh;
+}
