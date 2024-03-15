@@ -1,15 +1,10 @@
 use shared::{
-    intf::{
-        blindsign::GetBlindSessionRes,
-        coinjoin::{
-            GetStatusReq, GetStatusRes, GetUnsignedTxnReq, GetUnsignedTxnRes, RegisterReq,
-            RegisterRes, SetOutputReq, SetOutputRes, SignTxnReq, SignTxnRes,
-        },
+    intf::coinjoin::{
+        GetStatusReq, GetStatusRes, GetUnsignedTxnReq, GetUnsignedTxnRes, RegisterReq, RegisterRes,
+        SetOutputReq, SetOutputRes, SignTxnReq, SignTxnRes,
     },
     model::Utxo,
 };
-
-use serde_json::Value;
 
 use crate::connector::NodeConnector;
 
@@ -96,20 +91,6 @@ impl CoinjoinApis {
         let res = conn.post("coinjoin/sign", &body).await;
         match res {
             Ok(value) => serde_json::from_value::<SignTxnRes>(value).map_err(|e| e.to_string()),
-            Err(e) => Err(e.to_string()),
-        }
-    }
-
-    pub async fn get_blindsign_session() -> Result<GetBlindSessionRes, String> {
-        let conn = NodeConnector::new();
-
-        let res = conn
-            .get("blindsign/session".to_string(), &Value::Null)
-            .await;
-        match res {
-            Ok(value) => {
-                serde_json::from_value::<GetBlindSessionRes>(value).map_err(|e| e.to_string())
-            }
             Err(e) => Err(e.to_string()),
         }
     }

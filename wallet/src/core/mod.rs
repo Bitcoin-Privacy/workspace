@@ -1,9 +1,20 @@
-pub mod account;
-pub mod account_address_type;
-pub mod context;
-pub mod instantiated_key;
-pub mod key_derivation;
-pub mod master_account;
-pub mod mnemonic;
-pub mod seed;
-pub mod unlocker;
+mod account;
+mod account_address_type;
+mod context;
+mod instantiated_key;
+mod key_derivation;
+mod master_account;
+mod mnemonic;
+mod seed;
+mod unlocker;
+
+pub use account::Account;
+
+pub use account_address_type::AccountAddressType;
+pub use context::SecpContext;
+pub use instantiated_key::InstantiatedKey;
+pub use key_derivation::KeyDerivation;
+pub use master_account::{MasterAccount, MasterKeyEntropy};
+pub use mnemonic::Mnemonic;
+pub use seed::Seed;
+pub use unlocker::Unlocker;

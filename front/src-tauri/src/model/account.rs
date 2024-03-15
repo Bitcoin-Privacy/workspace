@@ -2,10 +2,7 @@ use std::str::FromStr;
 
 use bitcoin::{address::NetworkChecked, Address, Network};
 use serde::{Deserialize, Serialize};
-
-use crate::svc::account::Account;
-
-use super::AccountAddressType;
+use wallet::core::{Account, AccountAddressType};
 
 pub trait AccountActions {
     fn get_derivation_path(&self) -> (u32, u32);
