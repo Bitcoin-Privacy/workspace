@@ -15,16 +15,15 @@ use shared::{
     model::{Txn, Utxo},
 };
 
+use wallet::core::{
+    Account, AccountAddressType, MasterAccount, MasterKeyEntropy, Mnemonic, Unlocker,
+};
+
 use crate::{
     cfg::{BASE_TX_FEE, PASSPHRASE},
     db::PoolWrapper,
-    model::{AccountActions, AccountAddressType, AccountDTO},
+    model::{AccountActions, AccountDTO},
     store::master_account::{get_master, get_mut_master, initialize_master_account},
-    svc::{
-        account::{Account, MasterAccount, MasterKeyEntropy},
-        mnemonic::Mnemonic,
-        unlocker::Unlocker,
-    },
 };
 
 #[tauri::command]
@@ -48,30 +47,25 @@ pub fn add_account() {
 // NOTE: - New Version HERE ---------------------------------------------
 #[tauri::command]
 pub fn create_master(state: State<'_, PoolWrapper>) -> Result<Vec<String>, String> {
-    let mnemonic = Mnemonic::new_random(MasterKeyEntropy::Sufficient);
-    match mnemonic {
-        Ok(mnemonic) => {
-            let seed = mnemonic.to_seed_phrase();
-            let birth = 0;
+    let mnemonic = Mnemonic::new_random(MasterKeyEntropy::Sufficient).map_err(|e| e.to_string())?;
+    let seed = mnemonic.to_seed_phrase();
+    let birth = 0;
 
-            let _ = state
-                .pool
-                .insert(
-                    b"seedphrase",
-                    bincode::serialize(&seed.clone().join(" ")).unwrap(),
-                )
-                .expect("Cannot insert seedphrase");
-            let _ = state
-                .pool
-                .insert(b"birth", bincode::serialize(&birth).unwrap())
-                .expect("Cannot insert birth");
+    let _ = state
+        .pool
+        .insert(
+            b"seedphrase",
+            bincode::serialize(&seed.clone().join(" ")).unwrap(),
+        )
+        .expect("Cannot insert seedphrase");
+    let _ = state
+        .pool
+        .insert(b"birth", bincode::serialize(&birth).unwrap())
+        .expect("Cannot insert birth");
 
-            initialize_master_account(&mnemonic, birth, Network::Testnet, PASSPHRASE, None);
+    initialize_master_account(&mnemonic, birth, Network::Testnet, PASSPHRASE, None);
 
-            Ok(seed)
-        }
-        Err(e) => Err(e.to_string()),
-    }
+    Ok(seed)
 }
 
 #[tauri::command]

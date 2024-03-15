@@ -1,6 +1,6 @@
+use crate::api::blindsign::BlindsignApis;
 use crate::api::coinjoin::CoinjoinApis;
-use crate::db::PoolWrapper;
-use crate::model::{AccountActions, AccountDTO, RoomEntity};
+use crate::model::{AccountActions, AccountDTO};
 use shared::blindsign::BlindRequest;
 use shared::model::Utxo;
 
@@ -21,7 +21,7 @@ pub async fn register(
         .expect("Donot have compatible utxo")
         .to_owned();
 
-    let blind_session = CoinjoinApis::get_blindsign_session()
+    let blind_session = BlindsignApis::get_blindsign_session()
         .await
         .expect("Cannot get blindsign session");
 

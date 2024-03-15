@@ -4,10 +4,10 @@ use bitcoin::PrivateKey;
 use std::{collections::HashMap, sync::Arc};
 
 use crate::error::Error;
-use crate::model::AccountAddressType;
 
-use super::account::MasterAccount;
+use super::account_address_type::AccountAddressType;
 use super::context::SecpContext;
+use super::master_account::MasterAccount;
 use super::seed::Seed;
 
 /// calculator of private keys

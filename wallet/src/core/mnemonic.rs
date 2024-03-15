@@ -9,7 +9,7 @@ use crypto::{
 };
 use secp256k1::rand::{thread_rng, RngCore};
 
-use super::{account::MasterKeyEntropy, seed::Seed};
+use super::{master_account::MasterKeyEntropy, seed::Seed};
 use crate::{cfg::MNEMONIC, error::Error};
 
 #[derive(Clone, Eq, PartialEq, Debug)]

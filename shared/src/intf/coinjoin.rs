@@ -100,9 +100,8 @@ pub struct GetStatusReq {
     pub room_id: String,
 }
 
-#[cfg_attr(feature = "backend", derive(Serialize))]
 #[cfg_attr(feature = "frontend", derive(Deserialize))]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct GetStatusRes {
     pub status: u8, // Transaction in hex form
 }
@@ -117,9 +116,8 @@ pub struct GetUnsignedTxnReq {
     pub room_id: String,
 }
 
-#[cfg_attr(feature = "backend", derive(Serialize))]
 #[cfg_attr(feature = "frontend", derive(Deserialize))]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct GetUnsignedTxnRes {
     pub tx: String, // Transaction in hex form
 }

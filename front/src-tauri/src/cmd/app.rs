@@ -1,9 +1,10 @@
 use bitcoin::Network;
 use tauri::State;
+use wallet::core::Mnemonic;
 
 use crate::{
     cfg::PASSPHRASE, db::PoolWrapper, model::InitState,
-    store::master_account::initialize_master_account, svc::mnemonic::Mnemonic,
+    store::master_account::initialize_master_account,
 };
 
 /// Initialize function, should be called when setup the application

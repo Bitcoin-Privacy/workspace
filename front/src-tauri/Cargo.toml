@@ -19,6 +19,7 @@ tauri = { version = "1.5.3", features = ["fs-all", "path-all"] }
 
 # Workspace
 shared = { workspace = true, features = ["frontend"] }
+wallet = { workspace = true }
 
 serde_json = { workspace = true }
 serde = { workspace = true }

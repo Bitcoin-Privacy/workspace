@@ -2,6 +2,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use cfg::DATABASE_PATH;
+use connector::NodeConnector;
 
 pub mod api;
 pub mod cfg;
@@ -22,6 +23,7 @@ fn main() {
             Ok(())
         })
         .manage(db::PoolWrapper { pool: db })
+        .manage(NodeConnector::new())
         .invoke_handler(tauri::generate_handler![
             /*
              * App commands
@@ -52,7 +54,7 @@ fn main() {
             cmd::coinjoin::get_status,
             //---
             cmd::coinjoin::register,
-            cmd::coinjoin::sign_tx,
+            // cmd::coinjoin::sign_tx,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

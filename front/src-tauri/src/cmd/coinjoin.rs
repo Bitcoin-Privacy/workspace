@@ -15,14 +15,16 @@ use bitcoin::{
 use core::panic;
 use tauri::State;
 use tokio::time::{sleep, Duration};
+use wallet::core::{MasterAccount, Unlocker};
 
+use crate::api::blindsign::BlindsignApis;
 use crate::{
     api::coinjoin::CoinjoinApis,
     cfg::PASSPHRASE,
     db::PoolWrapper,
     model::{event, AccountActions, RoomEntity},
     store::master_account::get_master,
-    svc::{account::MasterAccount, unlocker::Unlocker, utxo},
+    svc::utxo,
 };
 
 use super::account::parse_derivation_path;
@@ -47,7 +49,7 @@ pub async fn register(
         .expect("Donot have compatible utxo")
         .to_owned();
 
-    let blind_session = CoinjoinApis::get_blindsign_session()
+    let blind_session = BlindsignApis::get_blindsign_session()
         .await
         .expect("Cannot get blindsign session");
     let rp: [u8; 32] = hex::decode(blind_session.rp)

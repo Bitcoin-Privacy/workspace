@@ -1,7 +1,3 @@
-mod word_mnemonic;
-
-pub use word_mnemonic::MNEMONIC;
-
 pub const PASSPHRASE: &str = "correct horse battery staple";
 pub const DATABASE_PATH: &str = "../../WalletDB";
 

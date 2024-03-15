@@ -2,12 +2,9 @@ use std::sync::{Mutex, MutexGuard};
 
 use bitcoin::Network;
 use lazy_static::lazy_static;
+use wallet::core::{Account, AccountAddressType, MasterAccount, Mnemonic, Unlocker};
 
 use crate::cfg::PASSPHRASE;
-use crate::model::AccountAddressType;
-use crate::svc::account::{Account, MasterAccount};
-use crate::svc::mnemonic::Mnemonic;
-use crate::svc::unlocker::Unlocker;
 
 lazy_static! {
     pub static ref MASTER_ACCOUNT: Mutex<Option<MasterAccount>> = Mutex::new(None);
