@@ -412,6 +412,7 @@ dependencies = [
  "tauri-build",
  "tokio",
  "uuid",
+ "wallet",
 ]
 
 [[package]]
@@ -6196,6 +6197,17 @@ checksum = "d71d857dc86794ca4c280d616f7da00d2dbfd8cd788846559a6813e6aa4b54ee"
 dependencies = [
  "same-file",
  "winapi-util",
+]
+
+[[package]]
+name = "wallet"
+version = "0.1.0"
+dependencies = [
+ "bitcoin",
+ "rust-crypto",
+ "secp256k1 0.27.0",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
