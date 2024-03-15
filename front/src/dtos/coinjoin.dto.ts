@@ -13,3 +13,9 @@ export type RoomDto = {
   created_at: number;
   updated_at: number;
 };
+
+export type UtxoDto = {
+  txid : string;
+  vout : number;
+  value : number;
+}
