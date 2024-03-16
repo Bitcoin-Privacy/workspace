@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 /// Address type an account is using
 #[derive(Copy, Clone, Hash, Eq, PartialEq, Debug, Serialize, Deserialize)]
-pub enum AccountAddressType {
+pub enum AddrType {
     /// legacy pay to public key hash (BIP44)
     P2PKH,
     /// transitional segwit pay to public key hash in legacy format (BIP49)
@@ -16,22 +16,22 @@ pub enum AccountAddressType {
     P2WSH(u32),
 }
 
-impl AccountAddressType {
+impl AddrType {
     pub fn as_u32(&self) -> u32 {
         match self {
-            AccountAddressType::P2PKH => 44,
-            AccountAddressType::P2SHWPKH => 49,
-            AccountAddressType::P2WPKH => 84,
-            AccountAddressType::P2WSH(n) => *n,
+            AddrType::P2PKH => 44,
+            AddrType::P2SHWPKH => 49,
+            AddrType::P2WPKH => 84,
+            AddrType::P2WSH(n) => *n,
         }
     }
 
-    pub fn from_u32(n: u32) -> AccountAddressType {
+    pub fn from_u32(n: u32) -> AddrType {
         match n {
-            44 => AccountAddressType::P2PKH,
-            49 => AccountAddressType::P2SHWPKH,
-            84 => AccountAddressType::P2WPKH,
-            n => AccountAddressType::P2WSH(n),
+            44 => AddrType::P2PKH,
+            49 => AddrType::P2SHWPKH,
+            84 => AddrType::P2WPKH,
+            n => AddrType::P2WSH(n),
         }
     }
 }

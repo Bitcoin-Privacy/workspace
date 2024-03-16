@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use bitcoin::{address::NetworkChecked, Address, Network};
 use serde::{Deserialize, Serialize};
-use wallet::core::{Account, AccountAddressType};
+use wallet::core::{Account, AddrType};
 
 pub trait AccountActions {
     fn get_derivation_path(&self) -> (u32, u32);
@@ -12,7 +12,7 @@ pub trait AccountActions {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct AccountDTO {
-    address_type: AccountAddressType,
+    address_type: AddrType,
     account_number: u32,
     sub_account_number: u32,
     network: Network,

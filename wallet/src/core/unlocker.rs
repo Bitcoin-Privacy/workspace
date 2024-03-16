@@ -5,10 +5,7 @@ use std::{collections::HashMap, sync::Arc};
 
 use crate::error::Error;
 
-use super::account_address_type::AccountAddressType;
-use super::context::SecpContext;
-use super::master_account::MasterAccount;
-use super::seed::Seed;
+use super::{AddrType, MasterAccount, SecpContext, Seed};
 
 /// calculator of private keys
 pub struct Unlocker {
@@ -16,7 +13,7 @@ pub struct Unlocker {
     network: Network,
     context: Arc<SecpContext>,
     cached: HashMap<
-        AccountAddressType,
+        AddrType,
         (
             Xpriv,
             HashMap<u32, (Xpriv, HashMap<u32, (Xpriv, HashMap<u32, Xpriv>)>)>,
@@ -67,7 +64,7 @@ impl Unlocker {
 
     pub fn sub_account_key(
         &mut self,
-        address_type: AccountAddressType,
+        address_type: AddrType,
         account: u32,
         sub_account: u32,
     ) -> Result<Xpriv, Error> {
@@ -104,7 +101,7 @@ impl Unlocker {
 
     pub fn unlock(
         &mut self,
-        address_type: AccountAddressType,
+        address_type: AddrType,
         account: u32,
         sub_account: u32,
         index: u32,

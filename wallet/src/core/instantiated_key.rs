@@ -5,8 +5,7 @@ use std::sync::Arc;
 
 use crate::error::Error;
 
-use super::account_address_type::AccountAddressType;
-use super::context::SecpContext;
+use super::{AddrType, SecpContext};
 
 /// instantiated key of an account
 #[derive(Clone, Debug)]
@@ -20,7 +19,7 @@ pub struct InstantiatedKey {
 
 impl InstantiatedKey {
     pub fn new<W>(
-        address_type: AccountAddressType,
+        address_type: AddrType,
         network: Network,
         master: &Xpub,
         tweak: Option<&[u8]>,
@@ -47,14 +46,12 @@ impl InstantiatedKey {
         };
 
         let address = match address_type {
-            AccountAddressType::P2PKH => Address::p2pkh(&btc_pub_key, network),
-            AccountAddressType::P2SHWPKH => {
+            AddrType::P2PKH => Address::p2pkh(&btc_pub_key, network),
+            AddrType::P2SHWPKH => {
                 Address::p2shwpkh(&btc_pub_key, network).expect("compressed pubkey")
             }
-            AccountAddressType::P2WPKH => {
-                Address::p2wpkh(&btc_pub_key, network).expect("compressed pubkey")
-            }
-            AccountAddressType::P2WSH(_) => Address::p2wsh(&script_code, network),
+            AddrType::P2WPKH => Address::p2wpkh(&btc_pub_key, network).expect("compressed pubkey"),
+            AddrType::P2WSH(_) => Address::p2wsh(&script_code, network),
         };
         Ok(InstantiatedKey {
             public,

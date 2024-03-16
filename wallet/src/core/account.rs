@@ -14,14 +14,11 @@ use std::sync::Arc;
 
 use crate::error::Error;
 
-use super::account_address_type::AccountAddressType;
-use super::context::SecpContext;
-use super::instantiated_key::InstantiatedKey;
-use super::unlocker::Unlocker;
+use super::{AddrType, InstantiatedKey, SecpContext, Unlocker};
 
 #[derive(Clone, Debug)]
 pub struct Account {
-    pub address_type: AccountAddressType,
+    pub address_type: AddrType,
     pub account_number: u32,
     pub sub_account_number: u32,
     pub context: Arc<SecpContext>,
@@ -35,7 +32,7 @@ pub struct Account {
 impl Account {
     pub fn new(
         unlocker: &mut Unlocker,
-        address_type: AccountAddressType,
+        address_type: AddrType,
         account_number: u32,
         sub_account_number: u32,
         look_ahead: u32,
@@ -60,7 +57,7 @@ impl Account {
     }
 
     pub fn new_from_storage(
-        address_type: AccountAddressType,
+        address_type: AddrType,
         account_number: u32,
         sub_account_number: u32,
         master_public: Xpub,
@@ -83,7 +80,7 @@ impl Account {
         }
     }
 
-    pub fn address_type(&self) -> AccountAddressType {
+    pub fn address_type(&self) -> AddrType {
         self.address_type
     }
 
@@ -140,14 +137,14 @@ impl Account {
         let kix = self.instantiated.len() as u32;
 
         let scripter = |public: &PublicKey, _| match self.address_type {
-            AccountAddressType::P2SHWPKH => Builder::new()
+            AddrType::P2SHWPKH => Builder::new()
                 .push_opcode(all::OP_DUP)
                 .push_opcode(all::OP_HASH160)
                 .push_slice(hash160::Hash::hash(&public.serialize()).to_byte_array())
                 .push_opcode(all::OP_EQUALVERIFY)
                 .push_opcode(all::OP_CHECKSIG)
                 .into_script(),
-            AccountAddressType::P2WPKH => Builder::new()
+            AddrType::P2WPKH => Builder::new()
                 .push_opcode(all::OP_DUP)
                 .push_opcode(all::OP_HASH160)
                 .push_slice(hash160::Hash::hash(&public.serialize()).to_byte_array())
@@ -175,7 +172,7 @@ impl Account {
     /// create a new key
     pub fn next_key(&mut self) -> Result<&InstantiatedKey, Error> {
         match self.address_type {
-            AccountAddressType::P2WSH(_) => {
+            AddrType::P2WSH(_) => {
                 return Err(Error::Unsupported(
                     "next_key can not be used for P2WSH accounts",
                 ))
@@ -210,7 +207,7 @@ impl Account {
         W: FnOnce(&PublicKey, Option<u16>) -> ScriptBuf,
     {
         match self.address_type {
-            AccountAddressType::P2WSH(_) => {}
+            AddrType::P2WSH(_) => {}
             _ => {
                 return Err(Error::Unsupported(
                     "add_script_key can only be used for P2WSH accounts",
@@ -305,7 +302,7 @@ impl Account {
                         instantiated.tweak.clone(),
                     )?;
                     match self.address_type {
-                        AccountAddressType::P2PKH => {
+                        AddrType::P2PKH => {
                             let sighash = bip143hasher
                                 .legacy_signature_hash(
                                     ix,
@@ -328,7 +325,7 @@ impl Account {
                             input.witness.clear();
                             signed += 1;
                         }
-                        AccountAddressType::P2WPKH => {
+                        AddrType::P2WPKH => {
                             if hash_type.to_u32() & EcdsaSighashType::All.to_u32() == 0 {
                                 return Err(Error::Unsupported("can only sign all inputs for now"));
                             }

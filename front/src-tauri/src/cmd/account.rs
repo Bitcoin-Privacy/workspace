@@ -15,15 +15,14 @@ use shared::{
     model::{Txn, Utxo},
 };
 
-use wallet::core::{
-    Account, AccountAddressType, MasterAccount, MasterKeyEntropy, Mnemonic, Unlocker,
-};
+use wallet::core::{Account, AddrType, MasterAccount, MasterKeyEntropy, Mnemonic, Unlocker};
 
 use crate::{
     cfg::{BASE_TX_FEE, PASSPHRASE},
     db::PoolWrapper,
     model::{AccountActions, AccountDTO},
     store::master_account::{get_master, get_mut_master, initialize_master_account},
+    svc::account::{get_internal_account, get_utxos_set, parse_derivation_path},
 };
 
 #[tauri::command]
@@ -38,7 +37,7 @@ pub fn add_account() {
     let mut master = get_mut_master();
     let mut unlocker = Unlocker::new_for_master(master.as_ref().unwrap(), PASSPHRASE).unwrap();
 
-    let account = Account::new(&mut unlocker, AccountAddressType::P2PKH, 0, 0, 10).unwrap();
+    let account = Account::new(&mut unlocker, AddrType::P2PKH, 0, 0, 10).unwrap();
     master.as_mut().unwrap().add_account(account);
 
     println!("Master Account: {:#?}", master);
@@ -80,50 +79,18 @@ pub fn get_accounts() -> Vec<AccountDTO> {
 
 #[tauri::command]
 pub fn get_account(deriv: &str) -> Result<AccountDTO, String> {
-    let account = get_internal_account(deriv);
-    account.map(|account| account.into())
-}
-
-pub fn get_internal_account(derivation_path: &str) -> Result<Account, String> {
-    let master_account: MasterAccount = get_master().expect("Master account does not exist");
-    let parsed_path = parse_derivation_path(&derivation_path).map_err(|e| e.to_string())?;
-    let account = master_account.accounts().get(&parsed_path);
-    match account {
-        Some(account) => Ok(account.clone()),
-        None => Err("Account not found".to_string()),
-    }
-}
-
-pub fn parse_derivation_path(deriv: &str) -> Result<(u32, u32), &'static str> {
-    let parts: Vec<&str> = deriv.split('/').collect();
-    if parts.len() == 2 {
-        let part0 = parts[0]
-            .parse::<u32>()
-            .map_err(|_| "First part of the path is not a valid u32")?;
-        let part1 = parts[1]
-            .parse::<u32>()
-            .map_err(|_| "Second part of the path is not a valid u32")?;
-        Ok((part0, part1))
-    } else {
-        Err("Derivation path must be exactly two components separated by '/'")
-    }
+    let account = get_internal_account(deriv)?;
+    Ok(account.into())
 }
 
 #[tauri::command]
-pub async fn get_utxo(address: String) -> Result<Vec<Utxo>, String> {
-    let url = format!(
-        "https://blockstream.info/testnet/api/address/{}/utxo",
-        address
-    );
-
-    let response: Vec<Utxo> = reqwest::get(&url).await.unwrap().json().await.unwrap();
-
-    Ok(response)
+pub async fn get_utxo(address: &str) -> Result<Vec<Utxo>, String> {
+    api::get_utxo(address).await
 }
 
 #[tauri::command]
-pub async fn get_balance(address: String) -> Result<u64, String> {
-    let utxos = get_utxo(address).await?;
+pub async fn get_balance(address: &str) -> Result<u64, String> {
+    let utxos = api::get_utxo(address).await?;
     Ok(utxos.iter().map(|utxo| utxo.value).sum())
 }
 
@@ -133,8 +100,7 @@ pub async fn create_tx(deriv: &str, receiver: &str, amount: u64) -> Result<u64, 
     let parsed_path = parse_derivation_path(deriv).map_err(|e| e.to_string())?;
     let account = master.accounts().get(&parsed_path).unwrap();
 
-    let utxos = get_utxo(account.get_addr()).await?;
-    let selected_utxos = select_utxos(amount, utxos).ok_or("Do not have compatible UTXOs")?;
+    let selected_utxos = get_utxos_set(&account.get_addr(), amount).await?;
 
     let mut fee: u64 = 0;
     let input: Vec<TxIn> = selected_utxos
@@ -244,27 +210,5 @@ async fn dosth(index: usize, input: TxIn) -> Result<(usize, TxIn, Txn), String> 
     match api::get_onchain_tx(&input.previous_output.txid.to_string()).await {
         Ok(tx) => Ok((index, input, tx)),
         Err(e) => Err(format!("Failed to get transaction for input {}", e)),
-    }
-}
-
-pub fn select_utxos(amount: u64, mut utxos: Vec<Utxo>) -> Option<Vec<Utxo>> {
-    // Sort UTXOs in descending order by value
-    utxos.sort_by(|a, b| b.value.cmp(&a.value));
-
-    let mut selected_utxos: Vec<Utxo> = Vec::new();
-    let mut total: u64 = 0;
-
-    for utxo in utxos {
-        if total >= amount {
-            break;
-        }
-        selected_utxos.push(utxo.clone());
-        total += utxo.value;
-    }
-
-    if total >= amount {
-        Some(selected_utxos)
-    } else {
-        None // Not enough funds
     }
 }

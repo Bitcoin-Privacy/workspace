@@ -1,33 +1,25 @@
-use shared::blindsign::{BlindRequest, WiredUnblindedSigData};
 use shared::intf::coinjoin::{GetStatusRes, GetUnsignedTxnRes, SetOutputRes};
-use shared::{
-    api,
-    model::{Txn, Utxo},
-};
+use shared::{api, model::Txn};
 
 use bitcoin::{
     consensus,
-    hex::{Case, DisplayHex},
     secp256k1::{Message, Secp256k1, SecretKey},
     sighash::SighashCache,
     Amount, EcdsaSighashType, ScriptBuf, Transaction, TxIn, Witness,
 };
-use core::panic;
 use tauri::State;
 use tokio::time::{sleep, Duration};
 use wallet::core::{MasterAccount, Unlocker};
 
-use crate::api::blindsign::BlindsignApis;
+use crate::svc::account::parse_derivation_path;
+use crate::svc::coinjoin;
 use crate::{
     api::coinjoin::CoinjoinApis,
     cfg::PASSPHRASE,
     db::PoolWrapper,
-    model::{event, AccountActions, RoomEntity},
+    model::{event, RoomEntity},
     store::master_account::get_master,
-    svc::utxo,
 };
-
-use super::account::parse_derivation_path;
 
 /// Register to CoinJoin Protocol
 #[tauri::command]
@@ -38,77 +30,29 @@ pub async fn register(
     address: String,
     amount: u64,
 ) -> Result<(), String> {
-    let source = super::account::get_account(deriv).expect("Account not found");
-
-    let utxos = utxo::get_utxo(source.get_addr())
+    let (room_id, sig) = coinjoin::register(state, deriv, amount, &address)
         .await
-        .expect("Cannot get utxos");
-    let utxo = utxos
-        .iter()
-        .find(|x: &&Utxo| x.value > amount)
-        .expect("Donot have compatible utxo")
-        .to_owned();
-
-    let blind_session = BlindsignApis::get_blindsign_session()
-        .await
-        .expect("Cannot get blindsign session");
-    let rp: [u8; 32] = hex::decode(blind_session.rp)
-        .expect("Cannot parse blindsign session")
-        .try_into()
-        .expect("Invalid size");
-    let (blinded_address, unblinder) =
-        BlindRequest::new_specific_msg::<sha3::Sha3_512, &[u8]>(&rp, address.as_bytes()).unwrap();
-
-    // NOTE: register to Server
-    let register_res = CoinjoinApis::register(
-        vec![utxo],
-        &hex::encode(blinded_address),
-        &source.get_addr(),
-        amount,
-    )
-    .await?;
-    let room_entity: RoomEntity = register_res.clone().into();
-
-    if let Err(e) = state.add_or_update_room(deriv, &room_entity) {
-        panic!("Failed to update room {:?}", e);
-    }
-
-    let signed_msg: [u8; 32] = hex::decode(&register_res.signed_blined_output)
-        .expect("Invalid sig")
-        .try_into()
-        .expect("Invalid size");
-
-    // Generate a random number of seconds
-    let random_delay = rand::random::<u64>() % 60; // for example, 0 to 59 seconds
+        .unwrap();
 
     // NOTE: set the output to the server
     tokio::spawn(async move {
-        let unblinded_sig = unblinder
-            .gen_signed_msg(&signed_msg)
-            .expect("Cannot unblind the sig");
-        let wired = WiredUnblindedSigData::from(unblinded_sig);
-        let sig = wired.as_bytes().to_hex_string(Case::Lower);
-
+        // Generate a random number of seconds
+        let random_delay = rand::random::<u64>() % 60; // for example, 0 to 59 seconds
         sleep(Duration::from_secs(random_delay)).await;
-        if let Err(e) = CoinjoinApis::set_output(&register_res.room.id, &address, &sig).await {
+
+        if let Err(e) = CoinjoinApis::set_output(&room_id, &address, &sig).await {
             println!("Set output got error {}", e);
             tauri::Window::emit(
                 &window,
                 "coinjoin-register-complete",
-                Some(event::CoinJoinRegisterCompleteEvent {
-                    room_id: register_res.room.id,
-                    status: 0,
-                }),
+                Some(event::CoinJoinRegisterCompleteEvent { room_id, status: 0 }),
             )
             .expect("Failed to emit event");
         } else {
             tauri::Window::emit(
                 &window,
                 "coinjoin-register-complete",
-                Some(event::CoinJoinRegisterCompleteEvent {
-                    room_id: register_res.room.id,
-                    status: 1,
-                }),
+                Some(event::CoinJoinRegisterCompleteEvent { room_id, status: 1 }),
             )
             .expect("Failed to emit event");
         }

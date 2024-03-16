@@ -10,7 +10,7 @@ mod unlocker;
 
 pub use account::Account;
 
-pub use account_address_type::AccountAddressType;
+pub use account_address_type::AddrType;
 pub use context::SecpContext;
 pub use instantiated_key::InstantiatedKey;
 pub use key_derivation::KeyDerivation;

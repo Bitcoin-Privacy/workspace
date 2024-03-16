@@ -54,7 +54,7 @@ fn main() {
             cmd::coinjoin::get_status,
             //---
             cmd::coinjoin::register,
-            // cmd::coinjoin::sign_tx,
+            cmd::coinjoin::sign_tx,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

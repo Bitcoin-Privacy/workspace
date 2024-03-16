@@ -1,18 +1,23 @@
 use crate::api::blindsign::BlindsignApis;
 use crate::api::coinjoin::CoinjoinApis;
-use crate::model::{AccountActions, AccountDTO};
-use shared::blindsign::BlindRequest;
+use crate::db::PoolWrapper;
+use crate::model::{AccountActions, RoomEntity};
+use crate::svc::account;
+use bitcoin::hex::Case;
+use bitcoin::hex::DisplayHex;
+use shared::api;
+use shared::blindsign::{BlindRequest, WiredUnblindedSigData};
 use shared::model::Utxo;
-
-use super::utxo;
+use tauri::State;
 
 pub async fn register(
-    // state: State<'_, PoolWrapper>,
-    acct: AccountDTO,
+    state: State<'_, PoolWrapper>,
+    deriv: &str,
     amount: u64,
-    dest: String,
-) -> Result<(BlindRequest, [u8; 32]), String> {
-    let utxos = utxo::get_utxo(acct.get_addr())
+    dest: &str,
+) -> Result<(String, String), String> {
+    let acct = account::get_internal_account(deriv).expect("Account not found");
+    let utxos = api::get_utxo(&acct.get_addr())
         .await
         .expect("Cannot get utxos");
     let utxo = utxos
@@ -39,16 +44,23 @@ pub async fn register(
         amount,
     )
     .await?;
-    // let room_entity: RoomEntity = register_res.clone().into();
-
-    // if let Err(e) = state.add_or_update_room(deriv, &room_entity) {
-    //     panic!("Failed to update room {:?}", e);
-    // }
 
     let signed_msg: [u8; 32] = hex::decode(&register_res.signed_blined_output)
         .expect("Invalid sig")
         .try_into()
         .expect("Invalid size");
 
-    Ok((unblinder, signed_msg))
+    let unblinded_sig = unblinder
+        .gen_signed_msg(&signed_msg)
+        .expect("Cannot unblind the sig");
+    let wired = WiredUnblindedSigData::from(unblinded_sig);
+    let sig = wired.as_bytes().to_hex_string(Case::Lower);
+
+    let room_entity: RoomEntity = register_res.clone().into();
+
+    if let Err(e) = state.add_or_update_room(deriv, &room_entity) {
+        panic!("Failed to update room {:?}", e);
+    }
+
+    Ok((register_res.room.id, sig))
 }
