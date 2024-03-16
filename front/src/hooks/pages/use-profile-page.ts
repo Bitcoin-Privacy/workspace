@@ -49,6 +49,18 @@ export const useProfilePage = () => {
     router.push(`/profile/${b64EncodeUnicode(deriv)}/send`);
   }, [deriv]);
 
+  const onDepositBtnClick = useCallback(() => {
+    router.push(`/profile/${b64EncodeUnicode(deriv)}/deposit`);
+  }, [deriv]);
+
+  const onWithdrawBtnClick = useCallback(() => {
+    router.push(`/profile/${b64EncodeUnicode(deriv)}/withdraw`);
+  }, [deriv]);
+
+  const onSendStatecoinBtnClick = useCallback(() => {
+    router.push(`/profile/${b64EncodeUnicode(deriv)}/send-statecoin`);
+  }, [deriv]);
+
   return {
     states: {
       deriv,
@@ -61,6 +73,9 @@ export const useProfilePage = () => {
     methods: {
       onCopy,
       onSendBtnClick,
+      onDepositBtnClick,
+      onSendStatecoinBtnClick,
+      onWithdrawBtnClick
     },
   };
 };
