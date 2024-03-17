@@ -60,19 +60,28 @@ impl TraitCoinJoinRepo for CoinJoinRepo {
     async fn add_peer(
         &self,
         room_id: uuid::Uuid,
-        txid: String,
-        vout: u16,
-        amount: u64,
+        txids: Vec<String>,
+        vouts: Vec<u16>,
+        amounts: Vec<u64>,
         change: u64,
-        script: String,
+        address: String,
     ) -> CoinjoinResult<()> {
-        let query = sqlx::query_as::<_, Room>(r#"select add_new_peer($1, $2, $3, $4, $5, $6);"#)
-            .bind(room_id)
-            .bind(txid)
-            .bind(vout as i32)
-            .bind(amount as i64)
-            .bind(change as i64)
-            .bind(script);
+        // Convert the vectors to arrays of the proper type for PostgreSQL
+        let txids_array: Vec<&str> = txids.iter().map(String::as_str).collect();
+        let vouts_array: Vec<i32> = vouts.into_iter().map(|vout| vout as i32).collect();
+        let amounts_array: Vec<i64> = amounts.into_iter().map(|amount| amount as i64).collect();
+
+        let query = sqlx::query(
+            r#"
+        select add_new_peer($1, $2::varchar[], $3::int[], $4::bigint[], $5, $6);
+    "#,
+        )
+        .bind(room_id)
+        .bind(&txids_array)
+        .bind(&vouts_array)
+        .bind(&amounts_array)
+        .bind(change as i64)
+        .bind(address);
 
         let result = self.pool.pool.execute(query).await;
         match result {

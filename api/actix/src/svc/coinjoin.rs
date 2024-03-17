@@ -47,9 +47,9 @@ pub async fn register(
     let add_peer_res = repo
         .add_peer(
             room.id,
-            first_utxo.txid.to_string(),
-            first_utxo.vout,
-            first_utxo.value,
+            vec![first_utxo.txid.to_string()],
+            vec![first_utxo.vout],
+            vec![first_utxo.value],
             change,
             des_addr.to_string(),
         )

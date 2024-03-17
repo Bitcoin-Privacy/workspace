@@ -15,9 +15,9 @@ pub trait TraitCoinJoinRepo: Send + Sync + 'static {
     async fn add_peer(
         &self,
         room_id: uuid::Uuid,
-        txid: String,
-        vout: u16,
-        amount: u64,
+        txids: Vec<String>,
+        vouts: Vec<u16>,
+        amounts: Vec<u64>,
         change: u64,
         script: String,
     ) -> CoinjoinResult<()>;

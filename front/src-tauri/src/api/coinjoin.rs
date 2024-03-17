@@ -1,3 +1,4 @@
+use bonsaidb::core::keyvalue::Value;
 use shared::{
     intf::coinjoin::{
         GetStatusReq, GetStatusRes, GetUnsignedTxnReq, GetUnsignedTxnRes, RegisterReq, RegisterRes,
@@ -52,34 +53,6 @@ impl CoinjoinApis {
         }
     }
 
-    pub async fn get_transaction(room_id: &str) -> Result<GetUnsignedTxnRes, String> {
-        let conn = NodeConnector::new();
-        let req = GetUnsignedTxnReq {
-            room_id: room_id.to_string(),
-        };
-        let body = serde_json::to_value(req).unwrap();
-        let res = conn.get("coinjoin/tx".to_string(), &body).await;
-        match res {
-            Ok(value) => {
-                serde_json::from_value::<GetUnsignedTxnRes>(value).map_err(|e| e.to_string())
-            }
-            Err(e) => Err(e.to_string()),
-        }
-    }
-
-    pub async fn get_status(room_id: &str) -> Result<GetStatusRes, String> {
-        let conn = NodeConnector::new();
-        let req = GetStatusReq {
-            room_id: room_id.to_string(),
-        };
-        let body = serde_json::to_value(req).unwrap();
-        let res = conn.get("coinjoin/status".to_string(), &body).await;
-        match res {
-            Ok(value) => serde_json::from_value::<GetStatusRes>(value).map_err(|e| e.to_string()),
-            Err(e) => Err(e.to_string()),
-        }
-    }
-
     pub async fn sign(room_id: &str, vins: Vec<u16>, txn: &str) -> Result<SignTxnRes, String> {
         let conn = NodeConnector::new();
         let req = SignTxnReq {
@@ -91,6 +64,30 @@ impl CoinjoinApis {
         let res = conn.post("coinjoin/sign", &body).await;
         match res {
             Ok(value) => serde_json::from_value::<SignTxnRes>(value).map_err(|e| e.to_string()),
+            Err(e) => Err(e.to_string()),
+        }
+    }
+
+    pub async fn get_transaction(room_id: &str) -> Result<GetUnsignedTxnRes, String> {
+        let conn = NodeConnector::new();
+        let res = conn
+            .get(format!("coinjoin/room/{id}/tx", id = room_id))
+            .await;
+        match res {
+            Ok(value) => {
+                serde_json::from_value::<GetUnsignedTxnRes>(value).map_err(|e| e.to_string())
+            }
+            Err(e) => Err(e.to_string()),
+        }
+    }
+
+    pub async fn get_status(room_id: &str) -> Result<GetStatusRes, String> {
+        let conn = NodeConnector::new();
+        let res = conn
+            .get(format!("coinjoin/room/{id}/status", id = room_id))
+            .await;
+        match res {
+            Ok(value) => serde_json::from_value::<GetStatusRes>(value).map_err(|e| e.to_string()),
             Err(e) => Err(e.to_string()),
         }
     }

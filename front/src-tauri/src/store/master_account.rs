@@ -7,7 +7,7 @@ use wallet::core::{Account, AddrType, MasterAccount, Mnemonic, Unlocker};
 use crate::cfg::PASSPHRASE;
 
 lazy_static! {
-    pub static ref MASTER_ACCOUNT: Mutex<Option<MasterAccount>> = Mutex::new(None);
+    pub static ref MASTER: Mutex<Option<MasterAccount>> = Mutex::new(None);
 }
 
 pub fn initialize_master_account(
@@ -17,7 +17,7 @@ pub fn initialize_master_account(
     passphrase: &str,
     pd_passphrase: Option<&str>,
 ) {
-    let mut singleton = MASTER_ACCOUNT.lock().unwrap();
+    let mut singleton = MASTER.lock().unwrap();
     if singleton.is_none() {
         let mut master =
             MasterAccount::from_mnemonic(mnemonic, birth, network, passphrase, pd_passphrase)
@@ -34,9 +34,9 @@ pub fn initialize_master_account(
 }
 
 pub fn get_mut_master() -> MutexGuard<'static, Option<MasterAccount>> {
-    MASTER_ACCOUNT.lock().unwrap()
+    MASTER.lock().unwrap()
 }
 
 pub fn get_master() -> Option<MasterAccount> {
-    MASTER_ACCOUNT.lock().unwrap().clone()
+    MASTER.lock().unwrap().clone()
 }

@@ -1,11 +1,11 @@
 use actix_web::{
-    web::{Data, Json},
+    web::{self, Data, Json},
     HttpResponse,
 };
 use bitcoin::{consensus, Transaction};
 use shared::intf::coinjoin::{
-    GetRoomByIdReq, GetRoomByIdRes, GetStatusReq, GetStatusRes, GetUnsignedTxnReq,
-    GetUnsignedTxnRes, RegisterReq, RegisterRes, SetOutputReq, SetOutputRes, SignTxnReq,
+    GetRoomByIdRes, GetStatusReq, GetStatusRes, GetUnsignedTxnReq, GetUnsignedTxnRes, RegisterReq,
+    RegisterRes, RoomQueryReq, SetOutputReq, SetOutputRes, SignTxnReq,
 };
 
 use crate::{
@@ -14,17 +14,17 @@ use crate::{
     util::response,
 };
 
-/// Register to CoinJoin transaction
+/// Register to CoinJoin Room
 /// - Verify UTXOs and proofs
-/// - Find/create Peer room
+/// - Find/create peer room -> add to this room
 /// - Blind sign output address
 pub async fn register(
     coinjoin_repo: Data<CoinJoinRepo>,
     payload: Json<RegisterReq>,
 ) -> HttpResponse {
     // Check valid UTXOs
-    if account::validate_utxos(&payload.utxos).await {
-        return response::error("Invaid UTXOs".to_string());
+    if let Err(err) = account::validate_utxos(&payload.utxos).await {
+        return response::error(err);
     }
 
     // Validate proof_signatures
@@ -69,42 +69,6 @@ pub async fn set_output(
     {
         Ok(status) => response::success(SetOutputRes { status }),
         Err(message) => response::error(message),
-    }
-}
-
-pub async fn get_room_by_id(
-    coinjoin_repo: Data<CoinJoinRepo>,
-    payload: Json<GetRoomByIdReq>,
-) -> HttpResponse {
-    let room = coinjoin_repo
-        .get_room_by_id(&payload.room_id)
-        .await
-        .unwrap();
-
-    let res: GetRoomByIdRes = room.into();
-
-    response::success(res)
-}
-
-pub async fn get_status(
-    coinjoin_repo: Data<CoinJoinRepo>,
-    payload: Json<GetStatusReq>,
-) -> HttpResponse {
-    match coinjoin_repo.get_room_by_id(&payload.room_id).await {
-        Ok(room) => response::success(GetStatusRes {
-            status: room.status,
-        }),
-        Err(e) => response::error(e),
-    }
-}
-
-pub async fn get_transaction(
-    coinjoin_repo: Data<CoinJoinRepo>,
-    payload: Json<GetUnsignedTxnReq>,
-) -> HttpResponse {
-    match coinjoin::get_txn_hex(coinjoin_repo, &payload.room_id).await {
-        Ok(tx) => response::success(GetUnsignedTxnRes { tx }),
-        Err(e) => response::error(e),
     }
 }
 
@@ -153,4 +117,37 @@ pub async fn set_signature(
     }
 
     response::success({})
+}
+
+pub async fn get_room_by_id(
+    coinjoin_repo: Data<CoinJoinRepo>,
+    path: web::Path<RoomQueryReq>,
+) -> HttpResponse {
+    let room = coinjoin_repo.get_room_by_id(&path.id).await.unwrap();
+
+    let res: GetRoomByIdRes = room.into();
+
+    response::success(res)
+}
+
+pub async fn get_status(
+    coinjoin_repo: Data<CoinJoinRepo>,
+    path: web::Path<RoomQueryReq>,
+) -> HttpResponse {
+    match coinjoin_repo.get_room_by_id(&path.id).await {
+        Ok(room) => response::success(GetStatusRes {
+            status: room.status,
+        }),
+        Err(e) => response::error(e),
+    }
+}
+
+pub async fn get_transaction(
+    coinjoin_repo: Data<CoinJoinRepo>,
+    path: web::Path<RoomQueryReq>,
+) -> HttpResponse {
+    match coinjoin::get_txn_hex(coinjoin_repo, &path.id).await {
+        Ok(tx) => response::success(GetUnsignedTxnRes { tx }),
+        Err(e) => response::error(e),
+    }
 }

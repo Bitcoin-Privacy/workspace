@@ -6,6 +6,7 @@ fe:
 
 be:
 	@cargo run -p node-service
+
 start:
 	tmux new-session -d -s mySession 'cd front && yarn && cargo tauri dev'
 	tmux split-window -h -t mySession 'cargo run -p node-service'

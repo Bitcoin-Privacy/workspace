@@ -75,3 +75,47 @@ end;
 $$
 language plpgsql
 ;
+
+create or replace function
+    add_new_peer(
+        p_room_id uuid,
+        p_txids varchar(64)[],
+        p_vouts int[],
+        p_amounts int8[],
+        p_change int8,
+        p_address varchar
+    )
+returns void
+as $$
+declare
+    i int;
+begin
+    -- check if the input arrays are of the same length
+    if array_length(p_txids, 1) <> array_length(p_vouts, 1) or 
+       array_length(p_txids, 1) <> array_length(p_amounts, 1) then
+        raise exception 'TXIDs, vouts, and amounts arrays must be of the same length';
+    end if;
+
+    -- loop through the arrays and insert each UTXO
+    for i in 1..array_length(p_txids, 1) loop
+        insert into txin (room_id, txid, vout, amount)
+        values (p_room_id, p_txids[i], p_vouts[i], p_amounts[i]);
+    end loop;
+
+    -- insert into txout table for the change address
+    insert into txout (room_id, amount, address)
+    values (p_room_id, p_change, p_address);
+
+    -- update the no_peer count in room table
+    update room
+    set no_peer = no_peer + 1
+    where id = p_room_id;
+exception
+    WHEN unique_violation THEN
+        RAISE NOTICE 'A unique violation occurred.';
+    when others then
+        -- in case of an error, rollback the transaction
+        raise notice 'An error occurred: %', SQLERRM;
+end;
+$$
+language plpgsql;

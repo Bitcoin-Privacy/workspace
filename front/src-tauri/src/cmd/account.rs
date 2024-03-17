@@ -169,12 +169,10 @@ pub async fn create_tx(deriv: &str, receiver: &str, amount: u64) -> Result<u64, 
             .get(input.previous_output.vout as usize)
             .expect("Cannot get the vout");
         let amount = Amount::from_sat(vout.value);
-        println!(
-            "Script code 1: {}",
-            ScriptBuf::from_hex(&vout.scriptpubkey).unwrap()
-        );
+
         let script_pubkey =
             ScriptBuf::from_hex(&vout.scriptpubkey).expect("Invalid script public key");
+        println!("Script code 1: {}", script_pubkey);
 
         let sighash = sighasher
             .p2wpkh_signature_hash(*index, &script_pubkey, amount, sighash_type)

@@ -23,7 +23,10 @@ pub async fn register(
     let utxo = utxos
         .iter()
         .find(|x: &&Utxo| x.value > amount)
-        .expect("Donot have compatible utxo")
+        .expect(&format!(
+            "Donot have compatible utxo {}, {:?}",
+            amount, utxos
+        ))
         .to_owned();
 
     let blind_session = BlindsignApis::get_blindsign_session()

@@ -25,6 +25,7 @@ pub async fn get_utxo(address: &str) -> Result<Vec<Utxo>, String> {
         "https://blockstream.info/testnet/api/address/{}/utxo",
         address
     );
+    println!("utxo, {}", address);
 
     let response: Vec<Utxo> = reqwest::get(&url).await.unwrap().json().await.unwrap();
 

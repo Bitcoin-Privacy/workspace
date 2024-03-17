@@ -27,13 +27,14 @@ impl NodeConnector {
     pub fn get_url(&self, endpoint: &str) -> String {
         format!("{}/{}", self.base_url, endpoint)
     }
-    pub async fn get(&self, endpoint: String, body: &Value) -> NodeConnectorResult<Value> {
+    pub async fn get(&self, endpoint: String) -> NodeConnectorResult<Value> {
         let client = reqwest::Client::new();
-        let builder = client
+        let res = client
             .get(self.get_url(&endpoint))
-            .json(&body)
-            .header("content-type", "application/json");
-        let res = builder.send().await;
+            .header("Accept", "application/json") // Correct header for indicating response preference
+            .send()
+            .await;
+
         match res {
             Ok(response) => {
                 let parsed_response = response.json::<ApiResponse<Value>>().await;

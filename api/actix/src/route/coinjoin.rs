@@ -24,20 +24,6 @@ pub fn config(cfg: &mut web::ServiceConfig) {
 
     /* Input:
      * - Room id
-     * Output:
-     * - Room status ({endtime - read..})
-     */
-    cfg.route("/status", web::get().to(coinjoin::get_status));
-
-    /* Input:
-     * - Room id
-     * Output:
-     * - Transaction (hex - string)
-     */
-    cfg.route("/tx", web::get().to(coinjoin::get_transaction));
-
-    /* Input:
-     * - Room id
      * - Transaction (hex - string)
      * Output:
      * - Room - current state
@@ -49,5 +35,19 @@ pub fn config(cfg: &mut web::ServiceConfig) {
      * Output:
      * - Room
      */
-    cfg.route("/room", web::post().to(coinjoin::get_room_by_id));
+    cfg.route("/room/{id}", web::get().to(coinjoin::get_room_by_id));
+
+    /* Input:
+     * - Room id
+     * Output:
+     * - Room status ({endtime - read..})
+     */
+    cfg.route("/room/{id}/status", web::get().to(coinjoin::get_status));
+
+    /* Input:
+     * - Room id
+     * Output:
+     * - Transaction (hex - string)
+     */
+    cfg.route("/room/{id}/tx", web::get().to(coinjoin::get_transaction));
 }

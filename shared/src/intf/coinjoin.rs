@@ -67,13 +67,32 @@ pub struct SetOutputRes {
 }
 
 // ---------------------------
+// Set signature
+// ---------------------------
+#[cfg_attr(feature = "backend", derive(Deserialize))]
+#[cfg_attr(feature = "frontend", derive(Serialize))]
+#[derive(Debug, Clone)]
+pub struct SignTxnReq {
+    pub room_id: String,
+    pub vins: Vec<u16>,
+    pub txn: String, // transaction hex
+}
+
+#[cfg_attr(feature = "backend", derive(Serialize))]
+#[cfg_attr(feature = "frontend", derive(Deserialize))]
+#[derive(Debug, Clone)]
+pub struct SignTxnRes {
+    pub status: u8,
+}
+
+// ---------------------------
 // Get room by id
 // ---------------------------
 #[cfg_attr(feature = "backend", derive(Deserialize))]
 #[cfg_attr(feature = "frontend", derive(Serialize))]
 #[derive(Debug, Clone)]
-pub struct GetRoomByIdReq {
-    pub room_id: String,
+pub struct RoomQueryReq {
+    pub id: String,
 }
 
 #[cfg_attr(feature = "backend", derive(Serialize))]
@@ -93,13 +112,6 @@ pub struct GetRoomByIdRes {
 // ---------------------------
 // Get room status
 // ---------------------------
-#[cfg_attr(feature = "backend", derive(Deserialize))]
-#[cfg_attr(feature = "frontend", derive(Serialize))]
-#[derive(Debug, Clone)]
-pub struct GetStatusReq {
-    pub room_id: String,
-}
-
 #[cfg_attr(feature = "frontend", derive(Deserialize))]
 #[derive(Debug, Clone, Serialize)]
 pub struct GetStatusRes {
@@ -109,34 +121,8 @@ pub struct GetStatusRes {
 // ---------------------------
 // Get unsigned transaction
 // ---------------------------
-#[cfg_attr(feature = "backend", derive(Deserialize))]
-#[cfg_attr(feature = "frontend", derive(Serialize))]
-#[derive(Debug, Clone)]
-pub struct GetUnsignedTxnReq {
-    pub room_id: String,
-}
-
 #[cfg_attr(feature = "frontend", derive(Deserialize))]
 #[derive(Debug, Clone, Serialize)]
 pub struct GetUnsignedTxnRes {
     pub tx: String, // Transaction in hex form
-}
-
-// ---------------------------
-// Set signature
-// ---------------------------
-#[cfg_attr(feature = "backend", derive(Deserialize))]
-#[cfg_attr(feature = "frontend", derive(Serialize))]
-#[derive(Debug, Clone)]
-pub struct SignTxnReq {
-    pub room_id: String,
-    pub vins: Vec<u16>,
-    pub txn: String, // transaction hex
-}
-
-#[cfg_attr(feature = "backend", derive(Serialize))]
-#[cfg_attr(feature = "frontend", derive(Deserialize))]
-#[derive(Debug, Clone)]
-pub struct SignTxnRes {
-    pub status: u8,
 }

@@ -1,9 +1,12 @@
 use sled::Db;
+use sqlx::SqlitePool;
+pub mod sqlite;
 
 use crate::model::RoomEntity;
 
 pub struct PoolWrapper {
     pub pool: Db,
+    pub sqlite_pool: SqlitePool,
 }
 
 impl PoolWrapper {

@@ -9,20 +9,30 @@ pub mod cfg;
 pub mod cmd;
 pub mod connector;
 pub mod db;
-pub mod error;
 pub mod model;
 pub mod store;
 pub mod svc;
 
-fn main() {
-    let db: sled::Db = sled::open(DATABASE_PATH).unwrap();
-    let cloned_db = db.clone();
+use db::sqlite::init_db;
+use tauri::Manager;
+
+#[tokio::main]
+async fn main() {
+    // Initialize the SQLite database connection pool asynchronously.
+    let sqlite_pool = init_db()
+        .await
+        .expect("Failed to initialize SQLite database");
+
     tauri::Builder::default()
-        .setup(move |_| {
-            cmd::app::init(&cloned_db.clone());
+        .setup(move |app| {
+            let db: sled::Db = sled::open(DATABASE_PATH).unwrap();
+            cmd::app::init(&db);
+            app.manage(db::PoolWrapper {
+                pool: db,
+                sqlite_pool,
+            });
             Ok(())
         })
-        .manage(db::PoolWrapper { pool: db })
         .manage(NodeConnector::new())
         .invoke_handler(tauri::generate_handler![
             /*
