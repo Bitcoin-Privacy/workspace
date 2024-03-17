@@ -35,6 +35,21 @@ impl From<Room> for RoomDto {
     }
 }
 
+impl From<&Room> for RoomDto {
+    fn from(value: &Room) -> Self {
+        RoomDto {
+            id: value.id.to_string(),
+            base_amount: value.base_amount,
+            no_peer: value.no_peer,
+            status: value.status,
+            due1: value.due1,
+            due2: value.due2,
+            created_at: value.created_at.timestamp_millis() as u64,
+            updated_at: value.updated_at.timestamp_millis() as u64,
+        }
+    }
+}
+
 impl From<Room> for GetRoomByIdRes {
     fn from(value: Room) -> Self {
         GetRoomByIdRes {
@@ -57,6 +72,7 @@ impl From<Room> for GetRoomByIdRes {
 pub struct Input {
     pub id: uuid::Uuid,
     pub room_id: uuid::Uuid,
+    pub address: String,
     pub txid: String,
     #[sqlx(try_from = "i32")]
     pub vout: u16,

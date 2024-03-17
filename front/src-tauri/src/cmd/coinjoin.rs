@@ -90,7 +90,7 @@ pub async fn sign_tx(
     let parsed_path = parse_derivation_path(deriv).map_err(|e| e.to_string())?;
     let account = master_account.accounts().get(&parsed_path).unwrap();
 
-    let res = CoinjoinApis::get_transaction(&room_id).await.unwrap();
+    let res = CoinjoinApis::get_txn(&room_id).await.unwrap();
     let parsed_tx =
         consensus::deserialize::<Transaction>(&hex::decode(&res.tx.clone()).unwrap()).unwrap();
 
@@ -182,7 +182,7 @@ pub async fn sign_tx(
 
 #[tauri::command]
 pub async fn get_tx(room_id: &str) -> Result<GetUnsignedTxnRes, String> {
-    let res = CoinjoinApis::get_transaction(room_id).await;
+    let res = CoinjoinApis::get_txn(room_id).await;
     match res {
         Ok(response) => Ok(response),
         Err(e) => Err(format!("Error: {}", e)),

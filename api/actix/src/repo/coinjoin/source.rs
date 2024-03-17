@@ -19,6 +19,22 @@ impl CoinJoinRepo {
     pub fn new(pool: Database) -> Self {
         Self { pool }
     }
+
+    pub async fn get_room_by_addr(&self, addr: &str) -> CoinjoinResult<Vec<Room>> {
+        sqlx::query_as::<_, Room>(
+            r#"select r.*
+            from room r
+            inner join (
+                select distinct i.room_id as id
+                from txin i
+                where i.address = $1
+            ) as distinct_rooms on r.id = distinct_rooms.id"#,
+        )
+        .bind(addr)
+        .fetch_all(&self.pool.pool)
+        .await
+        .map_err(|e| e.to_string())
+    }
 }
 
 #[async_trait]

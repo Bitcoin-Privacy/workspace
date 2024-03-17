@@ -33,6 +33,13 @@ pub fn config(cfg: &mut web::ServiceConfig) {
     /* Input:
      * - Room id
      * Output:
+     * - Room[]
+     */
+    cfg.route("/room/list", web::get().to(coinjoin::get_room_list));
+
+    /* Input:
+     * - Room id
+     * Output:
      * - Room
      */
     cfg.route("/room/{id}", web::get().to(coinjoin::get_room_by_id));
@@ -49,5 +56,5 @@ pub fn config(cfg: &mut web::ServiceConfig) {
      * Output:
      * - Transaction (hex - string)
      */
-    cfg.route("/room/{id}/tx", web::get().to(coinjoin::get_transaction));
+    cfg.route("/room/{id}/txn", web::get().to(coinjoin::get_txn));
 }

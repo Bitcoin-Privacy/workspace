@@ -2,6 +2,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::model::Utxo;
 
+use super::PaginationQuery;
+
 #[cfg_attr(feature = "backend", derive(Serialize))]
 #[cfg_attr(feature = "frontend", derive(Deserialize))]
 #[derive(Debug, Clone)]
@@ -31,10 +33,10 @@ pub struct ProofSignature {
 #[cfg_attr(feature = "frontend", derive(Serialize))]
 #[derive(Debug, Clone)]
 pub struct RegisterReq {
-    pub utxos: Vec<Utxo>,               // List of UTXOs the user wants to register
-    pub proofs: Vec<ProofSignature>,    // Proof signatures associated with the UTXOs
-    pub blinded_output_address: String, // Blinded set of output address
-    pub change_address: String,         // Cleartext
+    pub utxos: Vec<Utxo>,            // List of UTXOs the user wants to register
+    pub proofs: Vec<ProofSignature>, // Proof signatures associated with the UTXOs
+    pub blinded_out_addr: String,    // Blinded set of output address
+    pub change_addr: String,         // Cleartext
     pub amount: u32, // Limitation for coinjoin transaction, only able to transfer 2^32 - 1 satoshis
 }
 
@@ -55,7 +57,7 @@ pub struct RegisterRes {
 #[derive(Debug, Clone)]
 pub struct SetOutputReq {
     pub room_id: String,
-    pub output_address: String,
+    pub out_addr: String,
     pub sig: String,
 }
 
@@ -125,4 +127,12 @@ pub struct GetStatusRes {
 #[derive(Debug, Clone, Serialize)]
 pub struct GetUnsignedTxnRes {
     pub tx: String, // Transaction in hex form
+}
+
+#[cfg_attr(feature = "backend", derive(Deserialize))]
+#[cfg_attr(feature = "frontend", derive(Serialize))]
+#[derive(Debug, Clone)]
+pub struct RoomListQuery {
+    pub pagination: Option<PaginationQuery>,
+    pub address: String,
 }

@@ -16,8 +16,8 @@ use crate::{
 };
 
 pub async fn register(
-    repo: Data<CoinJoinRepo>,
-    utxo: Vec<Utxo>,
+    repo: &Data<CoinJoinRepo>,
+    utxo: &Vec<Utxo>,
     amount: u32,
     change_addr: &str,
     output_addr: &str,
@@ -157,6 +157,10 @@ async fn get_txn(repo: Data<CoinJoinRepo>, room_id: &str) -> Result<bitcoin::Tra
         input,
         output,
     })
+}
+
+pub async fn get_room_by_addr(repo: Data<CoinJoinRepo>, addr: &str) -> Result<Vec<Room>, String> {
+    Ok(repo.get_room_by_addr(addr).await?)
 }
 
 pub async fn check_tx_completed(

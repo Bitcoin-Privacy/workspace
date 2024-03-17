@@ -4,8 +4,8 @@ use actix_web::{
 };
 use bitcoin::{consensus, Transaction};
 use shared::intf::coinjoin::{
-    GetRoomByIdRes, GetStatusReq, GetStatusRes, GetUnsignedTxnReq, GetUnsignedTxnRes, RegisterReq,
-    RegisterRes, RoomQueryReq, SetOutputReq, SetOutputRes, SignTxnReq,
+    GetRoomByIdRes, GetStatusRes, GetUnsignedTxnRes, RegisterReq, RegisterRes, RoomDto,
+    RoomListQuery, RoomQueryReq, SetOutputReq, SetOutputRes, SignTxnReq,
 };
 
 use crate::{
@@ -36,11 +36,11 @@ pub async fn register(
         .reduce(|acc, e| acc && e);
 
     match coinjoin::register(
-        coinjoin_repo,
-        payload.utxos.clone(),
+        &coinjoin_repo,
+        &payload.utxos,
         payload.amount,
-        &payload.change_address,
-        &payload.blinded_output_address,
+        &payload.change_addr,
+        &payload.blinded_out_addr,
     )
     .await
     {
@@ -62,7 +62,7 @@ pub async fn set_output(
     match coinjoin::set_output(
         coinjoin_repo,
         &payload.room_id,
-        &payload.output_address,
+        &payload.out_addr,
         &payload.sig,
     )
     .await
@@ -72,6 +72,8 @@ pub async fn set_output(
     }
 }
 
+/// Set signature for coinjoin transaction
+///
 pub async fn set_signature(
     coinjoin_repo: Data<CoinJoinRepo>,
     payload: Json<SignTxnReq>,
@@ -142,12 +144,22 @@ pub async fn get_status(
     }
 }
 
-pub async fn get_transaction(
+pub async fn get_txn(
     coinjoin_repo: Data<CoinJoinRepo>,
     path: web::Path<RoomQueryReq>,
 ) -> HttpResponse {
     match coinjoin::get_txn_hex(coinjoin_repo, &path.id).await {
         Ok(tx) => response::success(GetUnsignedTxnRes { tx }),
+        Err(e) => response::error(e),
+    }
+}
+
+pub async fn get_room_list(
+    coinjoin_repo: Data<CoinJoinRepo>,
+    query: web::Query<RoomListQuery>,
+) -> HttpResponse {
+    match coinjoin::get_room_by_addr(coinjoin_repo, &query.address).await {
+        Ok(tx) => response::success(tx.iter().map(|dto| dto.into()).collect::<Vec<RoomDto>>()),
         Err(e) => response::error(e),
     }
 }
