@@ -19,3 +19,11 @@ export type UtxoDto = {
   vout : number;
   value : number;
 }
+
+
+export type StateChainDto = {
+  txid : string;
+  Address : string;
+  n_locktime : number;
+  value : number;
+}

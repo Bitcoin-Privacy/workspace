@@ -3,12 +3,12 @@ import { Box,Text, Image, VStack, Flex, HStack, Spacer, Button } from "@chakra-u
 import { useClipboard } from '@chakra-ui/react'
 import { FiCheck, FiCopy } from "react-icons/fi";
 
-interface UTXOCardProps {
+interface StateChainCardProps {
     val : UtxoDto;
     index : number;
 }
 
-export function UTXOCard(props : UTXOCardProps){
+export function StateChainCard(props : StateChainCardProps){
     const { val , index } = props;
     const { onCopy, value  , setValue, hasCopied } = useClipboard(val.txid);
    
@@ -18,8 +18,8 @@ export function UTXOCard(props : UTXOCardProps){
         key={index}
         color="white"
         textAlign="start"
-        w = "70%"
-        //maxW="80%"
+        w = "80%"
+        maxW="90%"
         bg="#3a3a3a"
         p="8px 16px"
         borderRadius="8px"
@@ -48,7 +48,7 @@ export function UTXOCard(props : UTXOCardProps){
                         borderRadius={"8"}
                         p="2px 8px"
                     >
-                        <Text isTruncated maxW={"160px"} >
+                        <Text isTruncated maxW={"120px"} >
                         TxId: {val.txid}
                         </Text>
                     </Button>

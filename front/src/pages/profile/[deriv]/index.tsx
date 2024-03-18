@@ -77,18 +77,17 @@ export default function ProfilePage() {
       <Head>
         <title>Home</title>
       </Head>
-      <Layout>
+      <Layout  >
         <VStack
           textAlign="center"
           spacing="8px"
-          h="100%"
-          overflowY="scroll"
+          h="100vh"
+          w="100%"
           p="20px 16px"
         >
           <NavBar title={"Account " + deriv.slice(0, deriv.indexOf("/"))} />
           <VStack spacing="36px" w="90%">
             <VStack
-              h="100%"
               justifyContent={"center"}
               id="control_box"
               bg={"gray.900"}
@@ -135,10 +134,9 @@ export default function ProfilePage() {
                 </VStack>
               </Flex>
 
-              <HStack px="2px">
+              <HStack  direction={{ base: 'column', md: 'row' }} spacing={{ base: 4, md: 2 }}  wrap="wrap" >
                 {featureButtons.map((feature, index) => {
                   return (
-                    <GridItem>
                       <Button
                         key={index}
                         bgColor="cyan.200"
@@ -146,11 +144,10 @@ export default function ProfilePage() {
                         onClick={feature.onClick}
                         fontSize="16px"
                         borderRadius="full"
-                        p="10px 20px"
+                        p="8px 16px"
                       >
                         {feature.name}
                       </Button>
-                    </GridItem>
                   );
                 })}
               </HStack>
@@ -197,7 +194,7 @@ export default function ProfilePage() {
               />
               <TabPanels>
                 <TabPanel>
-                  <VStack overflowY="scroll" h="100%" w="100%">
+                  <VStack h="100%" w="100%">
                     {listUtxoQuery.data?.map((val, index) => (
                       <UTXOCard index={index} val={val} />
                     ))}

@@ -27,7 +27,7 @@ export const Layout: React.FC<LayoutProps> = ({ title, children }) => {
       h="100vh"
       w="100%"
       bg="transparent"
-      overflow="hidden"
+      overflowY="scroll"
       position="relative"
     >
       <Box
