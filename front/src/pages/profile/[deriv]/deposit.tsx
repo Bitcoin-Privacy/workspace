@@ -36,9 +36,7 @@ type TransactionOption = {
 export default function Deposit() {
   const router = useRouter();
   const {
-    states: {
-      deriv, form, isLoading, balanceQuery
-    },
+    states: { deriv, form, isLoading, balanceQuery },
     methods: { handleFormSubmit },
   } = useSendPage();
 
@@ -85,7 +83,7 @@ export default function Deposit() {
         textAlign: "start",
       }),
     }),
-    [],
+    []
   );
 
   const {
@@ -94,7 +92,6 @@ export default function Deposit() {
     onCopy,
     hasCopied,
   } = useClipboard("tb1qajhanrjvkzr5ktpjwxtg82fax2emn5apmhjtff");
-
 
   const [hide, setHide] = useState(false);
 
@@ -112,71 +109,104 @@ export default function Deposit() {
             <Text color="white" fontWeight="700" fontSize="18px">
               Deposit bitcoin
             </Text>
-            <VStack width="100%" maxW="500px" spacing="16px" >
-             
-              <FormControl isInvalid={!!form.formState.errors.amount} >
-                <VStack spacing = '24px'>
-                <HStack w="full" justify="space-between">
-                  <Text color={"white"}>Amount:</Text>
-                  <InputGroup w={INPUT_WIDTH}>
-                    <Input
-                      placeholder="0.12"
-                      color={"white"}
-                      {...form.register("amount", {
-                        required: "Amount is required",
-                        pattern: { value: /^[0-9]+(?:\.[0-9]{0,8})?$/, message: "Amount should be a floating-point number with at most 8 decimal places." },
-                        max: { value: balanceQuery.data ? balanceQuery.data / 10000000 : Number.MAX_VALUE, message: "Balance is not enough" },
-                        min: { value: 0.00000001, message: "Amount must larget than or equal to 1 sat" }
-                      })}
-                    />
-                    <InputRightAddon w="82px" justifyContent="center">
-                      BTC
-                    </InputRightAddon>
-                  </InputGroup>
-                </HStack>
-                <Button onClick={() => {setHide(!hide)}}>Confirm</Button>
-                {form.formState.errors.amount && (
-                  <FormErrorMessage justifyContent="end">
-                    {form.formState.errors.amount.message}
-                  </FormErrorMessage>
-                )}
+            <VStack width="100%" maxW="500px" spacing="16px">
+              <FormControl isInvalid={!!form.formState.errors.amount}>
+                <VStack spacing="24px">
+                  <HStack w="full" justify="space-between">
+                    <Text color={"white"}>Amount:</Text>
+                    <InputGroup w={INPUT_WIDTH}>
+                      <Input
+                        placeholder="0.12"
+                        color={"white"}
+                        {...form.register("amount", {
+                          required: "Amount is required",
+                          pattern: {
+                            value: /^[0-9]+(?:\.[0-9]{0,8})?$/,
+                            message:
+                              "Amount should be a floating-point number with at most 8 decimal places.",
+                          },
+                          max: {
+                            value: balanceQuery.data
+                              ? balanceQuery.data / 10000000
+                              : Number.MAX_VALUE,
+                            message: "Balance is not enough",
+                          },
+                          min: {
+                            value: 0.00000001,
+                            message:
+                              "Amount must larget than or equal to 1 sat",
+                          },
+                        })}
+                      />
+                      <InputRightAddon w="82px" justifyContent="center">
+                        BTC
+                      </InputRightAddon>
+                    </InputGroup>
+                  </HStack>
+                  <Button
+                    onClick={() => {
+                      setHide(!hide);
+                    }}
+                  >
+                    Confirm
+                  </Button>
+                  {form.formState.errors.amount && (
+                    <FormErrorMessage justifyContent="end">
+                      {form.formState.errors.amount.message}
+                    </FormErrorMessage>
+                  )}
                 </VStack>
               </FormControl>
-              
             </VStack>
             {hide && (
-                <VStack  bg={"gray.900"} borderRadius={"8px"} p = "20px 40px"  w = 'full' spacing= '24px' color={"white"}>
-                    <HStack w ='full' alignItems={'end'} >
-                        <Square bg ='red'  size = "100px">
-                            QR
-                        </Square>
-                        <VStack  w = 'full'  alignItems={'center'} p = '0px 16px' spacing= '16px'>
-                            <Text> The address below is the Multisig Address between you and SE</Text>
-                            <HStack spacing ='8px'>
-                                <Center borderRadius={"16"} bg ="gray.700" p = "10px 15px"> 0.001 BTC</Center>
-                                <Center>
-                                <FaLongArrowAltRight size = '40px'/>
-                                </Center>
-                                
-                                <Button
-                                    onClick={onCopy}
-                                    bgColor={"gray.700"}
-                                    rightIcon={hasCopied ? <FiCheck /> : <FiCopy />}
-                                    borderRadius={"16"}
-                                >
-                                <Text color={"white"} isTruncated  p="5px">
-                                    {addr}
-                                </Text>
-                                </Button>
-                            </HStack>
-                        </VStack>
+              <VStack
+                bg={"gray.900"}
+                borderRadius={"8px"}
+                p="20px 40px"
+                w="full"
+                spacing="24px"
+                color={"white"}
+              >
+                <HStack w="full" alignItems={"end"}>
+                  <Square bg="red" size="100px">
+                    QR
+                  </Square>
+                  <VStack
+                    w="full"
+                    alignItems={"center"}
+                    p="0px 16px"
+                    spacing="16px"
+                  >
+                    <Text>
+                      {" "}
+                      The address below is the Multisig Address between you and
+                      SE
+                    </Text>
+                    <HStack spacing="8px">
+                      <Center borderRadius={"16"} bg="gray.700" p="10px 15px">
+                        {" "}
+                        0.001 BTC
+                      </Center>
+                      <Center>
+                        <FaLongArrowAltRight size="40px" />
+                      </Center>
+
+                      <Button
+                        onClick={onCopy}
+                        bgColor={"gray.700"}
+                        rightIcon={hasCopied ? <FiCheck /> : <FiCopy />}
+                        borderRadius={"16"}
+                      >
+                        <Text color={"white"} isTruncated p="5px">
+                          {addr}
+                        </Text>
+                      </Button>
                     </HStack>
-                    <Button>Send</Button>
-                </VStack>
-            ) }
-
-           
-
+                  </VStack>
+                </HStack>
+                <Button>Send</Button>
+              </VStack>
+            )}
           </VStack>
         </form>
       </Layout>

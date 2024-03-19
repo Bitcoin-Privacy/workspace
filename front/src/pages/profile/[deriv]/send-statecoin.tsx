@@ -22,13 +22,10 @@ import { TxStrategyEnum } from "@/dtos";
 
 const INPUT_WIDTH = "90%";
 
-
 export default function SendStateCoin() {
   const router = useRouter();
   const {
-    states: {
-      deriv, form, isLoading, balanceQuery
-    },
+    states: { deriv, form, isLoading, balanceQuery },
     methods: { handleFormSubmit },
   } = useSendPage();
 
@@ -75,10 +72,8 @@ export default function SendStateCoin() {
         textAlign: "start",
       }),
     }),
-    [],
+    []
   );
-
- 
 
   return (
     <React.Fragment>
@@ -92,42 +87,72 @@ export default function SendStateCoin() {
               <NavBar title={"Account " + deriv.slice(0, deriv.indexOf("/"))} />
             </HStack>
             <Text color="white" fontWeight="700" fontSize="18px">
-                Send Statecoin
+              Send Statecoin
             </Text>
 
-            <HStack alignItems={'flex-start'} color={"white"} p = "0px 8px" w = 'full'>
-                <VStack bg={"gray.800"} borderRadius={"8px"} p = "16px 24px" w = 'full'>
-                    <Text> Select statecoin to send</Text>
-                </VStack>
-                
+            <HStack
+              alignItems={"flex-start"}
+              color={"white"}
+              p="0px 8px"
+              w="full"
+            >
+              <VStack
+                bg={"gray.800"}
+                borderRadius={"8px"}
+                p="16px 24px"
+                w="full"
+              >
+                <Text> Select statecoin to send</Text>
+              </VStack>
 
-                <VStack w = 'full' alignItems={"start"}  bg={"gray.800"} borderRadius={"8px"} p = "16px 24px" spacing = '16px'>
-                    <Text > Transaction Details</Text>
-                    <HStack w="full" justify="space-between" >
-                        <Text w = '20%' color="white">Statechain Address:</Text>
-                        <Input
-                            placeholder="tb1qtperkdhmm9hesga45wzzdzks6rrtejtp2uec40"
-                            w={INPUT_WIDTH}
-                            color="white"
-                            {...form.register("address", { required: "Receiver address is required", pattern: { value: /^(tb1)[a-z0-9]{39,59}$/, message: "Addess should follow P2WPKH format, other type is not supported yet." } })}
-                        />
-                     </HStack>
-                     <HStack w="full" justify="space-between">
-                        <Text w = '20%' color="white">Authen Address:</Text>
-                        <Input
-                            placeholder="tb1qtperkdhmm9hesga45wzzdzks6rrtejtp2uec40"
-                            w={INPUT_WIDTH}
-                            color="white"
-                            {...form.register("address", { required: "Authen address is required", pattern: { value: /^(tb1)[a-z0-9]{39,59}$/, message: "Addess should follow P2WPKH format, other type is not supported yet." } })}
-                        />
-                       
+              <VStack
+                w="full"
+                alignItems={"start"}
+                bg={"gray.800"}
+                borderRadius={"8px"}
+                p="16px 24px"
+                spacing="16px"
+              >
+                <Text> Transaction Details</Text>
+                <HStack w="full" justify="space-between">
+                  <Text w="20%" color="white">
+                    Statechain Address:
+                  </Text>
+                  <Input
+                    placeholder="tb1qtperkdhmm9hesga45wzzdzks6rrtejtp2uec40"
+                    w={INPUT_WIDTH}
+                    color="white"
+                    {...form.register("address", {
+                      required: "Receiver address is required",
+                      pattern: {
+                        value: /^(tb1)[a-z0-9]{39,59}$/,
+                        message:
+                          "Addess should follow P2WPKH format, other type is not supported yet.",
+                      },
+                    })}
+                  />
+                </HStack>
+                <HStack w="full" justify="space-between">
+                  <Text w="20%" color="white">
+                    Authen Address:
+                  </Text>
+                  <Input
+                    placeholder="tb1qtperkdhmm9hesga45wzzdzks6rrtejtp2uec40"
+                    w={INPUT_WIDTH}
+                    color="white"
+                    {...form.register("address", {
+                      required: "Authen address is required",
+                      pattern: {
+                        value: /^(tb1)[a-z0-9]{39,59}$/,
+                        message:
+                          "Addess should follow P2WPKH format, other type is not supported yet.",
+                      },
+                    })}
+                  />
                 </HStack>
                 <Button alignSelf={"center"}> Send Statecoin</Button>
-               
-                </VStack>
+              </VStack>
             </HStack>
-           
-              
           </VStack>
         </form>
       </Layout>

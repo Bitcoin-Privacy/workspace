@@ -77,7 +77,7 @@ export default function ProfilePage() {
       <Head>
         <title>Home</title>
       </Head>
-      <Layout  >
+      <Layout>
         <VStack
           textAlign="center"
           spacing="8px"
@@ -134,20 +134,24 @@ export default function ProfilePage() {
                 </VStack>
               </Flex>
 
-              <HStack  direction={{ base: 'column', md: 'row' }} spacing={{ base: 4, md: 2 }}  wrap="wrap" >
+              <HStack
+                direction={{ base: "column", md: "row" }}
+                spacing={{ base: 4, md: 2 }}
+                wrap="wrap"
+              >
                 {featureButtons.map((feature, index) => {
                   return (
-                      <Button
-                        key={index}
-                        bgColor="cyan.200"
-                        leftIcon={feature.icon}
-                        onClick={feature.onClick}
-                        fontSize="16px"
-                        borderRadius="full"
-                        p="8px 16px"
-                      >
-                        {feature.name}
-                      </Button>
+                    <Button
+                      key={index}
+                      bgColor="cyan.200"
+                      leftIcon={feature.icon}
+                      onClick={feature.onClick}
+                      fontSize="16px"
+                      borderRadius="full"
+                      p="8px 16px"
+                    >
+                      {feature.name}
+                    </Button>
                   );
                 })}
               </HStack>

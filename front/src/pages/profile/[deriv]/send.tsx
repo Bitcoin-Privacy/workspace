@@ -30,9 +30,7 @@ type TransactionOption = {
 export default function Send() {
   const router = useRouter();
   const {
-    states: {
-      deriv, form, isLoading, balanceQuery
-    },
+    states: { deriv, form, isLoading, balanceQuery },
     methods: { handleFormSubmit },
   } = useSendPage();
 
@@ -79,7 +77,7 @@ export default function Send() {
         textAlign: "start",
       }),
     }),
-    [],
+    []
   );
 
   const options: TransactionOption[] = useMemo(
@@ -93,7 +91,7 @@ export default function Send() {
         value: TxStrategyEnum.CoinJoin,
       },
     ],
-    [],
+    []
   );
 
   return (
@@ -110,15 +108,22 @@ export default function Send() {
             <Text color="white" fontWeight="700" fontSize="18px">
               Create transaction
             </Text>
-            <VStack width="100%" maxW="500px" spacing="16px" >
-              <FormControl isInvalid={!!form.formState.errors.address} >
+            <VStack width="100%" maxW="500px" spacing="16px">
+              <FormControl isInvalid={!!form.formState.errors.address}>
                 <HStack w="full" justify="space-between">
                   <Text color="white">Address:</Text>
                   <Input
                     placeholder="tb1qtperkdhmm9hesga45wzzdzks6rrtejtp2uec40"
                     w={INPUT_WIDTH}
                     color="white"
-                    {...form.register("address", { required: "Receiver address is required", pattern: { value: /^(tb1)[a-z0-9]{39,59}$/, message: "Addess should follow P2WPKH format, other type is not supported yet." } })}
+                    {...form.register("address", {
+                      required: "Receiver address is required",
+                      pattern: {
+                        value: /^(tb1)[a-z0-9]{39,59}$/,
+                        message:
+                          "Addess should follow P2WPKH format, other type is not supported yet.",
+                      },
+                    })}
                   />
                 </HStack>
                 {form.formState.errors.address && (
@@ -136,9 +141,21 @@ export default function Send() {
                       color={"white"}
                       {...form.register("amount", {
                         required: "Amount is required",
-                        pattern: { value: /^[0-9]+(?:\.[0-9]{0,8})?$/, message: "Amount should be a floating-point number with at most 8 decimal places." },
-                        max: { value: balanceQuery.data ? balanceQuery.data / 10000000 : Number.MAX_VALUE, message: "Balance is not enough" },
-                        min: { value: 0.00000001, message: "Amount must larget than or equal to 1 sat" }
+                        pattern: {
+                          value: /^[0-9]+(?:\.[0-9]{0,8})?$/,
+                          message:
+                            "Amount should be a floating-point number with at most 8 decimal places.",
+                        },
+                        max: {
+                          value: balanceQuery.data
+                            ? balanceQuery.data / 10000000
+                            : Number.MAX_VALUE,
+                          message: "Balance is not enough",
+                        },
+                        min: {
+                          value: 0.00000001,
+                          message: "Amount must larget than or equal to 1 sat",
+                        },
                       })}
                     />
                     <InputRightAddon w="82px" justifyContent="center">
@@ -161,7 +178,10 @@ export default function Send() {
                   defaultValue={options[0]}
                   onChange={(e) => {
                     if (e != null && typeof e == "object" && "value" in e) {
-                      form.setValue("strategy", TxStrategyEnum[e.value as keyof typeof TxStrategyEnum]);
+                      form.setValue(
+                        "strategy",
+                        TxStrategyEnum[e.value as keyof typeof TxStrategyEnum]
+                      );
                     }
                   }}
                 />
@@ -210,8 +230,8 @@ export default function Send() {
                 type="submit"
                 isLoading={isLoading}
                 isDisabled={(() => {
-                  let formc = form.watch()
-                  return !formc.amount || !formc.address
+                  let formc = form.watch();
+                  return !formc.amount || !formc.address;
                 })()}
               >
                 Send
