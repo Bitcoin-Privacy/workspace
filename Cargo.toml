@@ -29,7 +29,7 @@ serde_json = "1.0.108"
 reqwest = { version = "0.11.18", features = ["json"] }
 tokio = { version = "1.29.1", features = ["macros", "rt-multi-thread"] }
 
-secp256k1 = { version = "0.27.0", features = ["rand-std"] }
+secp256k1 = { version = "0.28.1", features = ["rand-std"] }
 
 # bitcoin
 bitcoin = { version = "0.31.1", features = [

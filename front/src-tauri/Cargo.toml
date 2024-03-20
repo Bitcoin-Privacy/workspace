@@ -21,6 +21,7 @@ tauri = { version = "1.5.3", features = ["fs-all", "path-all"] }
 shared = { workspace = true, features = ["frontend"] }
 wallet = { workspace = true }
 statechain_core = { workspace = true }
+secp256k1 = { workspace = true }
 
 dotenv = { workspace = true }
 serde_json = { workspace = true }
@@ -45,7 +46,6 @@ clap = { version = "4.3.19", features = ["derive"] }
 hex = "0.4.3"
 openssl = "0.10.59"
 reqwest = { version = "0.11.18", features = ["json"] }
-secp256k1 = { version = "0.27.0", features = ["rand-std"] }
 lazy_static = "1.4.0"
 bonsaidb = "0.5.0"
 bonsaidb-local = "0.5.0"
