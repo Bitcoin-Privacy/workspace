@@ -107,7 +107,7 @@ export default function Deposit() {
               <NavBar title={"Account " + deriv.slice(0, deriv.indexOf("/"))} />
             </HStack>
             <Text color="white" fontWeight="700" fontSize="18px">
-              Deposit bitcoin
+              Deposit statecoin
             </Text>
             <VStack width="100%" maxW="500px" spacing="16px">
               <FormControl isInvalid={!!form.formState.errors.amount}>
@@ -183,7 +183,12 @@ export default function Deposit() {
                       SE
                     </Text>
                     <HStack spacing="8px">
-                      <Center borderRadius={"16"} bg="gray.700" p="10px 15px">
+                      <Center
+                        w="30%"
+                        borderRadius={"16"}
+                        bg="gray.700"
+                        p="10px 15px"
+                      >
                         {" "}
                         0.001 BTC
                       </Center>

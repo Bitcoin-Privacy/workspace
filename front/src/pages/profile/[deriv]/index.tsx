@@ -42,6 +42,7 @@ export default function ProfilePage() {
       onDepositBtnClick,
       onSendStatecoinBtnClick,
       onWithdrawBtnClick,
+      onReceiveStatecoinBtnClick
     },
   } = useProfilePage();
 
@@ -69,6 +70,7 @@ export default function ProfilePage() {
     {
       name: "Receive",
       icon: <FiArrowDownLeft />,
+      onClick : onReceiveStatecoinBtnClick
     },
   ];
 
