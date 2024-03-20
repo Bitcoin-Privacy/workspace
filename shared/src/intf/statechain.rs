@@ -82,8 +82,9 @@ pub struct ListStatecoinsRes {
 // ---------------------------
 // Update key
 // ---------------------------
-#[cfg_attr(feature = "frontend", derive(Deserialize))]
-#[derive(Debug, Clone, Serialize)]
+#[cfg_attr(feature = "backend", derive(Deserialize))]
+#[cfg_attr(feature = "frontend", derive(Serialize))]
+#[derive(Debug, Clone)]
 pub struct UpdateKeyReq {
     pub t: String,
 }

@@ -20,22 +20,24 @@ tauri = { version = "1.5.3", features = ["fs-all", "path-all"] }
 # Workspace
 shared = { workspace = true, features = ["frontend"] }
 wallet = { workspace = true }
+statechain_core = { workspace = true }
 
 dotenv = { workspace = true }
 serde_json = { workspace = true }
 serde = { workspace = true }
 tokio = { workspace = true }
-sqlx = { version = "0.7.3", default-features = false, features = [
-  "runtime-tokio-native-tls",
-  "sqlite",
-  "migrate",
-] }
 
-bitcoin = { version = "0.31.0", features = [
+bitcoin = { workspace = true, features = [
   "serde",
   "rand-std",
   "bitcoinconsensus",
   "actual-serde",
+] }
+
+sqlx = { version = "0.7.3", default-features = false, features = [
+  "runtime-tokio-native-tls",
+  "sqlite",
+  "migrate",
 ] }
 rust-crypto = "0.2"
 

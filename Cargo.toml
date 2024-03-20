@@ -1,12 +1,19 @@
 [workspace]
 resolver = "2"
-members = ["api/actix", "api/lib", "shared", "front/src-tauri", "wallet"]
+members = [
+  "api/actix",
+  "api/lib",
+  "shared",
+  "front/src-tauri",
+  "wallet",
+  "statechain-core",
+]
 
 [workspace.dependencies]
 # internal
 shared = { version = "0.1.0", path = "./shared" }
 wallet = { version = "0.1.0", path = "./wallet" }
-api-lib = { version = "0.1.0", path = "./api/lib" }
+statechain_core = { version = "0.1.0", path = "./statechain-core" }
 
 # actix
 actix-web = "4.4.1"
@@ -21,3 +28,15 @@ serde_json = "1.0.108"
 
 reqwest = { version = "0.11.18", features = ["json"] }
 tokio = { version = "1.29.1", features = ["macros", "rt-multi-thread"] }
+
+secp256k1 = { version = "0.27.0", features = ["rand-std"] }
+
+# bitcoin
+bitcoin = { version = "0.31.1", features = [
+  "std",
+  "rand-std",
+  "serde",
+  "base64",
+  "bitcoinconsensus",
+  "actual-serde",
+] }
