@@ -25,6 +25,8 @@ import { Layout, NavBar } from "@/components";
 import { CoinJoinRoomCard } from "@/components";
 import { useProfilePage } from "@/hooks";
 import { UTXOCard } from "@/components/utxo-card";
+import { StateChainDto } from "@/dtos/statechain.dto";
+import { StateChainCard } from "@/components/statechain-card";
 
 export default function ProfilePage() {
   const {
@@ -42,9 +44,30 @@ export default function ProfilePage() {
       onDepositBtnClick,
       onSendStatecoinBtnClick,
       onWithdrawBtnClick,
-      onReceiveStatecoinBtnClick
+      onReceiveStatecoinBtnClick,
     },
   } = useProfilePage();
+
+  const mockStatechain: StateChainDto[] = [
+    {
+      txid: "asoo4545o4o5ji4oj5oi4j54j54h;lkfs",
+      address: "4545taasdfasdfasdfsddsdddasdf",
+      n_locktime: 34234234234234,
+      value: 0.0001,
+    },
+    {
+      txid: "asoo4545o4o5jisj5oi4j54j54h;lkfs",
+      address: "4545taasdfasdasdsdsasdfasdfasdf",
+      n_locktime: 34234234234234,
+      value: 0.0001,
+    },
+    {
+      txid: "asoo4545o4o5ji4s5oi4j54j54h;lkfs",
+      address: "4545taasdfasdsdsdsasdfasdf",
+      n_locktime: 34234234234234,
+      value: 0.0001,
+    },
+  ];
 
   const featureButtons = [
     {
@@ -70,7 +93,7 @@ export default function ProfilePage() {
     {
       name: "Receive",
       icon: <FiArrowDownLeft />,
-      onClick : onReceiveStatecoinBtnClick
+      onClick: onReceiveStatecoinBtnClick,
     },
   ];
 
@@ -215,7 +238,11 @@ export default function ProfilePage() {
                 </TabPanel>
                 <TabPanel>
                   <Text fontSize="12px" fontWeight="200" color="#aaa">
-                    Statechain
+                    <VStack h="100%" w="100%" spacing="8px">
+                      {mockStatechain.map((val, index) => (
+                        <StateChainCard val={val} index={index} />
+                      ))}
+                    </VStack>
                   </Text>
                 </TabPanel>
               </TabPanels>

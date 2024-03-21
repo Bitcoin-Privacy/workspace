@@ -1,4 +1,5 @@
 import { UtxoDto } from "@/dtos";
+import { StateChainDto } from "@/dtos/statechain.dto";
 import {
   Box,
   Text,
@@ -13,7 +14,7 @@ import { useClipboard } from "@chakra-ui/react";
 import { FiCheck, FiCopy } from "react-icons/fi";
 
 interface StateChainCardProps {
-  val: UtxoDto;
+  val: StateChainDto;
   index: number;
 }
 
@@ -61,7 +62,7 @@ export function StateChainCard(props: StateChainCardProps) {
               TxId: {val.txid}
             </Text>
           </Button>
-          <Text>vout: {val.vout}</Text>
+          <Text>vout: {val.n_locktime}</Text>
         </VStack>
       </Flex>
     </HStack>

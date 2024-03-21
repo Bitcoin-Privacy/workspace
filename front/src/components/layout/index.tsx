@@ -24,10 +24,11 @@ export const Layout: React.FC<LayoutProps> = ({ title, children }) => {
 
   return (
     <VStack
-      h="100vh"
+      h="100%"
       w="100%"
       bg="transparent"
-      overflowY="scroll"
+      overflowY="auto"
+      alignItems="start"
       position="relative"
     >
       <Box

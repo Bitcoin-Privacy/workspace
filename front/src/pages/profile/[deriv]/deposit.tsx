@@ -25,20 +25,16 @@ import { FaLongArrowAltRight } from "react-icons/fa";
 import { Layout, NavBar } from "@/components";
 import { TxStrategyEnum } from "@/dtos";
 import { FiCheck, FiCopy } from "react-icons/fi";
+import { useDepositPage } from "@/hooks/pages/use-deposit-page";
 
 const INPUT_WIDTH = "75%";
-
-type TransactionOption = {
-  label: string;
-  value: TxStrategyEnum;
-};
 
 export default function Deposit() {
   const router = useRouter();
   const {
     states: { deriv, form, isLoading, balanceQuery },
     methods: { handleFormSubmit },
-  } = useSendPage();
+  } = useDepositPage();
 
   const chakraStyles: ChakraStylesConfig = useMemo(
     () => ({
@@ -147,6 +143,13 @@ export default function Deposit() {
                     onClick={() => {
                       setHide(!hide);
                     }}
+
+                    type="submit"
+                    isLoading={isLoading}
+                    isDisabled={(() => {
+                    let formc = form.watch();
+                    return !formc.amount;
+                })()}
                   >
                     Confirm
                   </Button>
