@@ -24,7 +24,7 @@ export const Layout: React.FC<LayoutProps> = ({ title, children }) => {
 
   return (
     <VStack
-      h="100%"
+      h="100vh"
       w="100%"
       bg="transparent"
       overflowY="auto"

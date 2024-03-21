@@ -5,6 +5,7 @@ import {
   Flex,
   Text,
   Button,
+  HStack,
   // Menu,
   // MenuButton,
   // MenuList,
@@ -49,11 +50,11 @@ export const NavBar = memo((props: NavBarProps) => {
   const router = useRouter();
 
   return (
-    <Flex
-      px="2"
+    <HStack
+      p="18px 24px"
       w="full"
-      h={16}
-      alignItems={"center"}
+      h={12}
+      alignItems="center"
       justifyContent="center"
       pos="relative"
     >
@@ -158,8 +159,8 @@ export const NavBar = memo((props: NavBarProps) => {
       {/*     } */}
       {/*   /> */}
       {/* </Flex> */}
-    </Flex>
+    </HStack>
   );
 });
 
-NavBar.displayName = "NavBar"
+NavBar.displayName = "NavBar";

@@ -9,8 +9,10 @@ import {
   HStack,
   Spacer,
   Button,
+  Progress,
 } from "@chakra-ui/react";
 import { useClipboard } from "@chakra-ui/react";
+import { useState } from "react";
 import { FiCheck, FiCopy } from "react-icons/fi";
 
 interface StateChainCardProps {
@@ -21,7 +23,7 @@ interface StateChainCardProps {
 export function StateChainCard(props: StateChainCardProps) {
   const { val, index } = props;
   const { onCopy, value, setValue, hasCopied } = useClipboard(val.txid);
-
+  const [timeValue, setTimeValue] = useState(50);
   return (
     <HStack
       key={index}
@@ -34,35 +36,30 @@ export function StateChainCard(props: StateChainCardProps) {
       borderRadius="8px"
       dir="row"
       alignItems={"center"}
+      spacing="8px"
     >
       <Image
         borderRadius="full"
         boxSize="50px"
-        src="https://i.ibb.co/M6xxyd6/istockphoto-905413264-612x612.jpg"
+        src="https://i.ibb.co/R91rN3Q/statechain.png"
       />
       <Flex w="full" alignItems={"center"}>
-        <VStack>
-          <Text fontSize={"20"} fontWeight={"1000"}>
-            Bitcoin
+        <VStack alignItems={"flex-start"} spacing="8px">
+          <Text isTruncated maxW={"160px"} fontSize={"16"} fontWeight={"800"}>
+            Address : {val.address}
+          </Text>
+          <Text isTruncated maxW={"160px"} fontSize={"16"} fontWeight={"400"}>
+            Txid : {val.txid}
           </Text>
           <Text>{val.value} Sats</Text>
         </VStack>
 
         <Spacer />
 
-        <VStack alignItems={"end"}>
-          <Button
-            onClick={onCopy}
-            bgColor={"cyan.100"}
-            rightIcon={hasCopied ? <FiCheck /> : <FiCopy />}
-            borderRadius={"8"}
-            p="2px 8px"
-          >
-            <Text isTruncated maxW={"120px"}>
-              TxId: {val.txid}
-            </Text>
-          </Button>
-          <Text>vout: {val.n_locktime}</Text>
+        <VStack alignItems={"end"} spacing={"8px"} w="100%">
+          <Progress value={timeValue} size="xs" colorScheme="pink" w="50%" />
+
+          <Text>Time to live: {val.n_locktime}</Text>
         </VStack>
       </Flex>
     </HStack>

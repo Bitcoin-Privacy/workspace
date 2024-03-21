@@ -10,6 +10,7 @@ import {
   Spacer,
   Grid,
   GridItem,
+  Box,
 } from "@chakra-ui/react";
 import { Text, VStack, Button, HStack, Image, Flex } from "@chakra-ui/react";
 import {
@@ -102,15 +103,10 @@ export default function ProfilePage() {
       <Head>
         <title>Home</title>
       </Head>
+
       <Layout>
-        <VStack
-          textAlign="center"
-          spacing="8px"
-          h="100vh"
-          w="100%"
-          p="20px 16px"
-        >
-          <NavBar title={"Account " + deriv.slice(0, deriv.indexOf("/"))} />
+        <NavBar title={"Account " + deriv.slice(0, deriv.indexOf("/"))} />
+        <VStack spacing="8px" h="100vh" w="100%" p="20px 16px">
           <VStack spacing="36px" w="90%">
             <VStack
               justifyContent={"center"}
@@ -182,26 +178,25 @@ export default function ProfilePage() {
               </HStack>
             </VStack>
 
-            <Grid templateColumns="repeat(3, 1fr)" gap={24}>
-              <GridItem w="100%" bg="gray.900" p="6px 6px" borderRadius="8px">
-                <Text fontSize="16px" fontWeight="200" color="#aaa">
-                  {" "}
-                  Connected to Server
-                </Text>
-              </GridItem>
-              <GridItem w="100%" bg="gray.900" p="6px 6px" borderRadius="8px">
-                <Text fontSize="16px" fontWeight="200" color="#aaa">
-                  {" "}
-                  Connected to CoinJoin
-                </Text>
-              </GridItem>
-              <GridItem w="100%" bg="gray.900" p="6px 6px" borderRadius="8px">
-                <Text fontSize="16px" fontWeight="200" color="#aaa">
-                  {" "}
-                  Connected to bitcoin
-                </Text>
-              </GridItem>
-            </Grid>
+            <HStack
+              w="100%"
+              color="white"
+              justifyContent={"space-between"}
+              direction={{ base: "column", md: "row" }}
+              spacing={{ base: 16, md: 4 }}
+              wrap="wrap"
+              p="0px 24px"
+            >
+              <Box bg="gray.900" p="12px 12px" borderRadius="8px">
+                <Text> Connect to server</Text>
+              </Box>
+              <Box bg="gray.900" p="12px 12px" borderRadius="8px">
+                <Text> Connect to CoinJoin</Text>
+              </Box>
+              <Box bg="gray.900" p="12px 12px" borderRadius="8px">
+                <Text> Connect to Statecoin</Text>
+              </Box>
+            </HStack>
 
             <Tabs isFitted variant="unstyled" w="100%">
               <TabList>
