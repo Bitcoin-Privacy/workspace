@@ -61,6 +61,10 @@ export const useProfilePage = () => {
     router.push(`/profile/${b64EncodeUnicode(deriv)}/send-statecoin`);
   }, [deriv]);
 
+  const onReceiveStatecoinBtnClick = useCallback(() => {
+    router.push(`/profile/${b64EncodeUnicode(deriv)}/receive-statecoin`);
+  }, [deriv]);
+
   return {
     states: {
       deriv,
@@ -75,7 +79,8 @@ export const useProfilePage = () => {
       onSendBtnClick,
       onDepositBtnClick,
       onSendStatecoinBtnClick,
-      onWithdrawBtnClick
+      onWithdrawBtnClick,
+      onReceiveStatecoinBtnClick
     },
   };
 };

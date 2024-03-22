@@ -10,6 +10,7 @@ import {
   Spacer,
   Grid,
   GridItem,
+  Box,
 } from "@chakra-ui/react";
 import { Text, VStack, Button, HStack, Image, Flex } from "@chakra-ui/react";
 import {
@@ -25,6 +26,8 @@ import { Layout, NavBar } from "@/components";
 import { CoinJoinRoomCard } from "@/components";
 import { useProfilePage } from "@/hooks";
 import { UTXOCard } from "@/components/utxo-card";
+import { StateChainDto } from "@/dtos/statechain.dto";
+import { StateChainCard } from "@/components/statechain-card";
 
 export default function ProfilePage() {
   const {
@@ -42,8 +45,30 @@ export default function ProfilePage() {
       onDepositBtnClick,
       onSendStatecoinBtnClick,
       onWithdrawBtnClick,
+      onReceiveStatecoinBtnClick,
     },
   } = useProfilePage();
+
+  const mockStatechain: StateChainDto[] = [
+    {
+      txid: "asoo4545o4o5ji4oj5oi4j54j54h;lkfs",
+      address: "4545taasdfasdfasdfsddsdddasdf",
+      n_locktime: 34234234234234,
+      value: 0.0001,
+    },
+    {
+      txid: "asoo4545o4o5jisj5oi4j54j54h;lkfs",
+      address: "4545taasdfasdasdsdsasdfasdfasdf",
+      n_locktime: 34234234234234,
+      value: 0.0001,
+    },
+    {
+      txid: "asoo4545o4o5ji4s5oi4j54j54h;lkfs",
+      address: "4545taasdfasdsdsdsasdfasdf",
+      n_locktime: 34234234234234,
+      value: 0.0001,
+    },
+  ];
 
   const featureButtons = [
     {
@@ -69,6 +94,7 @@ export default function ProfilePage() {
     {
       name: "Receive",
       icon: <FiArrowDownLeft />,
+      onClick: onReceiveStatecoinBtnClick,
     },
   ];
 
@@ -77,18 +103,12 @@ export default function ProfilePage() {
       <Head>
         <title>Home</title>
       </Head>
+
       <Layout>
-        <VStack
-          textAlign="center"
-          spacing="8px"
-          h="100%"
-          overflowY="scroll"
-          p="20px 16px"
-        >
-          <NavBar title={"Account " + deriv.slice(0, deriv.indexOf("/"))} />
+        <NavBar title={"Account " + deriv.slice(0, deriv.indexOf("/"))} />
+        <VStack spacing="8px" h="100vh" w="100%" p="20px 16px">
           <VStack spacing="36px" w="90%">
             <VStack
-              h="100%"
               justifyContent={"center"}
               id="control_box"
               bg={"gray.900"}
@@ -135,47 +155,48 @@ export default function ProfilePage() {
                 </VStack>
               </Flex>
 
-              <HStack px="2px">
+              <HStack
+                direction={{ base: "column", md: "row" }}
+                spacing={{ base: 4, md: 2 }}
+                wrap="wrap"
+              >
                 {featureButtons.map((feature, index) => {
                   return (
-                    <GridItem>
-                      <Button
-                        key={index}
-                        bgColor="cyan.200"
-                        leftIcon={feature.icon}
-                        onClick={feature.onClick}
-                        fontSize="16px"
-                        borderRadius="full"
-                        p="10px 20px"
-                      >
-                        {feature.name}
-                      </Button>
-                    </GridItem>
+                    <Button
+                      key={index}
+                      bgColor="cyan.200"
+                      leftIcon={feature.icon}
+                      onClick={feature.onClick}
+                      fontSize="16px"
+                      borderRadius="full"
+                      p="8px 16px"
+                    >
+                      {feature.name}
+                    </Button>
                   );
                 })}
               </HStack>
             </VStack>
 
-            <Grid templateColumns="repeat(3, 1fr)" gap={24}>
-              <GridItem w="100%" bg="gray.900" p="6px 6px" borderRadius="8px">
-                <Text fontSize="16px" fontWeight="200" color="#aaa">
-                  {" "}
-                  Connected to Server
-                </Text>
-              </GridItem>
-              <GridItem w="100%" bg="gray.900" p="6px 6px" borderRadius="8px">
-                <Text fontSize="16px" fontWeight="200" color="#aaa">
-                  {" "}
-                  Connected to CoinJoin
-                </Text>
-              </GridItem>
-              <GridItem w="100%" bg="gray.900" p="6px 6px" borderRadius="8px">
-                <Text fontSize="16px" fontWeight="200" color="#aaa">
-                  {" "}
-                  Connected to bitcoin
-                </Text>
-              </GridItem>
-            </Grid>
+            <HStack
+              w="100%"
+              color="white"
+              justifyContent={"space-between"}
+              direction={{ base: "column", md: "row" }}
+              spacing={{ base: 16, md: 4 }}
+              wrap="wrap"
+              p="0px 24px"
+            >
+              <Box bg="gray.900" p="12px 12px" borderRadius="8px">
+                <Text> Connect to server</Text>
+              </Box>
+              <Box bg="gray.900" p="12px 12px" borderRadius="8px">
+                <Text> Connect to CoinJoin</Text>
+              </Box>
+              <Box bg="gray.900" p="12px 12px" borderRadius="8px">
+                <Text> Connect to Statecoin</Text>
+              </Box>
+            </HStack>
 
             <Tabs isFitted variant="unstyled" w="100%">
               <TabList>
@@ -197,7 +218,7 @@ export default function ProfilePage() {
               />
               <TabPanels>
                 <TabPanel>
-                  <VStack overflowY="scroll" h="100%" w="100%">
+                  <VStack h="100%" w="100%">
                     {listUtxoQuery.data?.map((val, index) => (
                       <UTXOCard index={index} val={val} />
                     ))}
@@ -212,7 +233,11 @@ export default function ProfilePage() {
                 </TabPanel>
                 <TabPanel>
                   <Text fontSize="12px" fontWeight="200" color="#aaa">
-                    Statechain
+                    <VStack h="100%" w="100%" spacing="8px">
+                      {mockStatechain.map((val, index) => (
+                        <StateChainCard val={val} index={index} />
+                      ))}
+                    </VStack>
                   </Text>
                 </TabPanel>
               </TabPanels>

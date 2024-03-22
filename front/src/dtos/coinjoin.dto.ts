@@ -4,7 +4,7 @@ export type RegisterResponseDto = {
 };
 
 export type RoomDto = {
-  id: string;
+  id: string; 
   base_amount: number;
   no_peer: number;
   status: number;
@@ -19,3 +19,4 @@ export type UtxoDto = {
   vout : number;
   value : number;
 }
+
