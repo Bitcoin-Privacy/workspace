@@ -3,6 +3,8 @@ use db::TraitDatabase;
 use repo::coinjoin::CoinJoinRepo;
 use std::io;
 
+use crate::repo::statechain::StatechainRepo;
+
 pub mod app;
 pub mod config;
 pub mod constance;
@@ -32,10 +34,12 @@ async fn main() -> io::Result<()> {
     HttpServer::new(move || {
         let logger = Logger::default();
         let coinjoin_repo = Data::new(CoinJoinRepo::new(db.clone()));
+        let statechain_repo = Data::new(StatechainRepo::new(db.clone()));
         App::new()
             .wrap(logger)
             .wrap(middleware::logging::LoggingMiddleware)
             .app_data(coinjoin_repo)
+            .app_data(statechain_repo)
             .configure(app::config)
             .configure(route::config)
     })

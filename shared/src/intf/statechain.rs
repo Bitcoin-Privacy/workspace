@@ -1,12 +1,23 @@
 use serde::{Deserialize, Serialize};
 
 // ---------------------------
+// create token
+// ---------------------------
+#[cfg_attr(feature = "backend", derive(Deserialize))]
+#[cfg_attr(feature = "frontend", derive(Serialize))]
+#[derive(Debug, Clone)]
+pub struct CreateTokenReq {
+    pub user_name: String,
+}
+
+// ---------------------------
 // Deposit
 // ---------------------------
 #[cfg_attr(feature = "backend", derive(Deserialize))]
 #[cfg_attr(feature = "frontend", derive(Serialize))]
 #[derive(Debug, Clone)]
 pub struct DepositReq {
+    pub token_id: String,
     pub addr: String,
     pub amount: u32, // Limitation for coinjoin transaction, only able to transfer 2^32 - 1 satoshis
 }
@@ -15,8 +26,8 @@ pub struct DepositReq {
 #[cfg_attr(feature = "frontend", derive(Deserialize))]
 #[derive(Debug, Clone)]
 pub struct DepositRes {
-    pub pubkey: String,
-    pub session_id: String,
+    pub se_pubkey_1: String,
+    pub statechain_id: String,
 }
 
 // ---------------------------
