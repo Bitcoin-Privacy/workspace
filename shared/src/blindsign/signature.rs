@@ -1,6 +1,6 @@
 //! Manage the blindly signed message
 use super::request;
-use super::Error::{WiredRistrettoPointMalformed, WiredScalarMalformed};
+use super::BlindSignError::{WiredRistrettoPointMalformed, WiredScalarMalformed};
 use super::Result;
 use curve25519_dalek::{
     constants::RISTRETTO_BASEPOINT_POINT,

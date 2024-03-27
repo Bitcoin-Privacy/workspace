@@ -1,5 +1,5 @@
 //! Generate and manage the ECC keys
-use super::Error;
+use super::BlindSignError;
 use super::Result;
 use curve25519_dalek::{
     constants::RISTRETTO_BASEPOINT_POINT,
@@ -56,10 +56,10 @@ impl BlindKeypair {
     pub fn from_wired(private: [u8; 32], public: [u8; 32]) -> Result<Self> {
         let priv_key: Option<Scalar> = Scalar::from_canonical_bytes(private).into();
         Ok(BlindKeypair {
-            private: priv_key.ok_or(Error::WiredScalarMalformed)?,
+            private: priv_key.ok_or(BlindSignError::WiredScalarMalformed)?,
             public: CompressedRistretto(public)
                 .decompress()
-                .ok_or(Error::WiredRistrettoPointMalformed)?,
+                .ok_or(BlindSignError::WiredRistrettoPointMalformed)?,
         })
     }
 
@@ -91,13 +91,13 @@ impl BlindKeypair {
 
         // Assuming private_key_bytes and public_key_bytes are correct lengths ([u8; 32])
         let private_key_bytes: [u8; 32] = private_key_bytes
-            .map_err(|e| Error::Other(e.to_string()))?
+            .map_err(|e| BlindSignError::Other(e.to_string()))?
             .try_into()
-            .map_err(|_| Error::Other("Private key has invalid sized?".to_string()))?;
+            .map_err(|_| BlindSignError::Other("Private key has invalid sized?".to_string()))?;
         let public_key_bytes: [u8; 32] = public_key_bytes
-            .map_err(|e| Error::Other(e.to_string()))?
+            .map_err(|e| BlindSignError::Other(e.to_string()))?
             .try_into()
-            .map_err(|_| Error::Other("Public key has invalid sized?".to_string()))?;
+            .map_err(|_| BlindSignError::Other("Public key has invalid sized?".to_string()))?;
 
         // Use the from_wired function to create a BlindKeypair
         Self::from_wired(private_key_bytes, public_key_bytes)

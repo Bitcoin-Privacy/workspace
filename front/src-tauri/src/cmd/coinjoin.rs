@@ -1,18 +1,16 @@
-use shared::intf::coinjoin::{GetStatusRes, GetUnsignedTxnRes};
+use std::ops::ControlFlow;
 
 use bitcoin::{
-    consensus,
-    secp256k1::{Message, Secp256k1, SecretKey},
-    sighash::SighashCache,
-    Amount, EcdsaSighashType, ScriptBuf, Transaction, Witness,
+    consensus, secp256k1::Secp256k1, sighash::SighashCache, EcdsaSighashType, Transaction,
 };
 use tauri::State;
-use wallet::core::{MasterAccount, Unlocker};
 
-use crate::svc::account::parse_derivation_path;
-use crate::svc::coinjoin;
+use shared::intf::coinjoin::{GetStatusRes, GetUnsignedTxnRes};
+
 use crate::{
-    cfg::PASSPHRASE, db::PoolWrapper, model::RoomEntity, store::master_account::get_master,
+    db::PoolWrapper,
+    model::RoomEntity,
+    svc::{account, coinjoin},
 };
 
 /// Register to CoinJoin Protocol
@@ -36,9 +34,7 @@ pub async fn sign_tx(
     deriv: &str,
     room_id: &str,
 ) -> Result<(), String> {
-    let master_account = get_master().expect("Master account does not exist");
-    let parsed_path = parse_derivation_path(deriv).map_err(|e| e.to_string())?;
-    let account = master_account.accounts().get(&parsed_path).unwrap();
+    let (account, mut unlocker) = account::get_account(deriv).unwrap();
 
     let res = crate::api::coinjoin::get_txn(&room_id).await.unwrap();
     let parsed_tx =
@@ -49,11 +45,9 @@ pub async fn sign_tx(
         .map_err(|e| format!("Error: {:?}", e))
         .unwrap();
 
-    // TODO:
-    // - find inputs which is from this account
-    // - sign all these inputs
     let mut unsigned_tx = parsed_tx.clone();
 
+    let secp = Secp256k1::new();
     let sighash_type = EcdsaSighashType::All;
     let mut sighasher = SighashCache::new(&mut unsigned_tx);
 
@@ -67,59 +61,36 @@ pub async fn sign_tx(
                 .find(|utxo| input.previous_output.txid.to_string() == utxo.txid.to_string())
                 .is_some()
         })
-        .map(|(index, input)| tokio::spawn(coinjoin::find_and_join_txn(index, input.clone())))
+        .map(|(index, input)| tokio::spawn(account::find_and_join_txn(index, input.clone())))
         .collect();
+
     let mut results = Vec::new();
     for job in future_tasks {
         results.push(job.await.unwrap().unwrap());
     }
 
-    let mut unlocker = Unlocker::new_for_master(&master_account, PASSPHRASE).unwrap();
-    let secp = Secp256k1::new();
+    let mut vins: Vec<u16> = Vec::new();
+    let res = results.iter().try_for_each(|(index, input, tx)| {
+        vins.push(*index as u16);
+        match account::sign(
+            &secp,
+            &mut sighasher,
+            sighash_type,
+            &account,
+            &mut unlocker,
+            index,
+            input,
+            tx,
+        ) {
+            Ok(_) => ControlFlow::Continue(()),
+            Err(e) => ControlFlow::Break(e),
+        }
+    });
+    if let ControlFlow::Break(e) = res {
+        return Err(e.to_string());
+    }
 
-    let vins: Vec<u16> = results
-        .iter()
-        .map(|(index, input, tx)| {
-            let vout = tx
-                .vout
-                .get(input.previous_output.vout as usize)
-                .expect("Cannot get the vout");
-            let amount = Amount::from_sat(vout.value);
-            println!(
-                "Script code 1: {}",
-                ScriptBuf::from_hex(&vout.scriptpubkey).unwrap()
-            );
-            let script_pubkey =
-                ScriptBuf::from_hex(&vout.scriptpubkey).expect("Invalid script public key");
-
-            let sighash = sighasher
-                .p2wpkh_signature_hash(*index, &script_pubkey, amount, sighash_type)
-                .expect("failed to create sighash");
-
-            let priv_key = account
-                .get_privkey(script_pubkey.clone(), &mut unlocker)
-                .expect("Cannot get private key");
-            // input.script_sig = ScriptBuf::new();
-            let msg = Message::from(sighash);
-            let sk = SecretKey::from_slice(&priv_key.to_bytes()).unwrap();
-
-            let sig = secp.sign_ecdsa(&msg, &sk);
-
-            // Update the witness stack.
-            let signature = bitcoin::ecdsa::Signature {
-                sig,
-                hash_ty: EcdsaSighashType::All,
-            };
-
-            let pk = sk.public_key(&secp);
-            *sighasher.witness_mut(*index).unwrap() = Witness::p2wpkh(&signature, &pk);
-            *index as u16
-        })
-        .collect();
     let tx_hex = consensus::encode::serialize_hex(&unsigned_tx);
-    println!("hash: {:?}", tx_hex);
-    println!("{:#?}", unsigned_tx);
-
     let res = crate::api::coinjoin::sign(room_id, vins, &tx_hex).await;
     match res {
         Ok(response) => {

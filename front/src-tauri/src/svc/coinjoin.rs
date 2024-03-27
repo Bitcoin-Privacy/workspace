@@ -1,18 +1,24 @@
+use anyhow::anyhow;
 use anyhow::Result;
 use bitcoin::hex::Case;
 use bitcoin::hex::DisplayHex;
-use bitcoin::TxIn;
-use shared::model::Txn;
+use bitcoin::{
+    consensus,
+    secp256k1::{Message, Secp256k1, SecretKey},
+    sighash::SighashCache,
+    Amount, EcdsaSighashType, ScriptBuf, Transaction, Witness,
+};
 use tokio::time::{sleep, Duration};
 
 use shared::api;
 use shared::blindsign::{BlindRequest, WiredUnblindedSigData};
 use shared::model::Utxo;
 
-use crate::api::{blindsign, coinjoin};
+use crate::api::coinjoin;
 use crate::db::PoolWrapper;
 use crate::model::{AccountActions, RoomEntity};
 use crate::svc::account;
+use crate::svc::blindsign;
 
 pub async fn register(
     pool: &PoolWrapper,
@@ -20,10 +26,8 @@ pub async fn register(
     amount: u64,
     dest: &str,
 ) -> Result<(String, String)> {
-    let acct = account::get_internal_account(deriv).expect("Account not found");
-    let utxos = api::get_utxo(&acct.get_addr())
-        .await
-        .expect("Cannot get utxos");
+    let acct = account::get_internal_account(deriv)?;
+    let utxos = api::get_utxo(&acct.get_addr()).await?;
     let utxo = utxos
         .iter()
         .find(|x: &&Utxo| x.value > amount)
@@ -33,16 +37,7 @@ pub async fn register(
         ))
         .to_owned();
 
-    let blind_session = blindsign::get_blindsign_session()
-        .await
-        .expect("Cannot get blindsign session");
-
-    let rp: [u8; 32] = hex::decode(blind_session.rp)
-        .expect("Cannot parse blindsign session")
-        .try_into()
-        .expect("Invalid size");
-    let (blinded_address, unblinder) =
-        BlindRequest::new_specific_msg::<sha3::Sha3_512, &[u8]>(&rp, dest.as_bytes()).unwrap();
+    let (blinded_address, unblinder) = blindsign::blind_message(dest).await?;
 
     let register_res = coinjoin::register(
         vec![utxo],
@@ -98,9 +93,80 @@ pub async fn register(
     Ok((register_res.room.id, sig))
 }
 
-pub async fn find_and_join_txn(index: usize, input: TxIn) -> Result<(usize, TxIn, Txn), String> {
-    match api::get_onchain_tx(&input.previous_output.txid.to_string()).await {
-        Ok(tx) => Ok((index, input, tx)),
-        Err(e) => Err(format!("Failed to get transaction for input {}", e)),
+pub async fn sign_tx(pool: &PoolWrapper, deriv: &str, room_id: &str) -> Result<()> {
+    let (account, mut unlocker) = account::get_account(deriv)?;
+
+    let res = coinjoin::get_txn(&room_id).await?;
+    let parsed_tx = consensus::deserialize::<Transaction>(&hex::decode(&res.tx.clone())?)?;
+    let mut unsigned_tx = parsed_tx.clone();
+
+    let room = pool.get_room(deriv, room_id)?;
+
+    let secp = Secp256k1::new();
+    let sighash_type = EcdsaSighashType::All;
+    let mut sighasher = SighashCache::new(&mut unsigned_tx);
+
+    let future_tasks: Vec<_> = parsed_tx
+        .input
+        .iter()
+        .enumerate()
+        .filter(|(_, input)| {
+            room.utxos
+                .iter()
+                .find(|utxo| input.previous_output.txid.to_string() == utxo.txid.to_string())
+                .is_some()
+        })
+        .map(|(index, input)| tokio::spawn(account::find_and_join_txn(index, input.clone())))
+        .collect();
+
+    let mut results = Vec::new();
+    for job in future_tasks {
+        results.push(job.await??);
+    }
+
+    let vins: Vec<u16> = results
+        .iter()
+        .map(|(index, input, tx)| {
+            let vout = tx
+                .vout
+                .get(input.previous_output.vout as usize)
+                .expect("Cannot get the vout");
+            let amount = Amount::from_sat(vout.value);
+            let script_pubkey =
+                ScriptBuf::from_hex(&vout.scriptpubkey).expect("Invalid script public key");
+
+            let sighash = sighasher
+                .p2wpkh_signature_hash(*index, &script_pubkey, amount, sighash_type)
+                .expect("failed to create sighash");
+
+            let priv_key = account
+                .get_privkey(script_pubkey, &mut unlocker)
+                .expect("Cannot get private key");
+
+            let msg = Message::from(sighash);
+            let sk = SecretKey::from_slice(&priv_key.to_bytes()).unwrap();
+
+            let sig = secp.sign_ecdsa(&msg, &sk);
+
+            // Update the witness stack.
+            let signature = bitcoin::ecdsa::Signature {
+                sig,
+                hash_ty: sighash_type,
+            };
+
+            let pk = sk.public_key(&secp);
+            *sighasher.witness_mut(*index).unwrap() = Witness::p2wpkh(&signature, &pk);
+            *index as u16
+        })
+        .collect();
+    let tx_hex = consensus::encode::serialize_hex(&unsigned_tx);
+
+    let res = coinjoin::sign(room_id, vins, &tx_hex).await;
+    match res {
+        Ok(response) => {
+            println!("RES {:#?}", response);
+            Ok(())
+        }
+        Err(e) => Err(anyhow!("Error: {}", e)),
     }
 }

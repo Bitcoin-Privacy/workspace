@@ -1,21 +1,13 @@
-use std::str::FromStr;
+use std::{ops::ControlFlow, str::FromStr};
 
-use anyhow::Result;
 use bitcoin::{
-    absolute, consensus,
-    secp256k1::{Message, Secp256k1, SecretKey},
-    sighash::SighashCache,
-    transaction::Version,
+    absolute, consensus, secp256k1::Secp256k1, sighash::SighashCache, transaction::Version,
     Address, Amount, EcdsaSighashType, Network, OutPoint, ScriptBuf, Sequence, Transaction, TxIn,
     TxOut, Witness,
 };
 use tauri::State;
 
-use shared::{
-    api,
-    model::{Txn, Utxo},
-};
-
+use shared::{api, model::Utxo};
 use wallet::core::{Account, AddrType, MasterAccount, MasterKeyEntropy, Mnemonic, Unlocker};
 
 use crate::{
@@ -23,7 +15,7 @@ use crate::{
     db::PoolWrapper,
     model::{AccountActions, AccountDTO},
     store::master_account::{get_master, get_mut_master, initialize_master_account},
-    svc::account::{get_internal_account, get_utxos_set, parse_derivation_path},
+    svc::account,
 };
 
 #[tauri::command]
@@ -80,7 +72,7 @@ pub fn get_accounts() -> Vec<AccountDTO> {
 
 #[tauri::command]
 pub fn get_account(deriv: &str) -> Result<AccountDTO, String> {
-    let account = get_internal_account(deriv).map_err(|e| e.to_string())?;
+    let account = account::get_internal_account(deriv).map_err(|e| e.to_string())?;
     Ok(account.into())
 }
 
@@ -97,11 +89,9 @@ pub async fn get_balance(address: &str) -> Result<u64, String> {
 
 #[tauri::command]
 pub async fn create_tx(deriv: &str, receiver: &str, amount: u64) -> Result<u64, String> {
-    let master: MasterAccount = get_master().expect("Master account does not exist");
-    let parsed_path = parse_derivation_path(deriv).map_err(|e| e.to_string())?;
-    let account = master.accounts().get(&parsed_path).unwrap();
+    let (account, mut unlocker) = account::get_account(deriv).unwrap();
 
-    let selected_utxos = get_utxos_set(&account.get_addr(), amount)
+    let selected_utxos = account::get_utxos_set(&account.get_addr(), amount)
         .await
         .map_err(|e| e.to_string())?;
 
@@ -148,6 +138,7 @@ pub async fn create_tx(deriv: &str, receiver: &str, amount: u64) -> Result<u64, 
 
     let mut unsigned_tx = tx.clone();
 
+    let secp = Secp256k1::new();
     let sighash_type = EcdsaSighashType::All;
     let mut sighasher = SighashCache::new(&mut unsigned_tx);
 
@@ -155,7 +146,12 @@ pub async fn create_tx(deriv: &str, receiver: &str, amount: u64) -> Result<u64, 
         .input
         .iter()
         .enumerate()
-        .map(|(index, input)| tokio::spawn(tokio::spawn(dosth(index, input.clone()))))
+        .map(|(index, input)| {
+            tokio::spawn(tokio::spawn(account::find_and_join_txn(
+                index,
+                input.clone(),
+            )))
+        })
         .collect();
 
     let mut results = Vec::new();
@@ -163,53 +159,28 @@ pub async fn create_tx(deriv: &str, receiver: &str, amount: u64) -> Result<u64, 
         results.push(job.await.unwrap().unwrap().unwrap());
     }
 
-    let mut unlocker = Unlocker::new_for_master(&master, PASSPHRASE).unwrap();
-    let secp = Secp256k1::new();
-
-    results.iter().for_each(|(index, input, tx)| {
-        let vout = tx
-            .vout
-            .get(input.previous_output.vout as usize)
-            .expect("Cannot get the vout");
-        let amount = Amount::from_sat(vout.value);
-
-        let script_pubkey =
-            ScriptBuf::from_hex(&vout.scriptpubkey).expect("Invalid script public key");
-        println!("Script code 1: {}", script_pubkey);
-
-        let sighash = sighasher
-            .p2wpkh_signature_hash(*index, &script_pubkey, amount, sighash_type)
-            .expect("failed to create sighash");
-
-        let priv_key = account
-            .get_privkey(script_pubkey.clone(), &mut unlocker)
-            .expect("Cannot get private key");
-        // input.script_sig = ScriptBuf::new();
-        let msg = Message::from(sighash);
-        let sk = SecretKey::from_slice(&priv_key.to_bytes()).unwrap();
-
-        let sig = secp.sign_ecdsa(&msg, &sk);
-
-        // Update the witness stack.
-        let signature = bitcoin::ecdsa::Signature {
-            sig,
-            hash_ty: EcdsaSighashType::All,
-        };
-
-        let pk = sk.public_key(&secp);
-        *sighasher.witness_mut(*index).unwrap() = Witness::p2wpkh(&signature, &pk);
+    let res = results.iter().try_for_each(|(index, input, tx)| {
+        match account::sign(
+            &secp,
+            &mut sighasher,
+            sighash_type,
+            &account,
+            &mut unlocker,
+            index,
+            input,
+            tx,
+        ) {
+            Ok(_) => ControlFlow::Continue(()),
+            Err(e) => ControlFlow::Break(e),
+        }
     });
+    if let ControlFlow::Break(e) = res {
+        return Err(e.to_string());
+    }
 
     let tx_hex = consensus::encode::serialize_hex(&unsigned_tx);
     println!("hash: {:?}", tx_hex);
     println!("{:#?}", unsigned_tx);
 
     Ok(0)
-}
-
-async fn dosth(index: usize, input: TxIn) -> Result<(usize, TxIn, Txn), String> {
-    match api::get_onchain_tx(&input.previous_output.txid.to_string()).await {
-        Ok(tx) => Ok((index, input, tx)),
-        Err(e) => Err(format!("Failed to get transaction for input {}", e)),
-    }
 }
