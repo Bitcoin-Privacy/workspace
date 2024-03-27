@@ -5,17 +5,17 @@ use std::io;
 
 use crate::repo::statechain::StatechainRepo;
 
-pub mod app;
-pub mod config;
-pub mod constance;
-pub mod controller;
-pub mod db;
-pub mod middleware;
-pub mod model;
-pub mod repo;
-pub mod route;
-pub mod svc;
-pub mod util;
+mod app;
+mod config;
+mod constance;
+mod controller;
+mod db;
+mod middleware;
+mod model;
+mod repo;
+mod route;
+mod svc;
+mod util;
 
 #[actix_web::main]
 async fn main() -> io::Result<()> {

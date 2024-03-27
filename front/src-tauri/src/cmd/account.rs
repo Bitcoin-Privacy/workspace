@@ -1,5 +1,6 @@
 use std::str::FromStr;
 
+use anyhow::Result;
 use bitcoin::{
     absolute, consensus,
     secp256k1::{Message, Secp256k1, SecretKey},
@@ -79,18 +80,18 @@ pub fn get_accounts() -> Vec<AccountDTO> {
 
 #[tauri::command]
 pub fn get_account(deriv: &str) -> Result<AccountDTO, String> {
-    let account = get_internal_account(deriv)?;
+    let account = get_internal_account(deriv).map_err(|e| e.to_string())?;
     Ok(account.into())
 }
 
 #[tauri::command]
 pub async fn get_utxo(address: &str) -> Result<Vec<Utxo>, String> {
-    api::get_utxo(address).await
+    api::get_utxo(address).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub async fn get_balance(address: &str) -> Result<u64, String> {
-    let utxos = api::get_utxo(address).await?;
+    let utxos = api::get_utxo(address).await.map_err(|e| e.to_string())?;
     Ok(utxos.iter().map(|utxo| utxo.value).sum())
 }
 
@@ -100,7 +101,9 @@ pub async fn create_tx(deriv: &str, receiver: &str, amount: u64) -> Result<u64, 
     let parsed_path = parse_derivation_path(deriv).map_err(|e| e.to_string())?;
     let account = master.accounts().get(&parsed_path).unwrap();
 
-    let selected_utxos = get_utxos_set(&account.get_addr(), amount).await?;
+    let selected_utxos = get_utxos_set(&account.get_addr(), amount)
+        .await
+        .map_err(|e| e.to_string())?;
 
     let mut fee: u64 = 0;
     let input: Vec<TxIn> = selected_utxos

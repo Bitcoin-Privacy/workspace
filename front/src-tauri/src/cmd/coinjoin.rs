@@ -1,100 +1,50 @@
-use shared::intf::coinjoin::{GetStatusRes, GetUnsignedTxnRes, SetOutputRes};
-use shared::{api, model::Txn};
+use shared::intf::coinjoin::{GetStatusRes, GetUnsignedTxnRes};
 
 use bitcoin::{
     consensus,
     secp256k1::{Message, Secp256k1, SecretKey},
     sighash::SighashCache,
-    Amount, EcdsaSighashType, ScriptBuf, Transaction, TxIn, Witness,
+    Amount, EcdsaSighashType, ScriptBuf, Transaction, Witness,
 };
 use tauri::State;
-use tokio::time::{sleep, Duration};
 use wallet::core::{MasterAccount, Unlocker};
 
 use crate::svc::account::parse_derivation_path;
 use crate::svc::coinjoin;
 use crate::{
-    api::coinjoin::CoinjoinApis,
-    cfg::PASSPHRASE,
-    db::PoolWrapper,
-    model::{event, RoomEntity},
-    store::master_account::get_master,
+    cfg::PASSPHRASE, db::PoolWrapper, model::RoomEntity, store::master_account::get_master,
 };
 
 /// Register to CoinJoin Protocol
 #[tauri::command]
 pub async fn register(
-    state: State<'_, PoolWrapper>,
+    pool: State<'_, PoolWrapper>,
     // window: tauri::Window,
     deriv: &str,
-    address: String,
+    address: &str,
     amount: u64,
 ) -> Result<(), String> {
-    let (room_id, sig) = coinjoin::register(state, deriv, amount, &address)
+    coinjoin::register(&pool, deriv, amount, address)
         .await
-        .unwrap();
-
-    // NOTE: set the output to the server
-    // tokio::spawn(async move {
-    //     // Generate a random number of seconds
-    //     let random_delay = rand::random::<u64>() % 60; // for example, 0 to 59 seconds
-    //     sleep(Duration::from_secs(random_delay)).await;
-    //
-    //     if let Err(e) = CoinjoinApis::set_output(&room_id, &address, &sig).await {
-    //         println!("Set output got error {}", e);
-    //         tauri::Window::emit(
-    //             &window,
-    //             "coinjoin-register-complete",
-    //             Some(event::CoinJoinRegisterCompleteEvent { room_id, status: 0 }),
-    //         )
-    //         .expect("Failed to emit event");
-    //     } else {
-    //         tauri::Window::emit(
-    //             &window,
-    //             "coinjoin-register-complete",
-    //             Some(event::CoinJoinRegisterCompleteEvent { room_id, status: 1 }),
-    //         )
-    //         .expect("Failed to emit event");
-    //     }
-    // });
-
+        .map_err(|e| e.to_string())?;
     Ok(())
 }
 
 #[tauri::command]
-pub async fn get_rooms(
-    state: State<'_, PoolWrapper>,
-    deriv: &str,
-) -> Result<Vec<RoomEntity>, String> {
-    state
-        .get_all_rooms(deriv)
-        .map_err(|e| format!("Error: {:?}", e))
-}
-
-//------------------------
-
-async fn dosth(index: usize, input: TxIn) -> Result<(usize, TxIn, Txn), String> {
-    match api::get_onchain_tx(&input.previous_output.txid.to_string()).await {
-        Ok(tx) => Ok((index, input, tx)),
-        Err(e) => Err(format!("Failed to get transaction for input {}", e)),
-    }
-}
-
-#[tauri::command]
 pub async fn sign_tx(
-    state: State<'_, PoolWrapper>,
+    pool: State<'_, PoolWrapper>,
     deriv: &str,
     room_id: &str,
 ) -> Result<(), String> {
-    let master_account: MasterAccount = get_master().expect("Master account does not exist");
+    let master_account = get_master().expect("Master account does not exist");
     let parsed_path = parse_derivation_path(deriv).map_err(|e| e.to_string())?;
     let account = master_account.accounts().get(&parsed_path).unwrap();
 
-    let res = CoinjoinApis::get_txn(&room_id).await.unwrap();
+    let res = crate::api::coinjoin::get_txn(&room_id).await.unwrap();
     let parsed_tx =
         consensus::deserialize::<Transaction>(&hex::decode(&res.tx.clone()).unwrap()).unwrap();
 
-    let room = state
+    let room = pool
         .get_room(deriv, &room_id)
         .map_err(|e| format!("Error: {:?}", e))
         .unwrap();
@@ -117,7 +67,7 @@ pub async fn sign_tx(
                 .find(|utxo| input.previous_output.txid.to_string() == utxo.txid.to_string())
                 .is_some()
         })
-        .map(|(index, input)| tokio::spawn(dosth(index, input.clone())))
+        .map(|(index, input)| tokio::spawn(coinjoin::find_and_join_txn(index, input.clone())))
         .collect();
     let mut results = Vec::new();
     for job in future_tasks {
@@ -170,7 +120,7 @@ pub async fn sign_tx(
     println!("hash: {:?}", tx_hex);
     println!("{:#?}", unsigned_tx);
 
-    let res = CoinjoinApis::sign(room_id, vins, &tx_hex).await;
+    let res = crate::api::coinjoin::sign(room_id, vins, &tx_hex).await;
     match res {
         Ok(response) => {
             println!("RES {:#?}", response);
@@ -182,7 +132,7 @@ pub async fn sign_tx(
 
 #[tauri::command]
 pub async fn get_tx(room_id: &str) -> Result<GetUnsignedTxnRes, String> {
-    let res = CoinjoinApis::get_txn(room_id).await;
+    let res = crate::api::coinjoin::get_txn(room_id).await;
     match res {
         Ok(response) => Ok(response),
         Err(e) => Err(format!("Error: {}", e)),
@@ -191,22 +141,18 @@ pub async fn get_tx(room_id: &str) -> Result<GetUnsignedTxnRes, String> {
 
 #[tauri::command]
 pub async fn get_status(room_id: &str) -> Result<GetStatusRes, String> {
-    let res = CoinjoinApis::get_status(room_id).await;
+    let res = crate::api::coinjoin::get_status(room_id).await;
     match res {
         Ok(response) => Ok(response),
         Err(e) => Err(format!("Error: {}", e)),
     }
 }
 
-pub async fn set_out(
-    room_id: &str,
-    output_address: &str,
-    sig: &str,
-) -> Result<SetOutputRes, String> {
-    let res = CoinjoinApis::set_output(room_id, output_address, sig).await;
-
-    match res {
-        Ok(response) => Ok(response),
-        Err(e) => Err(format!("Error: {}", e)),
-    }
+#[tauri::command]
+pub async fn get_rooms(
+    pool: State<'_, PoolWrapper>,
+    deriv: &str,
+) -> Result<Vec<RoomEntity>, String> {
+    pool.get_all_rooms(deriv)
+        .map_err(|e| format!("Error: {:?}", e))
 }

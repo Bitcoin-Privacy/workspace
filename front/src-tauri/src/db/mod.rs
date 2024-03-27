@@ -1,3 +1,4 @@
+use anyhow::{anyhow, Result};
 use sled::Db;
 use sqlx::SqlitePool;
 pub mod sqlite;
@@ -20,11 +21,7 @@ impl PoolWrapper {
         PoolWrapper { pool, sqlite_pool }
     }
 
-    pub fn add_or_update_room(
-        &self,
-        derivation_path: &str,
-        room: &RoomEntity,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn add_or_update_room(&self, derivation_path: &str, room: &RoomEntity) -> Result<()> {
         let rooms_tree = self.pool.open_tree("rooms-".to_owned() + derivation_path)?;
         let room_key = room.id.as_bytes();
         let room_value = bincode::serialize(&room)?;
@@ -32,11 +29,8 @@ impl PoolWrapper {
         Ok(())
     }
 
-    pub fn get_all_rooms(
-        &self,
-        derivation_path: &str,
-    ) -> Result<Vec<RoomEntity>, Box<dyn std::error::Error>> {
-        let rooms_tree = self.pool.open_tree("rooms-".to_owned() + derivation_path)?;
+    pub fn get_all_rooms(&self, deriv: &str) -> Result<Vec<RoomEntity>> {
+        let rooms_tree = self.pool.open_tree("rooms-".to_owned() + deriv)?;
         let mut rooms = Vec::new();
 
         for result in rooms_tree.iter() {
@@ -47,17 +41,13 @@ impl PoolWrapper {
 
         Ok(rooms)
     }
-    pub fn get_room(
-        &self,
-        derivation_path: &str,
-        room_id: &str,
-    ) -> Result<RoomEntity, Box<dyn std::error::Error>> {
+    pub fn get_room(&self, derivation_path: &str, room_id: &str) -> Result<RoomEntity> {
         let rooms_tree = self.pool.open_tree("rooms-".to_owned() + derivation_path)?;
         if let Ok(Some(room)) = rooms_tree.get(room_id) {
             let room: RoomEntity = bincode::deserialize(&room)?;
             Ok(room)
         } else {
-            Err("erro".into())
+            Err(anyhow!("Cannot find room"))
         }
     }
 }
