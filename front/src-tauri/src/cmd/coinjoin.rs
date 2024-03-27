@@ -25,7 +25,7 @@ use crate::{
 #[tauri::command]
 pub async fn register(
     state: State<'_, PoolWrapper>,
-    window: tauri::Window,
+    // window: tauri::Window,
     deriv: &str,
     address: String,
     amount: u64,
@@ -35,28 +35,28 @@ pub async fn register(
         .unwrap();
 
     // NOTE: set the output to the server
-    tokio::spawn(async move {
-        // Generate a random number of seconds
-        let random_delay = rand::random::<u64>() % 60; // for example, 0 to 59 seconds
-        sleep(Duration::from_secs(random_delay)).await;
-
-        if let Err(e) = CoinjoinApis::set_output(&room_id, &address, &sig).await {
-            println!("Set output got error {}", e);
-            tauri::Window::emit(
-                &window,
-                "coinjoin-register-complete",
-                Some(event::CoinJoinRegisterCompleteEvent { room_id, status: 0 }),
-            )
-            .expect("Failed to emit event");
-        } else {
-            tauri::Window::emit(
-                &window,
-                "coinjoin-register-complete",
-                Some(event::CoinJoinRegisterCompleteEvent { room_id, status: 1 }),
-            )
-            .expect("Failed to emit event");
-        }
-    });
+    // tokio::spawn(async move {
+    //     // Generate a random number of seconds
+    //     let random_delay = rand::random::<u64>() % 60; // for example, 0 to 59 seconds
+    //     sleep(Duration::from_secs(random_delay)).await;
+    //
+    //     if let Err(e) = CoinjoinApis::set_output(&room_id, &address, &sig).await {
+    //         println!("Set output got error {}", e);
+    //         tauri::Window::emit(
+    //             &window,
+    //             "coinjoin-register-complete",
+    //             Some(event::CoinJoinRegisterCompleteEvent { room_id, status: 0 }),
+    //         )
+    //         .expect("Failed to emit event");
+    //     } else {
+    //         tauri::Window::emit(
+    //             &window,
+    //             "coinjoin-register-complete",
+    //             Some(event::CoinJoinRegisterCompleteEvent { room_id, status: 1 }),
+    //         )
+    //         .expect("Failed to emit event");
+    //     }
+    // });
 
     Ok(())
 }

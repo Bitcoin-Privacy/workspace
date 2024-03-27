@@ -2,7 +2,9 @@ use sled::Db;
 use sqlx::SqlitePool;
 pub mod sqlite;
 
-use crate::model::RoomEntity;
+use crate::{cfg::DATABASE_PATH, model::RoomEntity};
+
+use self::sqlite::init_db;
 
 pub struct PoolWrapper {
     pub pool: Db,
@@ -10,6 +12,14 @@ pub struct PoolWrapper {
 }
 
 impl PoolWrapper {
+    pub async fn new() -> Self {
+        let pool: sled::Db = sled::open(DATABASE_PATH).unwrap();
+        let sqlite_pool = init_db()
+            .await
+            .expect("Failed to initialize SQLite database");
+        PoolWrapper { pool, sqlite_pool }
+    }
+
     pub fn add_or_update_room(
         &self,
         derivation_path: &str,

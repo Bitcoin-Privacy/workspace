@@ -14,16 +14,16 @@ import { FiCheck, FiCopy } from "react-icons/fi";
 
 interface UTXOCardProps {
   val: UtxoDto;
-  index: number;
+  key: number;
 }
 
 export function UTXOCard(props: UTXOCardProps) {
-  const { val, index } = props;
+  const { val, key } = props;
   const { onCopy, value, setValue, hasCopied } = useClipboard(val.txid);
 
   return (
     <HStack
-      key={index}
+      key={key}
       color="white"
       textAlign="start"
       w="70%"

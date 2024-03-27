@@ -1,10 +1,10 @@
-export type RegisterResponseDto = {
+export type RegisterResDto = {
   room: string;
   signed_blined_output: string;
 };
 
 export type RoomDto = {
-  id: string; 
+  id: string;
   base_amount: number;
   no_peer: number;
   status: number;
@@ -15,8 +15,7 @@ export type RoomDto = {
 };
 
 export type UtxoDto = {
-  txid : string;
-  vout : number;
-  value : number;
-}
-
+  txid: string;
+  vout: number;
+  value: number;
+};

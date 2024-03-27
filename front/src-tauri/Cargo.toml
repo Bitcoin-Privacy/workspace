@@ -15,7 +15,7 @@ rust-version = "1.60"
 tauri-build = { version = "1.5.0", features = [] }
 
 [dependencies]
-tauri = { version = "1.5.3", features = ["fs-all", "path-all"] }
+tauri = { version = "1.5.3", features = ["fs-all", "path-all", "wry"] }
 
 # Workspace
 shared = { workspace = true, features = ["frontend"] }
@@ -24,6 +24,7 @@ statechain_core = { workspace = true }
 secp256k1 = { workspace = true }
 
 dotenv = { workspace = true }
+anyhow = { workspace = true }
 serde_json = { workspace = true }
 serde = { workspace = true }
 tokio = { workspace = true }

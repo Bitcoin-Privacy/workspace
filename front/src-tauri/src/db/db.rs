@@ -5,7 +5,7 @@ use bonsaidb::core::{
     schema::{Collection, SerializedCollection},
 };
 use bonsaidb_local::AsyncDatabase;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 // Trait describing the common behavior of
@@ -56,11 +56,10 @@ where
     }
 }
 
-
 #[derive(Debug, Serialize, Deserialize, Default, Collection)]
 #[collection( // custom key definition for BonsaiDB
-    name="classifiers", 
-    primary_key = String, 
+    name="classifiers",
+    primary_key = String,
     natural_id = Some(self._id.clone()))]
 pub struct Classifier {
     pub _id: String,
@@ -71,29 +70,31 @@ pub struct Classifier {
 // classifier service holding a typed repository
 pub struct ClassifierService {
     // constraints required by Tauri to support multi threading
-    repository : Box<dyn Repository<Classifier> + Send + Sync> 
+    repository: Box<dyn Repository<Classifier> + Send + Sync>,
 }
 
 impl ClassifierService {
-    fn new(repository: Box<dyn Repository<Classifier> + Send + Sync>) -> Self { 
+    fn new(repository: Box<dyn Repository<Classifier> + Send + Sync>) -> Self {
         Self { repository }
     }
 }
 
 impl ClassifierService {
-     pub async fn create_new_classifier(&self, new_name: &str) -> Classifier { 
+    pub async fn create_new_classifier(&self, new_name: &str) -> Classifier {
         // we have to manage the ids on our own, so create a new one here
         let id = Uuid::new_v4().to_string();
-        let new_classifier = self.repository.insert(Classifier{
-            _id: id.to_string(), 
-            name: new_name.to_string(), 
-            is_interface: false, 
-        }).await;
+        let new_classifier = self
+            .repository
+            .insert(Classifier {
+                _id: id.to_string(),
+                name: new_name.to_string(),
+                is_interface: false,
+            })
+            .await;
         new_classifier
     }
 
-    pub async fn update_classifier_name(
-        &self, id: &str, new_name: &str) -> Classifier {
+    pub async fn update_classifier_name(&self, id: &str, new_name: &str) -> Classifier {
         let mut classifier = self.repository.query_by_id(id.to_string()).await.unwrap();
         classifier.name = new_name.to_string();
         // we need to copy the id because "edit" owns the containing struct
@@ -102,4 +103,3 @@ impl ClassifierService {
         updated
     }
 }
-
