@@ -9,3 +9,4 @@
 !.bitcoin/bitcoin.conf
 
 WalletDB
+node_modules

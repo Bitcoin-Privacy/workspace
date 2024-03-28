@@ -26,7 +26,11 @@ export const useSendPage = () => {
 
   return {
     states: {
-      deriv, form, isLoading, profQuery, balanceQuery
+      deriv,
+      form,
+      isLoading,
+      profQuery,
+      balanceQuery,
     },
     methods: { handleFormSubmit },
   };

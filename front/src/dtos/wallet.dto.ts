@@ -20,4 +20,3 @@ export enum TxStrategyEnum {
   Base = "Base",
   CoinJoin = "CoinJoin",
 }
-

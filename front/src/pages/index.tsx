@@ -9,7 +9,7 @@ import { Layout, SignIn, SignUp } from "@/components";
 function AuthPage() {
   const {
     states: { password, state },
-    methods: { },
+    methods: {},
   } = useAuthPage();
 
   const authForm = useMemo(() => {

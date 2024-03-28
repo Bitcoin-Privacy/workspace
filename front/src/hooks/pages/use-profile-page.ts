@@ -80,7 +80,7 @@ export const useProfilePage = () => {
       onDepositBtnClick,
       onSendStatecoinBtnClick,
       onWithdrawBtnClick,
-      onReceiveStatecoinBtnClick
+      onReceiveStatecoinBtnClick,
     },
   };
 };
