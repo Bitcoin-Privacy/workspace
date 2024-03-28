@@ -21,10 +21,8 @@ pub struct Config {
 
 impl Config {
     fn new() -> Self {
-        dotenv().ok(); // Load .env file
-
-        let database_url =
-            get_env::<String>("DATABASE_URL", Some("../../db/sqlite.db".to_string()));
+        dotenv().ok();
+        let database_url = get_env::<String>("SQLITE_URL", None);
         Config { database_url }
     }
 }

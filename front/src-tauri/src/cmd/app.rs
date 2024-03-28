@@ -39,5 +39,5 @@ pub fn init(db: &sled::Db) -> InitState {
 
 #[tauri::command]
 pub fn get_init_state(state: State<'_, PoolWrapper>) -> InitState {
-    init(&state.pool)
+    init(&state.sled)
 }

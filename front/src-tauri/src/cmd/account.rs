@@ -19,9 +19,26 @@ use crate::{
 };
 
 #[tauri::command]
-pub fn print_master() {
-    let master = get_master();
-    println!("GET Master Account: {:#?}", master);
+pub fn create_master(state: State<'_, PoolWrapper>) -> Result<Vec<String>, String> {
+    let mnemonic = Mnemonic::new_random(MasterKeyEntropy::Sufficient).map_err(|e| e.to_string())?;
+    let seed = mnemonic.to_seed_phrase();
+    let birth = 0;
+
+    let _ = state
+        .sled
+        .insert(
+            b"seedphrase",
+            bincode::serialize(&seed.clone().join(" ")).unwrap(),
+        )
+        .expect("Cannot insert seedphrase");
+    let _ = state
+        .sled
+        .insert(b"birth", bincode::serialize(&birth).unwrap())
+        .expect("Cannot insert birth");
+
+    initialize_master_account(&mnemonic, birth, Network::Testnet, PASSPHRASE, None);
+
+    Ok(seed)
 }
 
 #[tauri::command]
@@ -34,57 +51,6 @@ pub fn add_account() {
     master.as_mut().unwrap().add_account(account);
 
     println!("Master Account: {:#?}", master);
-}
-
-// NOTE: - New Version HERE ---------------------------------------------
-#[tauri::command]
-pub fn create_master(state: State<'_, PoolWrapper>) -> Result<Vec<String>, String> {
-    let mnemonic = Mnemonic::new_random(MasterKeyEntropy::Sufficient).map_err(|e| e.to_string())?;
-    let seed = mnemonic.to_seed_phrase();
-    let birth = 0;
-
-    let _ = state
-        .pool
-        .insert(
-            b"seedphrase",
-            bincode::serialize(&seed.clone().join(" ")).unwrap(),
-        )
-        .expect("Cannot insert seedphrase");
-    let _ = state
-        .pool
-        .insert(b"birth", bincode::serialize(&birth).unwrap())
-        .expect("Cannot insert birth");
-
-    initialize_master_account(&mnemonic, birth, Network::Testnet, PASSPHRASE, None);
-
-    Ok(seed)
-}
-
-#[tauri::command]
-pub fn get_accounts() -> Vec<AccountDTO> {
-    let master_account: MasterAccount = get_master().expect("Master account does not exist");
-    master_account
-        .accounts()
-        .values()
-        .map(|e| <Account as Into<AccountDTO>>::into((*e).clone()))
-        .collect()
-}
-
-#[tauri::command]
-pub fn get_account(deriv: &str) -> Result<AccountDTO, String> {
-    let account = account::get_internal_account(deriv).map_err(|e| e.to_string())?;
-    Ok(account.into())
-}
-
-#[tauri::command]
-pub async fn get_utxo(address: &str) -> Result<Vec<Utxo>, String> {
-    api::get_utxo(address).await.map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-pub async fn get_balance(address: &str) -> Result<u64, String> {
-    let utxos = api::get_utxo(address).await.map_err(|e| e.to_string())?;
-    Ok(utxos.iter().map(|utxo| utxo.value).sum())
 }
 
 #[tauri::command]
@@ -183,4 +149,31 @@ pub async fn create_tx(deriv: &str, receiver: &str, amount: u64) -> Result<u64, 
     println!("{:#?}", unsigned_tx);
 
     Ok(0)
+}
+
+#[tauri::command]
+pub fn get_accounts() -> Vec<AccountDTO> {
+    let master_account: MasterAccount = get_master().expect("Master account does not exist");
+    master_account
+        .accounts()
+        .values()
+        .map(|e| <Account as Into<AccountDTO>>::into((*e).clone()))
+        .collect()
+}
+
+#[tauri::command]
+pub fn get_account(deriv: &str) -> Result<AccountDTO, String> {
+    let account = account::get_internal_account(deriv).map_err(|e| e.to_string())?;
+    Ok(account.into())
+}
+
+#[tauri::command]
+pub async fn get_utxo(address: &str) -> Result<Vec<Utxo>, String> {
+    api::get_utxo(address).await.map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn get_balance(address: &str) -> Result<u64, String> {
+    let utxos = api::get_utxo(address).await.map_err(|e| e.to_string())?;
+    Ok(utxos.iter().map(|utxo| utxo.value).sum())
 }

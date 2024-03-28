@@ -11,7 +11,7 @@ use bitcoin::{
 use tokio::time::{sleep, Duration};
 
 use shared::api;
-use shared::blindsign::{BlindRequest, WiredUnblindedSigData};
+use shared::blindsign::WiredUnblindedSigData;
 use shared::model::Utxo;
 
 use crate::api::coinjoin;

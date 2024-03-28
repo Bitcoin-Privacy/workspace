@@ -17,7 +17,6 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             account::get_account,
             account::get_utxo,
             account::get_balance,
-            account::print_master, // WARN: For debugging purpose only
         ])
         .build()
 }
