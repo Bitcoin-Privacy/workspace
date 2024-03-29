@@ -5,23 +5,24 @@ use connector::NodeConnector;
 
 mod api;
 mod cfg;
-mod cmd;
 mod connector;
 mod db;
 mod model;
 mod plug;
 mod store;
 mod svc;
+mod util;
 
 use db::PoolWrapper;
 
+type TResult<T> = Result<T, String>;
+
 #[tokio::main]
 async fn main() {
-    // Initialize the SQLite database connection pool asynchronously.
     let pool = PoolWrapper::new().await;
-
+    let node_conn = NodeConnector::new();
     tauri::Builder::default()
-        .manage(NodeConnector::new())
+        .manage(node_conn)
         .manage(pool)
         .plugin(plug::app::init())
         .plugin(plug::coinjoin::init())

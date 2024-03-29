@@ -1,13 +1,13 @@
+use std::ops::ControlFlow;
+
 use anyhow::anyhow;
 use anyhow::Result;
 use bitcoin::hex::Case;
 use bitcoin::hex::DisplayHex;
 use bitcoin::{
-    consensus,
-    secp256k1::{Message, Secp256k1, SecretKey},
-    sighash::SighashCache,
-    Amount, EcdsaSighashType, ScriptBuf, Transaction, Witness,
+    consensus, secp256k1::Secp256k1, sighash::SighashCache, EcdsaSighashType, Transaction,
 };
+use shared::intf::coinjoin::GetStatusRes;
 use tokio::time::{sleep, Duration};
 
 use shared::api;
@@ -124,41 +124,27 @@ pub async fn sign_tx(pool: &PoolWrapper, deriv: &str, room_id: &str) -> Result<(
         results.push(job.await??);
     }
 
-    let vins: Vec<u16> = results
-        .iter()
-        .map(|(index, input, tx)| {
-            let vout = tx
-                .vout
-                .get(input.previous_output.vout as usize)
-                .expect("Cannot get the vout");
-            let amount = Amount::from_sat(vout.value);
-            let script_pubkey =
-                ScriptBuf::from_hex(&vout.scriptpubkey).expect("Invalid script public key");
+    let mut vins: Vec<u16> = Vec::new();
+    let res = results.iter().try_for_each(|(index, input, tx)| {
+        vins.push(*index as u16);
+        match account::sign(
+            &secp,
+            &mut sighasher,
+            sighash_type,
+            &account,
+            &mut unlocker,
+            index,
+            input,
+            tx,
+        ) {
+            Ok(_) => ControlFlow::Continue(()),
+            Err(e) => ControlFlow::Break(e),
+        }
+    });
+    if let ControlFlow::Break(e) = res {
+        return Err(e);
+    }
 
-            let sighash = sighasher
-                .p2wpkh_signature_hash(*index, &script_pubkey, amount, sighash_type)
-                .expect("failed to create sighash");
-
-            let priv_key = account
-                .get_privkey(script_pubkey, &mut unlocker)
-                .expect("Cannot get private key");
-
-            let msg = Message::from(sighash);
-            let sk = SecretKey::from_slice(&priv_key.to_bytes()).unwrap();
-
-            let sig = secp.sign_ecdsa(&msg, &sk);
-
-            // Update the witness stack.
-            let signature = bitcoin::ecdsa::Signature {
-                sig,
-                hash_ty: sighash_type,
-            };
-
-            let pk = sk.public_key(&secp);
-            *sighasher.witness_mut(*index).unwrap() = Witness::p2wpkh(&signature, &pk);
-            *index as u16
-        })
-        .collect();
     let tx_hex = consensus::encode::serialize_hex(&unsigned_tx);
 
     let res = coinjoin::sign(room_id, vins, &tx_hex).await;
@@ -169,4 +155,12 @@ pub async fn sign_tx(pool: &PoolWrapper, deriv: &str, room_id: &str) -> Result<(
         }
         Err(e) => Err(anyhow!("Error: {}", e)),
     }
+}
+
+pub async fn get_status(room_id: &str) -> Result<GetStatusRes> {
+    crate::api::coinjoin::get_status(room_id).await
+}
+
+pub async fn get_rooms(pool: &PoolWrapper, deriv: &str) -> Result<Vec<RoomEntity>> {
+    pool.get_all_rooms(deriv)
 }
