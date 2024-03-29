@@ -10,8 +10,8 @@ export const useAuthPage = () => {
   useEffect(() => {
     if (!appState.logged.get()) return;
     if (appState.setWallet.get()) router.push("/home");
-    router.push("/seedphrase");
-  }, [appState.logged.get()]);
+    else router.push("/seedphrase");
+  }, [appState.logged]);
 
   const onSignin = useCallback(
     async (pw: string) => {
@@ -27,7 +27,7 @@ export const useAuthPage = () => {
 
   const onSignup = useCallback(async (pw: string) => {
     await WalletApi.savePassword(pw);
-    appState.merge({ logged: true });
+    appState.merge({ logged: true, setPassword: true });
   }, []);
 
   return {

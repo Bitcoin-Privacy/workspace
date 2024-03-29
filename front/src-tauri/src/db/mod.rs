@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Result};
-use sqlx::{Executor, Row, SqlitePool};
+use sqlx::{Executor, SqlitePool};
 
 use crate::model::RoomEntity;
 
@@ -23,37 +23,19 @@ impl PoolWrapper {
     }
 
     pub async fn set_password(&self, password: &str) -> Result<()> {
-        let _ = sqlx::query(
-            r#"insert into Config (key, value)
-            values('pw', ?) on conflict (key)
-            do update set value = excluded.value;"#,
-        )
-        .bind(password)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
+        sqlite::set_cfg(&self.pool, "pw", password).await
     }
 
     pub async fn get_password(&self) -> Result<Option<String>> {
-        let row = sqlx::query(r#"select value from Config where key = "pw";"#)
-            .fetch_optional(&self.pool)
-            .await?;
-        let val = match row {
-            Some(r) => Some(r.try_get::<String, _>("value")?),
-            None => None,
-        };
-        Ok(val)
+        sqlite::get_cfg(&self.pool, "pw").await
+    }
+
+    pub async fn set_seed(&self, seed: &str) -> Result<()> {
+        sqlite::set_cfg(&self.pool, "seed", seed).await
     }
 
     pub async fn get_seed(&self) -> Result<Option<String>> {
-        let row = sqlx::query(r#"select value from Config where key = "seed";"#)
-            .fetch_optional(&self.pool)
-            .await?;
-        let val = match row {
-            Some(r) => Some(r.try_get::<String, _>("value")?),
-            None => None,
-        };
-        Ok(val)
+        sqlite::get_cfg(&self.pool, "seed").await
     }
 
     pub fn add_or_update_room(&self, deriv: &str, room: &RoomEntity) -> Result<()> {

@@ -1,8 +1,9 @@
-import React, { useMemo } from "react";
 import Head from "next/head";
-import { Box, Text, VStack, HStack, Avatar, Circle } from "@chakra-ui/react";
 import { useRouter } from "next/router";
+import React, { useMemo } from "react";
 import { FiPlus } from "react-icons/fi";
+import { Box, Text, VStack, HStack, Avatar, Circle } from "@chakra-ui/react";
+
 import { Layout } from "@/components";
 import { AccountApi } from "@/apis";
 import { CachePrefixKeys, DEFAULT_AVATAR } from "@/consts";
@@ -28,18 +29,6 @@ export default function Home() {
       </Head>
       <Layout title="Home">
         <VStack textAlign="center" p="10px 16px" h="100%">
-          {/* <HStack justify="start" w="100%"> */}
-          {/*   <Button */}
-          {/*     variant="unstyled" */}
-          {/*     color="whiteAlpha.800" */}
-          {/*     onClick={() => router.back()} */}
-          {/*   > */}
-          {/*     Logout */}
-          {/*   </Button> */}
-          {/* </HStack> */}
-          {/* <Text fontSize="30px" fontWeight="800" color="#ddd"> */}
-          {/*   List accounts */}
-          {/* </Text> */}
           <VStack
             w="100%"
             justify="stretch"

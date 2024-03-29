@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import Head from "next/head";
 import {
   Text,
@@ -10,57 +10,30 @@ import {
   ListIcon,
   Grid,
   GridItem,
-  useClipboard,
   Stack,
   Spinner,
   Center,
 } from "@chakra-ui/react";
-import { Layout } from "@/components/layout";
-import { useRouter } from "next/router";
-import { FiArrowLeft } from "react-icons/fi";
 import { MdCheckCircle } from "react-icons/md";
 import { TiTick } from "react-icons/ti";
 import { BiCopy } from "react-icons/bi";
-import { AccountApi } from "@/apis";
+
+import { Layout } from "@/components";
+import { useSeedPhrasePage } from "@/hooks";
 
 export default function SeedPhrase() {
-  const router = useRouter();
-  useEffect(() => {
-    try {
-      (async () => {
-        const result = await AccountApi.createMasterAccount();
-        setMnemonicPhrases(result.join(" "));
-      })();
-    } catch (e) {
-      console.log("Get error", e);
-    }
-  }, []);
-
   const {
-    onCopy,
-    value: mnemonicPhrases,
-    setValue: setMnemonicPhrases,
-    hasCopied,
-  } = useClipboard(" ");
+    states: { mnemonicPhrases, hasCopied },
+    methods: { onCopy, onNextBtnClick },
+  } = useSeedPhrasePage();
+
   return (
     <React.Fragment>
       <Head>
         <title>Generate Seed Phrases</title>
       </Head>
-      <Layout>
+      <Layout title="Generate Seed Phrases">
         <VStack p="30px 16px" textColor={"whiteAlpha.800"}>
-          <HStack justify="start" w="100%" spacing={"40"}>
-            <Button
-              variant="unstyled"
-              leftIcon={<FiArrowLeft />}
-              onClick={() => router.back()}
-            >
-              Back
-            </Button>
-
-            <Text>Write down your secret recovery phrase</Text>
-          </HStack>
-
           <Stack justify="start">
             <List spacing={2}>
               <Text>Tips</Text>
@@ -118,13 +91,7 @@ export default function SeedPhrase() {
               >
                 <Text> Copy to clipboard</Text>
               </Button>
-              <Button
-                onClick={async () => {
-                  router.push("home");
-                }}
-              >
-                Next
-              </Button>
+              <Button onClick={onNextBtnClick}>Next</Button>
             </>
           )}
         </VStack>

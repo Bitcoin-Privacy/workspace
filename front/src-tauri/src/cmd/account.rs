@@ -19,24 +19,15 @@ use crate::{
 };
 
 #[tauri::command]
-pub fn create_master(state: State<'_, PoolWrapper>) -> Result<Vec<String>, String> {
+pub async fn create_master(pool: State<'_, PoolWrapper>) -> Result<Vec<String>, String> {
     let mnemonic = Mnemonic::new_random(MasterKeyEntropy::Sufficient).map_err(|e| e.to_string())?;
     let seed = mnemonic.to_seed_phrase();
-    let birth = 0;
 
-    // let _ = state
-    //     .sled
-    //     .insert(
-    //         b"seedphrase",
-    //         bincode::serialize(&seed.clone().join(" ")).unwrap(),
-    //     )
-    //     .expect("Cannot insert seedphrase");
-    // let _ = state
-    //     .sled
-    //     .insert(b"birth", bincode::serialize(&birth).unwrap())
-    //     .expect("Cannot insert birth");
+    pool.set_seed(&seed.join(" "))
+        .await
+        .map_err(|e| e.to_string())?;
 
-    initialize_master_account(&mnemonic, birth, Network::Testnet, PASSPHRASE, None);
+    initialize_master_account(&mnemonic, 0, Network::Testnet, PASSPHRASE, None);
 
     Ok(seed)
 }

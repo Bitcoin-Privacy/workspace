@@ -1,4 +1,5 @@
-use sqlx::{migrate::MigrateDatabase, Sqlite, SqlitePool};
+use anyhow::Result;
+use sqlx::{migrate::MigrateDatabase, Row, Sqlite, SqlitePool};
 
 use crate::cfg::CONFIG;
 
@@ -16,4 +17,29 @@ pub async fn init_db() -> sqlx::Result<SqlitePool> {
     let pool = SqlitePool::connect(&db_url).await?;
 
     Ok(pool)
+}
+
+pub async fn set_cfg(pool: &SqlitePool, key: &str, value: &str) -> Result<()> {
+    let _ = sqlx::query(
+        r#"insert into Config (key, value)
+            values(?, ?) on conflict (key)
+            do update set value = excluded.value;"#,
+    )
+    .bind(key)
+    .bind(value)
+    .execute(pool)
+    .await?;
+    Ok(())
+}
+
+pub async fn get_cfg(pool: &SqlitePool, key: &str) -> Result<Option<String>> {
+    let row = sqlx::query(r#"select value from Config where key = ?;"#)
+        .bind(key)
+        .fetch_optional(pool)
+        .await?;
+    let val = match row {
+        Some(r) => Some(r.try_get::<String, _>("value")?),
+        None => None,
+    };
+    Ok(val)
 }

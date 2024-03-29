@@ -10,11 +10,12 @@ import {
   Circle,
 } from "@chakra-ui/react";
 import { useRouter } from "next/router";
+import { useQuery } from "react-query";
 import { FiPlus } from "react-icons/fi";
+
 import { Layout } from "@/components";
 import { AccountApi } from "@/apis";
 import { CachePrefixKeys, DEFAULT_AVATAR } from "@/consts";
-import { useQuery } from "react-query";
 import { derivBase64 } from "@/utils";
 import { useApp } from "@/hooks";
 
