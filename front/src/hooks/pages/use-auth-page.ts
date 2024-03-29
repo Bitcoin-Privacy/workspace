@@ -1,4 +1,4 @@
-import { WalletApi } from "@/apis";
+import { AppApi } from "@/apis";
 import { useEffect, useCallback } from "react";
 import { useApp } from "..";
 import { useRouter } from "next/router";
@@ -15,7 +15,7 @@ export const useAuthPage = () => {
 
   const onSignin = useCallback(
     async (pw: string) => {
-      const result = await WalletApi.signin(pw);
+      const result = await AppApi.signin(pw);
       if (result) {
         appState.merge({ logged: true });
       } else {
@@ -26,7 +26,7 @@ export const useAuthPage = () => {
   );
 
   const onSignup = useCallback(async (pw: string) => {
-    await WalletApi.savePassword(pw);
+    await AppApi.savePassword(pw);
     appState.merge({ logged: true, setPassword: true });
   }, []);
 

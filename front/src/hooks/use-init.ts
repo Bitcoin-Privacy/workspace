@@ -1,4 +1,4 @@
-import { WalletApi } from "@/apis";
+import { AppApi } from "@/apis";
 import { InitStateEnum } from "@/dtos";
 import { AppState } from "@/stores";
 import { useHookstate } from "@hookstate/core";
@@ -11,7 +11,7 @@ export const useInit = () => {
 
   useEffect(() => {
     (async () => {
-      const initState = await WalletApi.getInitState();
+      const initState = await AppApi.getInitState();
       appState.merge({
         loading: false,
         ready: true,

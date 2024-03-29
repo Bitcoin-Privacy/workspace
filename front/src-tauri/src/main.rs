@@ -23,17 +23,9 @@ async fn main() {
     tauri::Builder::default()
         .manage(NodeConnector::new())
         .manage(pool)
-        .plugin(plug::account::init())
+        .plugin(plug::app::init())
         .plugin(plug::coinjoin::init())
         .plugin(plug::statechain::init())
-        .invoke_handler(tauri::generate_handler![
-            /* App commands */
-            cmd::app::get_init_state,
-            /* Auth commands */
-            cmd::auth::save_password,
-            cmd::auth::signin,
-            cmd::auth::save_room_id,
-        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

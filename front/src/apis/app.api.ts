@@ -1,12 +1,19 @@
-import { AccountDto } from "../dtos";
 import { TauriConnection } from "./core";
+import { InitState, mapToInitState, AccountDto } from "@/dtos";
 
-export const AccountApi = Object.freeze({
+export const AppApi = Object.freeze({
   /* Utils */
   name(name: string): string {
-    return "plugin:account|" + name;
+    return "plugin:app|" + name;
   },
   /* Accessors */
+  async getInitState(): Promise<InitState> {
+    const res = await TauriConnection.callAPI<object>(
+      this.name("get_init_state"),
+      {},
+    );
+    return mapToInitState(res);
+  },
   async getListAccounts(): Promise<AccountDto[]> {
     const res = await TauriConnection.callAPI<AccountDto[]>(
       this.name("get_accounts"),
@@ -47,5 +54,14 @@ export const AccountApi = Object.freeze({
       address,
       amount,
     });
+  },
+  async savePassword(password: string): Promise<void> {
+    return TauriConnection.callAPI<void>(this.name("save_password"), {
+      password,
+    });
+  },
+  // TODO: Implement submit
+  async signin(password: string): Promise<boolean> {
+    return TauriConnection.callAPI<boolean>(this.name("signin"), { password });
   },
 });

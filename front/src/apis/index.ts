@@ -1,4 +1,3 @@
-export * from "./wallet.api";
+export * from "./app.api";
 export * from "./coinjoin.api";
-export * from "./account.api";
 export * from "./statechain.api";

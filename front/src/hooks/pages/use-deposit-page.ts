@@ -1,19 +1,19 @@
 import { useQuery } from "react-query";
 import { useDeriv } from "@/hooks";
 
-import { AccountApi } from "@/apis";
+import { AppApi } from "@/apis";
 import { CachePrefixKeys } from "@/consts";
 import { useDepositForm } from "../use-deposit-form";
 
 export const useDepositPage = () => {
   const { deriv } = useDeriv();
   const profQuery = useQuery([CachePrefixKeys.ProfileFromDeriv, deriv], () =>
-    AccountApi.getAccount(deriv),
+    AppApi.getAccount(deriv),
   );
 
   const balanceQuery = useQuery(
     [CachePrefixKeys.Balance, profQuery.data?.address],
-    () => AccountApi.getBalance(profQuery.data!.address),
+    () => AppApi.getBalance(profQuery.data!.address),
     {
       enabled: !!profQuery.data?.address,
     },

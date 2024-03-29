@@ -5,7 +5,7 @@ import { FiPlus } from "react-icons/fi";
 import { Box, Text, VStack, HStack, Avatar, Circle } from "@chakra-ui/react";
 
 import { Layout } from "@/components";
-import { AccountApi } from "@/apis";
+import { AppApi } from "@/apis";
 import { CachePrefixKeys, DEFAULT_AVATAR } from "@/consts";
 import { useQuery } from "react-query";
 import { derivBase64 } from "@/utils";
@@ -14,7 +14,7 @@ export default function Home() {
   const router = useRouter();
 
   const listProfilesQuery = useQuery([CachePrefixKeys.Profiles], () =>
-    AccountApi.getListAccounts(),
+    AppApi.getListAccounts(),
   );
 
   const listProfiles = useMemo(() => {

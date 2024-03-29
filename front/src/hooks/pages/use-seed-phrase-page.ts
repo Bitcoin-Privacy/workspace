@@ -3,14 +3,14 @@ import { useEffect } from "react";
 import { useClipboard } from "@chakra-ui/react";
 import { useRouter } from "next/router";
 
-import { AccountApi } from "@/apis";
+import { AppApi } from "@/apis";
 
 export const useSeedPhrasePage = () => {
   const router = useRouter();
   useEffect(() => {
     try {
       (async () => {
-        const result = await AccountApi.createMasterAccount();
+        const result = await AppApi.createMasterAccount();
         setMnemonicPhrases(result.join(" "));
       })();
     } catch (e) {

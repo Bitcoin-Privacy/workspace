@@ -14,7 +14,7 @@ import { useQuery } from "react-query";
 import { FiPlus } from "react-icons/fi";
 
 import { Layout } from "@/components";
-import { AccountApi } from "@/apis";
+import { AppApi } from "@/apis";
 import { CachePrefixKeys, DEFAULT_AVATAR } from "@/consts";
 import { derivBase64 } from "@/utils";
 import { useApp } from "@/hooks";
@@ -24,7 +24,7 @@ export default function Home() {
   const { appState } = useApp();
 
   const listProfilesQuery = useQuery([CachePrefixKeys.Profiles], () =>
-    AccountApi.getListAccounts(),
+    AppApi.getListAccounts(),
   );
 
   const listProfiles = useMemo(() => {
