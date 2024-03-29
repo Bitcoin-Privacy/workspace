@@ -9,4 +9,8 @@ export const WalletApi = Object.freeze({
   async savePassword(password: string): Promise<void> {
     return TauriConnection.callAPI<void>("save_password", { password });
   },
+  // TODO: Implement submit
+  async signin(password: string): Promise<boolean> {
+    return TauriConnection.callAPI<boolean>("signin", { password });
+  },
 });

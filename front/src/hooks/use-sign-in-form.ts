@@ -1,5 +1,3 @@
-import { InitStateEnum } from "@/dtos";
-import { useRouter } from "next/router";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 
@@ -7,31 +5,35 @@ type LoginFormInput = {
   password: string;
 };
 
-export const useLoginForm = (password: string, state: InitStateEnum) => {
+export const useLoginForm = (onSubmit: (pw: string) => Promise<void>) => {
   const form = useForm<LoginFormInput>();
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const router = useRouter();
 
   const handleFormSubmit = useMemo(
     () =>
       form.handleSubmit(async (data) => {
-        console.log(data, password, state);
         setIsLoading(true);
-        if (data.password === password) {
-          if (state === InitStateEnum.CreatedPassword)
-            router.push("/seedphrase");
-          else router.push("/home");
-        } else {
-          form.setError("password", { message: "Incorrect password" });
+        try {
+          await onSubmit(data.password);
+        } catch (e) {
+          if (typeof e === "string")
+            form.setError("password", {
+              message: e,
+            });
+          else
+            form.setError("password", {
+              message: "Failed to submit password",
+            });
+        } finally {
+          setIsLoading(false);
         }
-        setIsLoading(false);
       }),
-    [state],
+    [],
   );
   return {
     states: {
       form,
-      isHandling: isLoading,
+      isLoading,
     },
     methods: {
       handleFormSubmit,

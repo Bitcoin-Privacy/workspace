@@ -16,9 +16,11 @@ import { AccountApi } from "@/apis";
 import { CachePrefixKeys, DEFAULT_AVATAR } from "@/consts";
 import { useQuery } from "react-query";
 import { derivBase64 } from "@/utils";
+import { useApp } from "@/hooks";
 
 export default function Home() {
   const router = useRouter();
+  const { appState } = useApp();
 
   const listProfilesQuery = useQuery([CachePrefixKeys.Profiles], () =>
     AccountApi.getListAccounts(),
@@ -40,7 +42,10 @@ export default function Home() {
             <Button
               variant="unstyled"
               color="whiteAlpha.800"
-              onClick={() => router.back()}
+              onClick={() => {
+                appState.merge({ logged: false });
+                router.push("/");
+              }}
             >
               Logout
             </Button>

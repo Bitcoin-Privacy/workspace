@@ -31,6 +31,7 @@ async fn main() {
             cmd::app::get_init_state,
             /* Auth commands */
             cmd::auth::save_password,
+            cmd::auth::signin,
             cmd::auth::save_room_id,
         ])
         .run(tauri::generate_context!())

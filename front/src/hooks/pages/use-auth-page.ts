@@ -1,32 +1,39 @@
 import { WalletApi } from "@/apis";
-import { InitStateEnum } from "@/dtos";
-import { useEffect, useState } from "react";
+import { useEffect, useCallback } from "react";
+import { useApp } from "..";
+import { useRouter } from "next/router";
 
 export const useAuthPage = () => {
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [password, setPassword] = useState<string | null>(null);
-  const [state, setState] = useState<InitStateEnum | null>(null);
+  const router = useRouter();
+  const { appState } = useApp();
 
   useEffect(() => {
-    (async () => {
-      try {
-        const initState = await WalletApi.getInitState();
-        setPassword(initState.password ?? null);
-        setState(initState.type);
-      } catch (e) {
-        console.log("Get init state error:", e);
-      } finally {
-        setIsLoading(false);
+    if (!appState.logged.get()) return;
+    if (appState.setWallet.get()) router.push("/home");
+    router.push("/seedphrase");
+  }, [appState.logged.get()]);
+
+  const onSignin = useCallback(
+    async (pw: string) => {
+      const result = await WalletApi.signin(pw);
+      if (result) {
+        appState.merge({ logged: true });
+      } else {
+        throw "The password is incorrect";
       }
-    })();
+    },
+    [appState.setWallet],
+  );
+
+  const onSignup = useCallback(async (pw: string) => {
+    await WalletApi.savePassword(pw);
+    appState.merge({ logged: true });
   }, []);
 
   return {
-    states: {
-      isLoading,
-      password,
-      state,
+    state: {
+      setPassword: appState.setPassword,
     },
-    methods: {},
+    method: { onSignin, onSignup },
   };
 };

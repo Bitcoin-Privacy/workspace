@@ -4,7 +4,7 @@ import { TauriConnection } from "./core";
 export const AccountApi = Object.freeze({
   /* Utils */
   name(name: string): string {
-    return "plugin:coinjoin|" + name;
+    return "plugin:account|" + name;
   },
   /* Accessors */
   async getListAccounts(): Promise<AccountDto[]> {

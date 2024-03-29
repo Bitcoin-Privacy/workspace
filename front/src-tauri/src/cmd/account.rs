@@ -24,17 +24,17 @@ pub fn create_master(state: State<'_, PoolWrapper>) -> Result<Vec<String>, Strin
     let seed = mnemonic.to_seed_phrase();
     let birth = 0;
 
-    let _ = state
-        .sled
-        .insert(
-            b"seedphrase",
-            bincode::serialize(&seed.clone().join(" ")).unwrap(),
-        )
-        .expect("Cannot insert seedphrase");
-    let _ = state
-        .sled
-        .insert(b"birth", bincode::serialize(&birth).unwrap())
-        .expect("Cannot insert birth");
+    // let _ = state
+    //     .sled
+    //     .insert(
+    //         b"seedphrase",
+    //         bincode::serialize(&seed.clone().join(" ")).unwrap(),
+    //     )
+    //     .expect("Cannot insert seedphrase");
+    // let _ = state
+    //     .sled
+    //     .insert(b"birth", bincode::serialize(&birth).unwrap())
+    //     .expect("Cannot insert birth");
 
     initialize_master_account(&mnemonic, birth, Network::Testnet, PASSPHRASE, None);
 

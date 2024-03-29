@@ -1,3 +1,4 @@
+use anyhow::Result;
 use bitcoin::Network;
 use tauri::State;
 use wallet::core::Mnemonic;
@@ -12,32 +13,22 @@ use crate::{
 /// - Load master account
 /// - Init subaccount
 /// - Return the app state
-#[tauri::command]
-pub fn init(db: &sled::Db) -> InitState {
-    let password = db.get(b"password").expect("Cannot get password");
-
-    match password {
-        Some(password) => {
-            let password = bincode::deserialize::<String>(&password).unwrap();
-            let seedphrase = db.get(b"seedphrase").expect("Cannot get seedphrase");
-            let birth = db.get(b"birth").expect("Cannot get birth");
-            if let (Some(seedphrase), Some(birth)) = (seedphrase, birth) {
-                let seedphrase = bincode::deserialize::<String>(&seedphrase).unwrap();
-                let birth = bincode::deserialize::<u64>(&birth).unwrap();
-
-                let mnemonic = Mnemonic::from_str(&seedphrase).unwrap();
-                initialize_master_account(&mnemonic, birth, Network::Testnet, PASSPHRASE, None);
-
-                InitState::CreatedWallet(password)
-            } else {
-                InitState::CreatedPassword(password)
+async fn init(pool: &PoolWrapper) -> Result<InitState> {
+    let state = match pool.get_password().await? {
+        Some(_) => match pool.get_seed().await? {
+            Some(seed) => {
+                let mnemonic = Mnemonic::from_str(&seed).unwrap();
+                initialize_master_account(&mnemonic, 0, Network::Testnet, PASSPHRASE, None);
+                InitState::CreatedWallet
             }
-        }
+            None => InitState::CreatedPassword,
+        },
         None => InitState::BrandNew,
-    }
+    };
+    Ok(state)
 }
 
 #[tauri::command]
-pub fn get_init_state(state: State<'_, PoolWrapper>) -> InitState {
-    init(&state.sled)
+pub async fn get_init_state(pool: State<'_, PoolWrapper>) -> Result<InitState, String> {
+    init(&pool).await.map_err(|e| e.to_string())
 }
