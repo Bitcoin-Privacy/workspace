@@ -15,7 +15,7 @@ export const useAuthPage = () => {
 
   const onSignin = useCallback(
     async (pw: string) => {
-      const result = await AppApi.signin(pw);
+      const result = await AppApi.signIn(pw);
       if (result) {
         appState.merge({ logged: true });
       } else {
@@ -26,7 +26,7 @@ export const useAuthPage = () => {
   );
 
   const onSignup = useCallback(async (pw: string) => {
-    await AppApi.savePassword(pw);
+    await AppApi.signUp(pw);
     appState.merge({ logged: true, setPassword: true });
   }, []);
 

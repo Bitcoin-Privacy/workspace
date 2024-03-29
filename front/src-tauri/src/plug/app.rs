@@ -25,18 +25,13 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             get_init_state,
             get_accounts,
             get_account,
-            get_utxo,
+            get_utxos,
             get_balance,
         ])
         .build()
 }
 
 // Modifiers --------------------------------------
-
-#[command]
-async fn get_init_state(pool: State<'_, PoolWrapper>) -> TResult<InitState> {
-    app::init(&pool).await.map_err(util::to_string)
-}
 
 #[command]
 async fn signup(pool: State<'_, PoolWrapper>, password: &str) -> TResult<()> {
@@ -71,6 +66,11 @@ async fn create_txn(deriv: &str, receiver: &str, amount: u64) -> TResult<()> {
 
 // Accessors --------------------------------------
 #[command]
+async fn get_init_state(pool: State<'_, PoolWrapper>) -> TResult<InitState> {
+    app::init(&pool).await.map_err(util::to_string)
+}
+
+#[command]
 fn get_accounts() -> TResult<Vec<AccountDTO>> {
     app::get_accounts().map_err(util::to_string)
 }
@@ -81,8 +81,8 @@ fn get_account(deriv: &str) -> TResult<AccountDTO> {
 }
 
 #[command]
-async fn get_utxo(address: &str) -> TResult<Vec<Utxo>> {
-    app::get_utxo(address).await.map_err(util::to_string)
+async fn get_utxos(address: &str) -> TResult<Vec<Utxo>> {
+    app::get_utxos(address).await.map_err(util::to_string)
 }
 
 #[command]

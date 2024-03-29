@@ -1,5 +1,4 @@
 pub const PASSPHRASE: &str = "correct horse battery staple";
-pub const DATABASE_PATH: &str = "../../WalletDB";
 
 pub const NODE_SERVICE_BASE_URL: &str = "http://localhost:6080";
 

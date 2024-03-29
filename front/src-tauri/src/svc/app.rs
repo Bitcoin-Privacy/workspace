@@ -185,11 +185,11 @@ pub fn get_account(deriv: &str) -> Result<AccountDTO> {
     Ok(account.into())
 }
 
-pub async fn get_utxo(address: &str) -> Result<Vec<Utxo>> {
+pub async fn get_utxos(address: &str) -> Result<Vec<Utxo>> {
     shared::api::get_utxo(address).await
 }
 
 pub async fn get_balance(address: &str) -> Result<u64> {
-    let utxos = get_utxo(address).await?;
+    let utxos = get_utxos(address).await?;
     Ok(utxos.iter().map(|utxo| utxo.value).sum())
 }

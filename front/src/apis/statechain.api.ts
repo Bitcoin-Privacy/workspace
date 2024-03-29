@@ -2,9 +2,12 @@ import { TauriConnection } from "./core";
 import { RegisterResDto } from "@/dtos";
 
 export const StatechainApi = Object.freeze({
+  /* Utils */
   name(name: string): string {
     return "plugin:statechain|" + name;
   },
+
+  /* Modifiers */
   async deposit(
     deriv: string,
     address: string,
@@ -16,6 +19,9 @@ export const StatechainApi = Object.freeze({
       amount,
     });
   },
+
+  /* Accessors */
+
   // async signTx(deriv: string, roomId: string): Promise<RegisterResponseDto> {
   //   return await TauriConnection.callAPI<RegisterResponseDto>("sign_tx", {
   //     deriv,

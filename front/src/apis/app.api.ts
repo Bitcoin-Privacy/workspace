@@ -6,6 +6,34 @@ export const AppApi = Object.freeze({
   name(name: string): string {
     return "plugin:app|" + name;
   },
+
+  /* Modifiers */
+  async signUp(password: string): Promise<void> {
+    return TauriConnection.callAPI<void>(this.name("signup"), {
+      password,
+    });
+  },
+  async signIn(password: string): Promise<boolean> {
+    return TauriConnection.callAPI<boolean>(this.name("signin"), { password });
+  },
+  async createMaster(): Promise<string[]> {
+    return await TauriConnection.callAPI<string[]>(
+      this.name("create_master"),
+      {},
+    );
+  },
+  async createTxn(
+    deriv: string,
+    receiver: string,
+    amount: number,
+  ): Promise<void> {
+    return await TauriConnection.callAPI<void>(this.name("create_txn"), {
+      deriv,
+      receiver,
+      amount,
+    });
+  },
+
   /* Accessors */
   async getInitState(): Promise<InitState> {
     const res = await TauriConnection.callAPI<object>(
@@ -14,7 +42,7 @@ export const AppApi = Object.freeze({
     );
     return mapToInitState(res);
   },
-  async getListAccounts(): Promise<AccountDto[]> {
+  async getAccounts(): Promise<AccountDto[]> {
     const res = await TauriConnection.callAPI<AccountDto[]>(
       this.name("get_accounts"),
       {},
@@ -26,8 +54,8 @@ export const AppApi = Object.freeze({
       deriv,
     });
   },
-  async getListUtxo(deriv: string): Promise<any[]> {
-    return await TauriConnection.callAPI<any[]>(this.name("get_utxo"), {
+  async getUtxos(deriv: string): Promise<any[]> {
+    return await TauriConnection.callAPI<any[]>(this.name("get_utxos"), {
       address: deriv,
     });
   },
@@ -35,33 +63,5 @@ export const AppApi = Object.freeze({
     return await TauriConnection.callAPI<number>(this.name("get_balance"), {
       address,
     });
-  },
-
-  /* Modifiers */
-  async createMasterAccount(): Promise<string[]> {
-    return await TauriConnection.callAPI<string[]>(
-      this.name("create_master"),
-      {},
-    );
-  },
-  async createTx(
-    deriv: string,
-    address: string,
-    amount: number,
-  ): Promise<void> {
-    return await TauriConnection.callAPI<void>(this.name("create_tx"), {
-      deriv,
-      address,
-      amount,
-    });
-  },
-  async savePassword(password: string): Promise<void> {
-    return TauriConnection.callAPI<void>(this.name("save_password"), {
-      password,
-    });
-  },
-  // TODO: Implement submit
-  async signin(password: string): Promise<boolean> {
-    return TauriConnection.callAPI<boolean>(this.name("signin"), { password });
   },
 });

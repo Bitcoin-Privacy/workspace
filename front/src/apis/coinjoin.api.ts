@@ -2,9 +2,12 @@ import { TauriConnection } from "./core";
 import { RegisterResDto, RoomDto } from "@/dtos";
 
 export const CoinJoinApi = Object.freeze({
+  /* Utils */
   name(name: string): string {
     return "plugin:coinjoin|" + name;
   },
+
+  /* Modifiers */
   async register(
     deriv: string,
     address: string,
@@ -19,20 +22,24 @@ export const CoinJoinApi = Object.freeze({
       },
     );
   },
-  async signTx(deriv: string, roomId: string): Promise<RegisterResDto> {
-    return await TauriConnection.callAPI<RegisterResDto>(this.name("sign_tx"), {
-      deriv,
-      roomId,
-    });
+  async signTxn(deriv: string, roomId: string): Promise<RegisterResDto> {
+    return await TauriConnection.callAPI<RegisterResDto>(
+      this.name("sign_txn"),
+      {
+        deriv,
+        roomId,
+      },
+    );
   },
-  /* Fetching Data APIs */
-  async getListRooms(deriv: string): Promise<RoomDto[]> {
+
+  /* Accessors */
+  async getRooms(deriv: string): Promise<RoomDto[]> {
     return await TauriConnection.callAPI<RoomDto[]>(this.name("get_rooms"), {
       deriv,
     });
   },
-  async getTx(roomId: string): Promise<object> {
-    return await TauriConnection.callAPI<object>(this.name("get_tx"), {
+  async getTxn(roomId: string): Promise<object> {
+    return await TauriConnection.callAPI<object>(this.name("get_txn"), {
       roomId,
     });
   },

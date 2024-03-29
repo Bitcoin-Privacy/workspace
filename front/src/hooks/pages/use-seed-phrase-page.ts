@@ -10,7 +10,7 @@ export const useSeedPhrasePage = () => {
   useEffect(() => {
     try {
       (async () => {
-        const result = await AppApi.createMasterAccount();
+        const result = await AppApi.createMaster();
         setMnemonicPhrases(result.join(" "));
       })();
     } catch (e) {

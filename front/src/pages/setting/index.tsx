@@ -24,7 +24,7 @@ export default function Home() {
   const { appState } = useApp();
 
   const listProfilesQuery = useQuery([CachePrefixKeys.Profiles], () =>
-    AppApi.getListAccounts(),
+    AppApi.getAccounts(),
   );
 
   const listProfiles = useMemo(() => {

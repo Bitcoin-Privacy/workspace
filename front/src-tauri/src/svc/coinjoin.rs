@@ -93,7 +93,7 @@ pub async fn register(
     Ok((register_res.room.id, sig))
 }
 
-pub async fn sign_tx(pool: &PoolWrapper, deriv: &str, room_id: &str) -> Result<()> {
+pub async fn sign_txn(pool: &PoolWrapper, deriv: &str, room_id: &str) -> Result<()> {
     let (account, mut unlocker) = account::get_account(deriv)?;
 
     let res = coinjoin::get_txn(&room_id).await?;

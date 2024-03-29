@@ -30,7 +30,7 @@ export const useProfilePage = () => {
 
   const listUtxoQuery = useQuery(
     [CachePrefixKeys.UTXO, addr],
-    () => AppApi.getListUtxo(addr),
+    () => AppApi.getUtxos(addr),
     { enabled: !!addr },
   );
   const balanceQuery = useQuery(
