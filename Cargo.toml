@@ -42,3 +42,14 @@ bitcoin = { version = "0.31.1", features = [
   "bitcoinconsensus",
   "actual-serde",
 ] }
+
+# sqlx
+sqlx = { version = "0.7.3", default-features = false, features = [
+  "runtime-tokio-native-tls",
+  "macros",
+  "postgres",
+  "sqlite",
+  "uuid",
+  "chrono",
+  "json",
+] }

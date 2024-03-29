@@ -20,11 +20,10 @@ tokio = { workspace = true }
 
 bitcoin = { workspace = true, features = ["serde"] }
 
-sqlx = { version = "0.7.3", default-features = false, features = [
+sqlx = { workspace = true, features = [
   "runtime-tokio-native-tls",
   "macros",
   "postgres",
-  "sqlite",
   "uuid",
   "chrono",
   "json",
