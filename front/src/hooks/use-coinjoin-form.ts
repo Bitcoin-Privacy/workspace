@@ -21,16 +21,16 @@ export const useCreateTxForm = (derivationPath: string) => {
         try {
           switch (data.strategy) {
             case TxStrategyEnum.Base:
-              throw "Not support yet"
+              throw "Not support yet";
             case TxStrategyEnum.CoinJoin:
               await CoinJoinApi.register(
                 derivationPath,
                 data.address,
                 convertBtcToSat(data.amount),
               );
-              break
+              break;
             default:
-              throw "Not support yet"
+              throw "Not support yet";
           }
           form.reset({ address: "", amount: 0, strategy: TxStrategyEnum.Base });
         } catch (e) {
@@ -51,4 +51,3 @@ export const useCreateTxForm = (derivationPath: string) => {
     },
   };
 };
-

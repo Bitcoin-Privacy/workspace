@@ -6,7 +6,7 @@
 //! actually request protocol initiation. Also, the request for protocol
 //! initiation is neither defined nor implemented by this crate.
 use super::signature::UnblindedSigData;
-use super::Error::{WiredRistrettoPointMalformed, WiredScalarMalformed};
+use super::BlindSignError::{WiredRistrettoPointMalformed, WiredScalarMalformed};
 use super::Result;
 use curve25519_dalek::{
     constants::RISTRETTO_BASEPOINT_POINT,

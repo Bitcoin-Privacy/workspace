@@ -5,7 +5,7 @@
 //! request for protocol initiation. Also, the request for protocol initiation
 //! is neither defined nor implemented by this crate.
 
-use super::Error::WiredScalarMalformed;
+use super::BlindSignError::WiredScalarMalformed;
 use super::Result;
 use curve25519_dalek::{constants::RISTRETTO_BASEPOINT_POINT, scalar::Scalar};
 use rand::rngs::OsRng;

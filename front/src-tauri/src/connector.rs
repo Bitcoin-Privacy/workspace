@@ -1,18 +1,16 @@
-use failure_derive::Fail;
 use serde_json::{Map, Value};
 use shared::model::resp::{ApiResponse, Status};
-
-use crate::cfg::NODE_SERVICE_BASE_URL;
+use thiserror::Error;
 
 pub struct NodeConnector {
     base_url: String,
 }
 
-#[derive(Fail, Debug)]
+#[derive(Error, Debug)]
 pub enum NodeConnErr {
-    #[fail(display = "failed to request to node")]
+    #[error("failed to request to node")]
     RequestFailed(String),
-    #[fail(display = "failed to parse response to JSON")]
+    #[error("failed to parse response to JSON")]
     ParseResponseFailed(String),
 }
 
@@ -26,10 +24,8 @@ impl From<reqwest::Error> for NodeConnErr {
 pub type NodeConnectorResult<T> = ::std::result::Result<T, NodeConnErr>;
 
 impl NodeConnector {
-    pub fn new() -> Self {
-        Self {
-            base_url: NODE_SERVICE_BASE_URL.to_string(),
-        }
+    pub fn new(url: String) -> Self {
+        Self { base_url: url }
     }
     pub fn get_url(&self, endpoint: &str) -> String {
         format!("{}/{}", self.base_url, endpoint)

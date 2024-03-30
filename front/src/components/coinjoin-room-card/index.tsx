@@ -53,7 +53,7 @@ export function CoinJoinRoomCard(props: CoinJoinRoomCardProps) {
       <Button
         h="100%"
         onClick={() => {
-          CoinJoinApi.signTx(props.deriv, data.id);
+          CoinJoinApi.signTxn(props.deriv, data.id);
         }}
       >
         Sign

@@ -1,25 +1,35 @@
-use crate::api::blindsign::BlindsignApis;
-use crate::api::coinjoin::CoinjoinApis;
+use std::ops::ControlFlow;
+
+use anyhow::anyhow;
+use anyhow::Result;
+use bitcoin::hex::Case;
+use bitcoin::hex::DisplayHex;
+use bitcoin::{
+    consensus, secp256k1::Secp256k1, sighash::SighashCache, EcdsaSighashType, Transaction,
+};
+use shared::intf::coinjoin::GetStatusRes;
+use tokio::time::{sleep, Duration};
+
+use shared::api;
+use shared::blindsign::WiredUnblindedSigData;
+use shared::model::Utxo;
+
+use crate::api::coinjoin;
+use crate::connector::NodeConnector;
 use crate::db::PoolWrapper;
 use crate::model::{AccountActions, RoomEntity};
 use crate::svc::account;
-use bitcoin::hex::Case;
-use bitcoin::hex::DisplayHex;
-use shared::api;
-use shared::blindsign::{BlindRequest, WiredUnblindedSigData};
-use shared::model::Utxo;
-use tauri::State;
+use crate::svc::blindsign;
 
 pub async fn register(
-    state: State<'_, PoolWrapper>,
+    pool: &PoolWrapper,
+    conn: &NodeConnector,
     deriv: &str,
     amount: u64,
     dest: &str,
-) -> Result<(String, String), String> {
-    let acct = account::get_internal_account(deriv).expect("Account not found");
-    let utxos = api::get_utxo(&acct.get_addr())
-        .await
-        .expect("Cannot get utxos");
+) -> Result<(String, String)> {
+    let acct = account::get_internal_account(deriv)?;
+    let utxos = api::get_utxo(&acct.get_addr()).await?;
     let utxo = utxos
         .iter()
         .find(|x: &&Utxo| x.value > amount)
@@ -29,18 +39,10 @@ pub async fn register(
         ))
         .to_owned();
 
-    let blind_session = BlindsignApis::get_blindsign_session()
-        .await
-        .expect("Cannot get blindsign session");
+    let (blinded_address, unblinder) = blindsign::blind_message(conn, dest).await?;
 
-    let rp: [u8; 32] = hex::decode(blind_session.rp)
-        .expect("Cannot parse blindsign session")
-        .try_into()
-        .expect("Invalid size");
-    let (blinded_address, unblinder) =
-        BlindRequest::new_specific_msg::<sha3::Sha3_512, &[u8]>(&rp, dest.as_bytes()).unwrap();
-
-    let register_res = CoinjoinApis::register(
+    let register_res = coinjoin::register(
+        conn,
         vec![utxo],
         &hex::encode(blinded_address),
         &acct.get_addr(),
@@ -61,9 +63,107 @@ pub async fn register(
 
     let room_entity: RoomEntity = register_res.clone().into();
 
-    if let Err(e) = state.add_or_update_room(deriv, &room_entity) {
+    if let Err(e) = pool.add_or_update_room(deriv, &room_entity) {
         panic!("Failed to update room {:?}", e);
     }
 
+    let (room_id, address, sig_cloned) =
+        (register_res.room.id.clone(), dest.to_string(), sig.clone());
+
+    tokio::spawn(async move {
+        // Generate a random number of seconds
+        let random_delay = rand::random::<u64>() % 60; // for example, 0 to 59 seconds
+        sleep(Duration::from_secs(random_delay)).await;
+
+        if let Err(e) = coinjoin::set_output(&room_id, &address, &sig_cloned).await {
+            println!("Set output got error {}", e);
+            // tauri::Window::emit(
+            //     &window,
+            //     "coinjoin-register-complete",
+            //     Some(event::CoinJoinRegisterCompleteEvent { room_id, status: 0 }),
+            // )
+            // .expect("Failed to emit event");
+        } else {
+            // tauri::Window::emit(
+            //     &window,
+            //     "coinjoin-register-complete",
+            //     Some(event::CoinJoinRegisterCompleteEvent { room_id, status: 1 }),
+            // )
+            // .expect("Failed to emit event");
+        }
+    });
+
     Ok((register_res.room.id, sig))
+}
+
+pub async fn sign_txn(pool: &PoolWrapper, deriv: &str, room_id: &str) -> Result<()> {
+    let (account, mut unlocker) = account::get_account(deriv)?;
+
+    let res = coinjoin::get_txn(&room_id).await?;
+    let parsed_tx = consensus::deserialize::<Transaction>(&hex::decode(&res.tx.clone())?)?;
+    let mut unsigned_tx = parsed_tx.clone();
+
+    let room = pool.get_room(deriv, room_id)?;
+
+    let secp = Secp256k1::new();
+    let sighash_type = EcdsaSighashType::All;
+    let mut sighasher = SighashCache::new(&mut unsigned_tx);
+
+    let future_tasks: Vec<_> = parsed_tx
+        .input
+        .iter()
+        .enumerate()
+        .filter(|(_, input)| {
+            room.utxos
+                .iter()
+                .find(|utxo| input.previous_output.txid.to_string() == utxo.txid.to_string())
+                .is_some()
+        })
+        .map(|(index, input)| tokio::spawn(account::find_and_join_txn(index, input.clone())))
+        .collect();
+
+    let mut results = Vec::new();
+    for job in future_tasks {
+        results.push(job.await??);
+    }
+
+    let mut vins: Vec<u16> = Vec::new();
+    let res = results.iter().try_for_each(|(index, input, tx)| {
+        vins.push(*index as u16);
+        match account::sign(
+            &secp,
+            &mut sighasher,
+            sighash_type,
+            &account,
+            &mut unlocker,
+            index,
+            input,
+            tx,
+        ) {
+            Ok(_) => ControlFlow::Continue(()),
+            Err(e) => ControlFlow::Break(e),
+        }
+    });
+    if let ControlFlow::Break(e) = res {
+        return Err(e);
+    }
+
+    let tx_hex = consensus::encode::serialize_hex(&unsigned_tx);
+
+    let res = coinjoin::sign(room_id, vins, &tx_hex).await;
+    match res {
+        Ok(response) => {
+            println!("RES {:#?}", response);
+            Ok(())
+        }
+        Err(e) => Err(anyhow!("Error: {}", e)),
+    }
+}
+
+pub async fn get_status(room_id: &str) -> Result<GetStatusRes> {
+    crate::api::coinjoin::get_status(room_id).await
+}
+
+pub async fn get_rooms(pool: &PoolWrapper, deriv: &str) -> Result<Vec<RoomEntity>> {
+    pool.get_all_rooms(deriv)
 }

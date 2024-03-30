@@ -1,9 +1,12 @@
 /target
 /debug
 
+/db
+
 .DS_Store
 
 .bitcoin/*
 !.bitcoin/bitcoin.conf
 
 WalletDB
+node_modules

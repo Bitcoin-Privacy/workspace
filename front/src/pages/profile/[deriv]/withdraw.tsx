@@ -73,7 +73,7 @@ export default function Withdraw() {
         textAlign: "start",
       }),
     }),
-    []
+    [],
   );
 
   return (

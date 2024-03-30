@@ -220,7 +220,7 @@ export default function ProfilePage() {
                 <TabPanel>
                   <VStack h="100%" w="100%">
                     {listUtxoQuery.data?.map((val, index) => (
-                      <UTXOCard index={index} val={val} />
+                      <UTXOCard key={index} val={val} />
                     ))}
                   </VStack>
                 </TabPanel>
@@ -235,7 +235,7 @@ export default function ProfilePage() {
                   <Text fontSize="12px" fontWeight="200" color="#aaa">
                     <VStack h="100%" w="100%" spacing="8px">
                       {mockStatechain.map((val, index) => (
-                        <StateChainCard val={val} index={index} />
+                        <StateChainCard val={val} key={index} />
                       ))}
                     </VStack>
                   </Text>

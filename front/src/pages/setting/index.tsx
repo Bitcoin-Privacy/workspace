@@ -10,18 +10,21 @@ import {
   Circle,
 } from "@chakra-ui/react";
 import { useRouter } from "next/router";
-import { FiPlus } from "react-icons/fi";
-import { Layout } from "@/components";
-import { AccountApi } from "@/apis";
-import { CachePrefixKeys, DEFAULT_AVATAR } from "@/consts";
 import { useQuery } from "react-query";
+import { FiPlus } from "react-icons/fi";
+
+import { Layout } from "@/components";
+import { AppApi } from "@/apis";
+import { CachePrefixKeys, DEFAULT_AVATAR } from "@/consts";
 import { derivBase64 } from "@/utils";
+import { useApp } from "@/hooks";
 
 export default function Home() {
   const router = useRouter();
+  const { appState } = useApp();
 
   const listProfilesQuery = useQuery([CachePrefixKeys.Profiles], () =>
-    AccountApi.getListAccounts(),
+    AppApi.getAccounts(),
   );
 
   const listProfiles = useMemo(() => {
@@ -40,7 +43,10 @@ export default function Home() {
             <Button
               variant="unstyled"
               color="whiteAlpha.800"
-              onClick={() => router.back()}
+              onClick={() => {
+                appState.merge({ logged: false });
+                router.push("/");
+              }}
             >
               Logout
             </Button>
