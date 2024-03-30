@@ -1,10 +1,13 @@
 use anyhow::Result;
 use shared::blindsign::BlindRequest;
 
-use crate::api::blindsign;
+use crate::{api::blindsign, connector::NodeConnector};
 
-pub async fn blind_message(address: &str) -> Result<([u8; 32], BlindRequest)> {
-    let blind_session = blindsign::get_blindsign_session().await?;
+pub async fn blind_message(
+    conn: &NodeConnector,
+    address: &str,
+) -> Result<([u8; 32], BlindRequest)> {
+    let blind_session = blindsign::get_blindsign_session(conn).await?;
     let rp: [u8; 32] = hex::decode(blind_session.rp)?
         .try_into()
         .expect("Invalid size");

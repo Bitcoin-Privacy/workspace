@@ -15,6 +15,7 @@ use shared::blindsign::WiredUnblindedSigData;
 use shared::model::Utxo;
 
 use crate::api::coinjoin;
+use crate::connector::NodeConnector;
 use crate::db::PoolWrapper;
 use crate::model::{AccountActions, RoomEntity};
 use crate::svc::account;
@@ -22,6 +23,7 @@ use crate::svc::blindsign;
 
 pub async fn register(
     pool: &PoolWrapper,
+    conn: &NodeConnector,
     deriv: &str,
     amount: u64,
     dest: &str,
@@ -37,9 +39,10 @@ pub async fn register(
         ))
         .to_owned();
 
-    let (blinded_address, unblinder) = blindsign::blind_message(dest).await?;
+    let (blinded_address, unblinder) = blindsign::blind_message(conn, dest).await?;
 
     let register_res = coinjoin::register(
+        conn,
         vec![utxo],
         &hex::encode(blinded_address),
         &acct.get_addr(),

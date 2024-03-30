@@ -20,7 +20,7 @@ type TResult<T> = Result<T, String>;
 #[tokio::main]
 async fn main() {
     let pool = PoolWrapper::new().await;
-    let node_conn = NodeConnector::new();
+    let node_conn = NodeConnector::new(cfg::CFG.service_url.clone());
     tauri::Builder::default()
         .manage(node_conn)
         .manage(pool)

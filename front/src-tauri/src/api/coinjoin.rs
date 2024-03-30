@@ -7,15 +7,15 @@ use shared::{
     model::Utxo,
 };
 
-use crate::connector::NodeConnector;
+use crate::{cfg::CFG, connector::NodeConnector};
 
 pub async fn register(
+    conn: &NodeConnector,
     input_coins: Vec<Utxo>,
     blinded_output_address: &str,
     change_address: &str,
     amount: u64,
 ) -> Result<RegisterRes> {
-    let conn = NodeConnector::new();
     let req = RegisterReq {
         utxos: input_coins,
         proofs: vec![],
@@ -29,7 +29,7 @@ pub async fn register(
 }
 
 pub async fn set_output(room_id: &str, out_addr: &str, sig: &str) -> Result<SetOutputRes> {
-    let conn = NodeConnector::new();
+    let conn = NodeConnector::new(CFG.service_url.clone());
     let req = SetOutputReq {
         room_id: room_id.to_string(),
         out_addr: out_addr.to_string(),
@@ -41,7 +41,7 @@ pub async fn set_output(room_id: &str, out_addr: &str, sig: &str) -> Result<SetO
 }
 
 pub async fn sign(room_id: &str, vins: Vec<u16>, txn: &str) -> Result<SignTxnRes> {
-    let conn = NodeConnector::new();
+    let conn = NodeConnector::new(CFG.service_url.clone());
     let req = SignTxnReq {
         room_id: room_id.to_string(),
         vins,
@@ -53,7 +53,7 @@ pub async fn sign(room_id: &str, vins: Vec<u16>, txn: &str) -> Result<SignTxnRes
 }
 
 pub async fn get_txn(room_id: &str) -> Result<GetUnsignedTxnRes> {
-    let conn = NodeConnector::new();
+    let conn = NodeConnector::new(CFG.service_url.clone());
     let res = conn
         .get(format!("coinjoin/room/{id}/txn", id = room_id), None)
         .await?;
@@ -61,7 +61,7 @@ pub async fn get_txn(room_id: &str) -> Result<GetUnsignedTxnRes> {
 }
 
 pub async fn get_status(room_id: &str) -> Result<GetStatusRes> {
-    let conn = NodeConnector::new();
+    let conn = NodeConnector::new(CFG.service_url.clone());
     let res = conn
         .get(format!("coinjoin/room/{id}/status", id = room_id), None)
         .await?;
@@ -69,7 +69,7 @@ pub async fn get_status(room_id: &str) -> Result<GetStatusRes> {
 }
 
 pub async fn get_room_list() -> Result<GetStatusRes> {
-    let conn = NodeConnector::new();
+    let conn = NodeConnector::new(CFG.service_url.clone());
     let res = conn
         .get(format!("coinjoin/room/{id}/status", id = ""), None)
         .await?;

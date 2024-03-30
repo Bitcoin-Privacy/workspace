@@ -1,10 +1,10 @@
 use anyhow::Result;
 use sqlx::{migrate::MigrateDatabase, Row, Sqlite, SqlitePool};
 
-use crate::cfg::CONFIG;
+use crate::cfg::CFG;
 
 pub async fn init_db() -> sqlx::Result<SqlitePool> {
-    let db_url = &CONFIG.database_url;
+    let db_url = &CFG.database_url;
     if !Sqlite::database_exists(&db_url).await.unwrap_or(false) {
         println!("Creating sqlite database {}", &db_url);
         match Sqlite::create_database(&db_url).await {

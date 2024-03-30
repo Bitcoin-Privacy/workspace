@@ -2,8 +2,6 @@ use serde_json::{Map, Value};
 use shared::model::resp::{ApiResponse, Status};
 use thiserror::Error;
 
-use crate::cfg::NODE_SERVICE_BASE_URL;
-
 pub struct NodeConnector {
     base_url: String,
 }
@@ -26,10 +24,8 @@ impl From<reqwest::Error> for NodeConnErr {
 pub type NodeConnectorResult<T> = ::std::result::Result<T, NodeConnErr>;
 
 impl NodeConnector {
-    pub fn new() -> Self {
-        Self {
-            base_url: NODE_SERVICE_BASE_URL.to_string(),
-        }
+    pub fn new(url: String) -> Self {
+        Self { base_url: url }
     }
     pub fn get_url(&self, endpoint: &str) -> String {
         format!("{}/{}", self.base_url, endpoint)
