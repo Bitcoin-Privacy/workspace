@@ -11,10 +11,19 @@ pub trait TraitStatechainRepo: Send + Sync + 'static {
     async fn create_deposit_tx(
         &self,
         token_id: &str,
-        auth_pubkey: &PublicKey,
+        auth_pubkey: &XOnlyPublicKey,
         server_pubkey: &PublicKey,
         server_privkey: &SecretKey,
         statechain_id: &String,
         amount: u32,
+    ) -> StatechainResult<()>;
+    async fn get_auth_key_by_statechain_id(&self, statechain_id: &str) -> StatechainResult<String>;
+    async fn insert_signature_data(
+        &self,
+        r2_commitment: &str,
+        blind_commitment: &str,
+        statechain_id: &str,
+        server_pubnonce: &PublicKey,
+        server_secnonce: &SecretKey,
     ) -> StatechainResult<()>;
 }

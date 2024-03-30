@@ -3331,6 +3331,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "musig2"
+version = "0.0.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bed08befaac75bfb31ca5e87678c4e8490bcd21d0c98ccb4f12f4065a7567e83"
+dependencies = [
+ "base16ct 0.2.0",
+ "hmac",
+ "once_cell",
+ "secp",
+ "secp256k1 0.28.2",
+ "sha2",
+ "subtle",
+]
+
+[[package]]
 name = "nanorand"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3441,6 +3456,7 @@ dependencies = [
  "lazy_static",
  "listenfd",
  "log",
+ "musig2",
  "num-bigint",
  "num-traits",
  "openssl",
@@ -4678,6 +4694,18 @@ dependencies = [
  "pkcs8",
  "subtle",
  "zeroize",
+]
+
+[[package]]
+name = "secp"
+version = "0.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1507279bb0404bb566f85523e48fcf37a158daa5380577ee0d93f3ef4df39ccc"
+dependencies = [
+ "base16ct 0.2.0",
+ "once_cell",
+ "secp256k1 0.28.2",
+ "subtle",
 ]
 
 [[package]]

@@ -22,6 +22,45 @@ pub struct DepositReq {
     pub amount: u32, // Limitation for coinjoin transaction, only able to transfer 2^32 - 1 satoshis
 }
 
+// ---------------------------
+// Sign first request
+// ---------------------------
+#[cfg_attr(feature = "backend", derive(Deserialize))]
+#[cfg_attr(feature = "frontend", derive(Serialize))]
+#[derive(Debug, Clone)]
+pub struct SignFirstReq {
+    pub statechain_id: String,
+    pub r2_commitment: String,
+    pub blind_commitment: String,
+    pub signed_statechain_id: String,
+}
+
+// ---------------------------
+// Sign first response
+// ---------------------------
+#[cfg_attr(feature = "backend", derive(Deserialize))]
+#[cfg_attr(feature = "frontend", derive(Serialize))]
+#[derive(Debug, Clone)]
+pub struct SignFirstRes {
+   pub server_pub_nonce : String,
+}
+
+
+// ---------------------------
+// Sign second
+// ---------------------------
+#[cfg_attr(feature = "backend", derive(Deserialize))]
+#[cfg_attr(feature = "frontend", derive(Serialize))]
+#[derive(Debug, Clone)]
+pub struct SignSecondReq {
+    pub statechain_id: String,
+    pub negate_seckey: u8,
+    pub session: String,
+    pub signed_statechain_id: String,
+    pub server_pub_nonce: String,
+}
+
+
 #[cfg_attr(feature = "backend", derive(Serialize))]
 #[cfg_attr(feature = "frontend", derive(Deserialize))]
 #[derive(Debug, Clone)]
