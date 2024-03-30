@@ -8,15 +8,14 @@ import { Layout, SignIn, SignUp } from "@/components";
 
 function AuthPage() {
   const {
-    states: { password, state },
-    methods: { },
+    state: { setPassword },
+    method: { onSignin, onSignup },
   } = useAuthPage();
 
   const authForm = useMemo(() => {
-    if (password !== null && state != null)
-      return <SignIn state={state} password={password} />;
-    else return <SignUp />;
-  }, [password, state]);
+    if (setPassword.get()) return <SignIn onSubmit={onSignin} />;
+    else return <SignUp onSubmit={onSignup} />;
+  }, [setPassword]);
 
   return (
     <React.Fragment>

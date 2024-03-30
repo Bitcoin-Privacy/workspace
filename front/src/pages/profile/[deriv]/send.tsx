@@ -77,7 +77,7 @@ export default function Send() {
         textAlign: "start",
       }),
     }),
-    []
+    [],
   );
 
   const options: TransactionOption[] = useMemo(
@@ -91,7 +91,7 @@ export default function Send() {
         value: TxStrategyEnum.CoinJoin,
       },
     ],
-    []
+    [],
   );
 
   return (
@@ -180,7 +180,7 @@ export default function Send() {
                     if (e != null && typeof e == "object" && "value" in e) {
                       form.setValue(
                         "strategy",
-                        TxStrategyEnum[e.value as keyof typeof TxStrategyEnum]
+                        TxStrategyEnum[e.value as keyof typeof TxStrategyEnum],
                       );
                     }
                   }}

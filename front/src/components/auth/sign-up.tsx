@@ -9,11 +9,15 @@ import {
 import React from "react";
 import { useSignUpForm } from "@/hooks";
 
-export const SignUp: React.FC<{}> = () => {
+interface ISignUp {
+  onSubmit: (pw: string) => Promise<void>;
+}
+
+export const SignUp: React.FC<ISignUp> = ({ onSubmit }) => {
   const {
-    states: { form },
+    states: { form, isLoading },
     methods: { handleFormSubmit },
-  } = useSignUpForm();
+  } = useSignUpForm(onSubmit);
 
   return (
     <form onSubmit={handleFormSubmit}>
@@ -25,6 +29,7 @@ export const SignUp: React.FC<{}> = () => {
             placeholder="Password"
             color="white"
             {...form.register("password")}
+            isDisabled={isLoading}
           />
           {form.formState.errors.password && (
             <FormErrorMessage>
@@ -38,6 +43,7 @@ export const SignUp: React.FC<{}> = () => {
             placeholder="Confirm password"
             color="white"
             {...form.register("confirmPassword")}
+            isDisabled={isLoading}
           />
           {form.formState.errors.confirmPassword && (
             <FormErrorMessage>
@@ -45,7 +51,14 @@ export const SignUp: React.FC<{}> = () => {
             </FormErrorMessage>
           )}
         </FormControl>
-        <Button type="submit" variant="solid" colorScheme="blue" w="100%">
+        <Button
+          type="submit"
+          variant="solid"
+          colorScheme="blue"
+          w="100%"
+          isDisabled={isLoading}
+          isLoading={isLoading}
+        >
           Go
         </Button>
       </VStack>

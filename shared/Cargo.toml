@@ -12,6 +12,9 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 reqwest = { workspace = true }
 
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+
 digest = "0.10.7"
 rand = "0.8.5"
 hex = "0.4.3"

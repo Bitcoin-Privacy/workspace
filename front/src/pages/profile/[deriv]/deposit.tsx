@@ -79,7 +79,7 @@ export default function Deposit() {
         textAlign: "start",
       }),
     }),
-    []
+    [],
   );
 
   const {
@@ -143,13 +143,12 @@ export default function Deposit() {
                     onClick={() => {
                       setHide(!hide);
                     }}
-
                     type="submit"
                     isLoading={isLoading}
                     isDisabled={(() => {
-                    let formc = form.watch();
-                    return !formc.amount;
-                })()}
+                      let formc = form.watch();
+                      return !formc.amount;
+                    })()}
                   >
                     Confirm
                   </Button>

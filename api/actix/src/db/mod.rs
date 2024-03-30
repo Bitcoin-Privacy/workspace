@@ -21,7 +21,7 @@ impl TraitDatabase for Database {
     async fn init_database(&mut self) -> Result<(), String> {
         let result = self
             .pool
-            .execute(include_str!("../../../db/init_database.sql"))
+            .execute(include_str!("../../db/init_database.sql"))
             .await;
 
         match result {

@@ -72,7 +72,7 @@ export default function SendStateCoin() {
         textAlign: "start",
       }),
     }),
-    []
+    [],
   );
 
   return (

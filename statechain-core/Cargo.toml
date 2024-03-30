@@ -14,6 +14,7 @@ bitcoin = { workspace = true, features = [
 ], default-features = false }
 
 secp256k1 = { workspace = true }
+anyhow = { workspace = true }
 
 bip39 = "1.2.0"
 bech32 = { version = "0.9.1", default-features = false }
@@ -26,5 +27,4 @@ secp256k1-zkp = { git = "https://github.com/tinguyen1107/rust-secp256k1-zkp.git"
   "hashes",
   "std",
 ] }
-anyhow = "1.0"
 # secp256k1-zkp = "0.10.1"

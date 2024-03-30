@@ -11,8 +11,8 @@ export type InitState = {
 
 export function mapToInitState(raw: any): InitState {
   return {
-    type: InitStateEnum[raw.type as keyof typeof InitStateEnum],
-    password: raw.password,
+    type: InitStateEnum[raw as keyof typeof InitStateEnum],
+    // password: raw.password,
   };
 }
 
@@ -20,4 +20,3 @@ export enum TxStrategyEnum {
   Base = "Base",
   CoinJoin = "CoinJoin",
 }
-

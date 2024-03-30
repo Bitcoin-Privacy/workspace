@@ -7,16 +7,16 @@ import {
 } from "@chakra-ui/react";
 import React from "react";
 import { useLoginForm } from "../../hooks";
-import { InitStateEnum } from "@/dtos";
 
-export const SignIn: React.FC<{ state: InitStateEnum; password: string }> = ({
-  password,
-  state,
-}) => {
+interface ISignIn {
+  onSubmit: (pw: string) => Promise<void>;
+}
+
+export const SignIn: React.FC<ISignIn> = ({ onSubmit }) => {
   const {
-    states: { form },
+    states: { form, isLoading },
     methods: { handleFormSubmit },
-  } = useLoginForm(password, state);
+  } = useLoginForm(onSubmit);
 
   return (
     <form onSubmit={handleFormSubmit}>
@@ -27,8 +27,16 @@ export const SignIn: React.FC<{ state: InitStateEnum; password: string }> = ({
             placeholder="Password"
             color="white"
             {...form.register("password")}
+            isDisabled={isLoading}
           />
-          <Button type="submit" variant="solid" colorScheme="blue" w="120px">
+          <Button
+            type="submit"
+            variant="solid"
+            colorScheme="blue"
+            w="120px"
+            isLoading={isLoading}
+            isDisabled={isLoading}
+          >
             Go
           </Button>
         </HStack>

@@ -1,33 +1,35 @@
-import { useRouter } from "next/router";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
-import { WalletApi } from "@/apis";
 
 type SignUpFormInput = {
   password: string;
   confirmPassword: string;
 };
 
-export const useSignUpForm = () => {
+export const useSignUpForm = (onSignup: (pw: string) => Promise<void>) => {
   const form = useForm<SignUpFormInput>();
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const router = useRouter();
 
   const handleFormSubmit = useMemo(
     () =>
       form.handleSubmit(async (data: SignUpFormInput) => {
         setIsLoading(true);
-        if (data.password !== data.confirmPassword) {
-          form.setError("confirmPassword", {
-            message: "Do not match with password",
+        try {
+          if (data.password !== data.confirmPassword) {
+            form.setError("confirmPassword", {
+              message: "Do not match with password",
+            });
+            return;
+          }
+          await onSignup(data.password);
+        } catch (e) {
+          console.error(e);
+          form.setError("password", {
+            message: "Failed to set password",
           });
-          return;
+        } finally {
+          setIsLoading(false);
         }
-
-        await WalletApi.savePassword(data.password);
-
-        router.push("seedphrase");
-        setIsLoading(false);
       }),
     [],
   );
@@ -35,7 +37,7 @@ export const useSignUpForm = () => {
   return {
     states: {
       form,
-      isHandling: isLoading,
+      isLoading,
     },
     methods: {
       handleFormSubmit,

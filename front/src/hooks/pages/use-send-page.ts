@@ -1,19 +1,19 @@
 import { useQuery } from "react-query";
 import { useCreateTxForm, useDeriv } from "@/hooks";
 
-import { AccountApi } from "@/apis";
+import { AppApi } from "@/apis";
 import { CachePrefixKeys } from "@/consts";
 
 export const useSendPage = () => {
   const { deriv } = useDeriv();
 
   const profQuery = useQuery([CachePrefixKeys.ProfileFromDeriv, deriv], () =>
-    AccountApi.getAccount(deriv),
+    AppApi.getAccount(deriv),
   );
 
   const balanceQuery = useQuery(
     [CachePrefixKeys.Balance, profQuery.data?.address],
-    () => AccountApi.getBalance(profQuery.data!.address),
+    () => AppApi.getBalance(profQuery.data!.address),
     {
       enabled: !!profQuery.data?.address,
     },
@@ -26,7 +26,11 @@ export const useSendPage = () => {
 
   return {
     states: {
-      deriv, form, isLoading, profQuery, balanceQuery
+      deriv,
+      form,
+      isLoading,
+      profQuery,
+      balanceQuery,
     },
     methods: { handleFormSubmit },
   };

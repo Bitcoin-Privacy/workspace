@@ -7,7 +7,7 @@ export const useDeriv = () => {
 
   try {
     const rawDeriv = router.query.deriv;
-    if (typeof rawDeriv === 'string') {
+    if (typeof rawDeriv === "string") {
       deriv = b64DecodeUnicode(rawDeriv);
     } else {
       console.error('Invalid or missing "deriv" query parameter');
@@ -15,5 +15,5 @@ export const useDeriv = () => {
   } catch (error) {
     console.error('Error decoding "deriv":', error);
   }
-  return { deriv }
-}
+  return { deriv };
+};

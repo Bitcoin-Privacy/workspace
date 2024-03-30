@@ -1,6 +1,6 @@
+import { useApp, useLogout } from "@/hooks";
 import {
   Box,
-  Button,
   HStack,
   Menu,
   MenuButton,
@@ -13,14 +13,17 @@ import { useRouter } from "next/router";
 import React from "react";
 import { FiMenu } from "react-icons/fi";
 
-interface LayoutProps {
+interface ILayout {
   title?: string;
   type?: string;
   children: React.ReactNode;
 }
 
-export const Layout: React.FC<LayoutProps> = ({ title, children }) => {
+export const Layout: React.FC<ILayout> = ({ title, children }) => {
   const router = useRouter();
+  const {
+    method: { logout },
+  } = useLogout();
 
   return (
     <VStack
@@ -61,13 +64,7 @@ export const Layout: React.FC<LayoutProps> = ({ title, children }) => {
             </MenuButton>
             <MenuList>
               <MenuItem>Change Password</MenuItem>
-              <MenuItem
-                onClick={() => {
-                  router.replace("/");
-                }}
-              >
-                Log out
-              </MenuItem>
+              <MenuItem onClick={logout}>Log out</MenuItem>
             </MenuList>
           </Menu>
         </HStack>
