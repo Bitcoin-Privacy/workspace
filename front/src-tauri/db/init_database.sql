@@ -5,6 +5,7 @@ create table if not exists Account (
   deriv TEXT NOT NULL
 );
 
+
 create table if not exists Config (
   key TEXT NOT NULL PRIMARY KEY,
   value TEXT NOT NULL
@@ -35,4 +36,44 @@ create table if not exists CoinJoinRoom (
 
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS Statecoin (
+    statechain_id TEXT NOT NULL PRIMARY KEY,
+    account_id TEXT,
+    token_id TEXT,
+    signed_statechain_id TEXT,
+    amount INT,
+    server_pubkey_share BLOB,
+    aggregated_pubkey BLOB,
+    p2tr_agg_address TEXT,
+
+    funding_txid TEXT,
+    funding_vout INT,
+
+    status TEXT,
+    locktime INT,
+
+    client_pubkey_share BLOB,
+
+    tx_withdraw TEXT,
+    
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (account_id) REFERENCES Account(id)
+);
+
+CREATE TABLE IF NOT EXISTS BackupTransaction (
+    id TEXT NOT NULL PRIMARY KEY,
+    tx_n INT,
+    statechain_id TEXT,
+    client_public_nonce BLOB,
+    server_public_nonce BLOB,
+    client_pubkey BLOB,
+    server_pubkey BLOB,
+    blinding_factor BLOB,
+    backup_tx BLOB,
+    recipient_address TEXT,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (statechain_id) REFERENCES Statecoin(statechain_id)
 );

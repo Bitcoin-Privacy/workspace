@@ -1,3 +1,4 @@
+use shared::intf::statechain::DepositRes;
 use tauri::{
     command,
     plugin::{Builder, TauriPlugin},
@@ -19,8 +20,8 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
 // Modifiers --------------------------------------
 
 #[command]
-pub async fn deposit(conn: State<'_, NodeConnector>, deriv: &str, amount: u64) -> TResult<()> {
-    statechain::deposit(&conn, deriv, amount)
+pub async fn deposit(conn: State<'_, NodeConnector>, amount: u64) -> TResult<DepositRes> {
+    statechain::deposit(&conn, amount)
         .await
         .map_err(util::to_string)
 }

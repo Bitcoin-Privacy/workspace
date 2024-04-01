@@ -19,8 +19,6 @@ export const useDepositForm = (derivationPath: string) => {
         try {
           console.log("send deposit");
           await StatechainApi.deposit(
-            derivationPath,
-            "hell",
             convertBtcToSats(data.amount),
           );
 
