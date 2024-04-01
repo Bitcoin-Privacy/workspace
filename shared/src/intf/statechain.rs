@@ -42,9 +42,8 @@ pub struct SignFirstReq {
 #[cfg_attr(feature = "frontend", derive(Serialize))]
 #[derive(Debug, Clone)]
 pub struct SignFirstRes {
-   pub server_pub_nonce : String,
+    pub server_pub_nonce: String,
 }
-
 
 // ---------------------------
 // Sign second
@@ -60,10 +59,9 @@ pub struct SignSecondReq {
     pub server_pub_nonce: String,
 }
 
-
-#[cfg_attr(feature = "backend", derive(Serialize))]
+// #[cfg_attr(feature = "backend", derive(Serialize))]
 #[cfg_attr(feature = "frontend", derive(Deserialize))]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct DepositRes {
     pub se_pubkey_1: String,
     pub statechain_id: String,

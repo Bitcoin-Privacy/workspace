@@ -41,7 +41,7 @@ export const useProfilePage = () => {
 
   const listRoomsQuery = useQuery(
     [CachePrefixKeys.ListRooms, addr],
-    () => CoinJoinApi.getListRooms(deriv),
+    () => CoinJoinApi.getRooms(deriv),
     { enabled: !!addr },
   );
 
