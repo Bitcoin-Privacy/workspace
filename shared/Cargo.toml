@@ -8,19 +8,17 @@ backend = []
 frontend = []
 
 [dependencies]
-serde = { workspace = true }
-serde_json = { workspace = true }
-reqwest = { workspace = true }
-
+# utils
 anyhow = { workspace = true }
 thiserror = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
 
+reqwest = { workspace = true }
+
+# cryptography
+hex = { workspace = true }
+rand = { workspace = true }
+curve25519-dalek = { workspace = true }
 digest = "0.10.7"
-rand = "0.8.5"
-hex = "0.4.3"
 subtle = "2.5.0"
-
-failure = "0.1.8"
-failure_derive = "0.1.8"
-
-curve25519-dalek = { version = "4.1.1", features = ["rand_core", "digest"] }
