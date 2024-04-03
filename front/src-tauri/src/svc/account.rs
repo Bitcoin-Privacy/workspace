@@ -80,6 +80,7 @@ pub async fn find_and_join_txn(index: usize, input: TxIn) -> Result<(usize, TxIn
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn sign(
     secp: &Secp256k1<All>,
     sighasher: &mut SighashCache<&mut Transaction>,

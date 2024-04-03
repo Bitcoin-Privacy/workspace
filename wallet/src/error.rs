@@ -21,6 +21,8 @@ pub enum Error {
     SecpError(bitcoin::secp256k1::Error),
     /// cipher error
     SymmetricCipherError(symmetriccipher::SymmetricCipherError),
+    /// sighash error
+    SigHash(bitcoin::sighash::Error),
 }
 
 impl error::Error for Error {
@@ -38,6 +40,7 @@ impl error::Error for Error {
             Error::KeyDerivation(ref err) => Some(err),
             Error::SecpError(ref err) => Some(err),
             Error::SymmetricCipherError(_) => None,
+            Error::SigHash(_) => None,
         }
     }
 }
@@ -58,10 +61,11 @@ impl fmt::Display for Error {
                 f,
                 "Cipher error: {}",
                 match err {
-                    &symmetriccipher::SymmetricCipherError::InvalidLength => "invalid length",
-                    &symmetriccipher::SymmetricCipherError::InvalidPadding => "invalid padding",
+                    symmetriccipher::SymmetricCipherError::InvalidLength => "invalid length",
+                    symmetriccipher::SymmetricCipherError::InvalidPadding => "invalid padding",
                 }
             ),
+            Error::SigHash(ref err) => write!(f, "Secp256k1 error: {}", err),
         }
     }
 }

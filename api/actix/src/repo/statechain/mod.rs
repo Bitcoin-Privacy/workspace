@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use secp256k1::{PublicKey, SecretKey, XOnlyPublicKey};
+use secp256k1::{PublicKey, SecretKey};
 
 mod source;
 pub use source::StatechainRepo;
@@ -14,7 +14,7 @@ pub trait TraitStatechainRepo: Send + Sync + 'static {
         auth_pubkey: &PublicKey,
         server_pubkey: &PublicKey,
         server_privkey: &SecretKey,
-        statechain_id: &String,
+        statechain_id: &str,
         amount: u32,
     ) -> StatechainResult<()>;
 }

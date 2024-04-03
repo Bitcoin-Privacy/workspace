@@ -309,17 +309,17 @@ impl Account {
                                     &instantiated.address.script_pubkey(),
                                     hash_type.to_u32(),
                                 )
-                                .unwrap();
+                                .map_err(|e| Error::SigHash(e))?;
                             let slice: &[u8] = &sighash[..];
                             let array_ref: &[u8; 32] =
                                 slice.try_into().expect("Slice has incorrect length");
                             let signature =
                                 self.context.sign(array_ref, &priv_key)?.serialize_der();
                             let mut with_hashtype = PushBytesBuf::new();
-                            // let mut with_hashtype = signature.to_vec();
-                            let _ = with_hashtype.push(hash_type.to_u32() as u8);
+                            with_hashtype.extend_from_slice(&signature.to_vec());
+                            with_hashtype.push(hash_type.to_u32() as u8);
                             input.script_sig = Builder::new()
-                                .push_slice(with_hashtype.as_push_bytes())
+                                .push_slice(with_hashtype)
                                 .push_slice(instantiated.public.serialize())
                                 .into_script();
                             input.witness.clear();
@@ -330,7 +330,7 @@ impl Account {
                                 return Err(Error::Unsupported("can only sign all inputs for now"));
                             }
                             input.script_sig = ScriptBuf::new();
-                            println!("Script code 2: {}", instantiated.script_code.to_string());
+                            println!("Script code 2: {}", instantiated.script_code);
 
                             let sighash = bip143hasher
                                 .p2wpkh_signature_hash(
@@ -340,7 +340,7 @@ impl Account {
                                     spend.value,
                                     hash_type,
                                 )
-                                .unwrap();
+                                .map_err(|e| Error::SigHash(e))?;
                             let slice: &[u8] = &sighash[..];
                             let array_ref: &[u8; 32] =
                                 slice.try_into().expect("Slice has incorrect length");
@@ -355,57 +355,7 @@ impl Account {
                         }
                         _ => {
                             panic!("NOT SUPPORT YET")
-                        } // AccountAddressType::P2SHWPKH => {
-                          //     if hash_type.to_u32() & EcdsaSighashType::All.to_u32() == 0 {
-                          //         return Err(Error::Unsupported("can only sign all inputs for now"));
-                          //     }
-                          //     input.script_sig = Builder::new()
-                          //         .push_slice(
-                          //             &Builder::new()
-                          //                 .push_int(0)
-                          //                 .push_slice(
-                          //                     &hash160::Hash::hash(
-                          //                         instantiated.public.to_bytes().as_slice(),
-                          //                     )[..],
-                          //                 )
-                          //                 .into_script()[..],
-                          //         )
-                          //         .into_script();
-                          //     let sighash = bip143hasher.signature_hash(
-                          //         ix,
-                          //         &instantiated.script_code,
-                          //         spend.value,
-                          //         hash_type,
-                          //     );
-                          //     let signature =
-                          //         self.context.sign(&sighash[..], &priv_key)?.serialize_der();
-                          //     let mut with_hashtype = signature.to_vec();
-                          //     with_hashtype.push(hash_type.as_u32() as u8);
-                          //     input.witness.clear();
-                          //     input.witness.push(with_hashtype);
-                          //     input.witness.push(instantiated.public.to_bytes());
-                          //     signed += 1;
-                          // }
-                          // AccountAddressType::P2WSH(_) => {
-                          //     if hash_type.to_u32() & EcdsaSighashType::All.to_u32() == 0 {
-                          //         return Err(Error::Unsupported("can only sign all inputs for now"));
-                          //     }
-                          //     input.script_sig = ScriptBuf::new();
-                          //     let sighash = bip143hasher.signature_hash(
-                          //         ix,
-                          //         &instantiated.script_code,
-                          //         spend.value,
-                          //         hash_type,
-                          //     );
-                          //     let signature =
-                          //         self.context.sign(&sighash[..], &priv_key)?.serialize_der();
-                          //     let mut with_hashtype = signature.to_vec();
-                          //     with_hashtype.push(hash_type.to_u32() as u8);
-                          //     input.witness.clear();
-                          //     input.witness.push(with_hashtype);
-                          //     input.witness.push(instantiated.script_code.to_bytes());
-                          //     signed += 1;
-                          // }
+                        }
                     }
                 }
             }

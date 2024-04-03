@@ -44,7 +44,7 @@ pub struct CreateBkTxnReq {
 #[cfg_attr(feature = "frontend", derive(Deserialize))]
 #[derive(Debug, Clone)]
 pub struct CreateBkTxnRes {
-    pub sig: String,
+    pub signed_txn_bk: String,
     pub rand_key: String,
 }
 
