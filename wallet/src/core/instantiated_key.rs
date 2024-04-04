@@ -47,11 +47,7 @@ impl InstantiatedKey {
 
         let address = match address_type {
             AddrType::P2PKH => Address::p2pkh(&btc_pub_key, network),
-            AddrType::P2SHWPKH => {
-                Address::p2shwpkh(&btc_pub_key, network).expect("compressed pubkey")
-            }
             AddrType::P2WPKH => Address::p2wpkh(&btc_pub_key, network).expect("compressed pubkey"),
-            AddrType::P2WSH(_) => Address::p2wsh(&script_code, network),
         };
         Ok(InstantiatedKey {
             public,

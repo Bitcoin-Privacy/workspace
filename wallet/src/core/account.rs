@@ -9,7 +9,6 @@ use bitcoin::{
     OutPoint, Transaction,
 };
 use bitcoin::{EcdsaSighashType, Network, PrivateKey, ScriptBuf};
-use core::panic;
 use std::sync::Arc;
 
 use crate::error::Error;
@@ -137,13 +136,13 @@ impl Account {
         let kix = self.instantiated.len() as u32;
 
         let scripter = |public: &PublicKey, _| match self.address_type {
-            AddrType::P2SHWPKH => Builder::new()
-                .push_opcode(all::OP_DUP)
-                .push_opcode(all::OP_HASH160)
-                .push_slice(hash160::Hash::hash(&public.serialize()).to_byte_array())
-                .push_opcode(all::OP_EQUALVERIFY)
-                .push_opcode(all::OP_CHECKSIG)
-                .into_script(),
+            // AddrType::P2SHWPKH => Builder::new()
+            //     .push_opcode(all::OP_DUP)
+            //     .push_opcode(all::OP_HASH160)
+            //     .push_slice(hash160::Hash::hash(&public.serialize()).to_byte_array())
+            //     .push_opcode(all::OP_EQUALVERIFY)
+            //     .push_opcode(all::OP_CHECKSIG)
+            //     .into_script(),
             AddrType::P2WPKH => Builder::new()
                 .push_opcode(all::OP_DUP)
                 .push_opcode(all::OP_HASH160)
@@ -171,14 +170,6 @@ impl Account {
 
     /// create a new key
     pub fn next_key(&mut self) -> Result<&InstantiatedKey, Error> {
-        match self.address_type {
-            AddrType::P2WSH(_) => {
-                return Err(Error::Unsupported(
-                    "next_key can not be used for P2WSH accounts",
-                ))
-            }
-            _ => {}
-        }
         self.instantiate_more()?;
         let key = &self.instantiated[self.next as usize];
         self.next += 1;
@@ -195,38 +186,6 @@ impl Account {
     /// get a previously instantiated key
     pub fn get_key(&self, kix: u32) -> Option<&InstantiatedKey> {
         self.instantiated.get(kix as usize)
-    }
-
-    pub fn add_script_key<W>(
-        &mut self,
-        scripter: W,
-        tweak: Option<&[u8]>,
-        csv: Option<u16>,
-    ) -> Result<u32, Error>
-    where
-        W: FnOnce(&PublicKey, Option<u16>) -> ScriptBuf,
-    {
-        match self.address_type {
-            AddrType::P2WSH(_) => {}
-            _ => {
-                return Err(Error::Unsupported(
-                    "add_script_key can only be used for P2WSH accounts",
-                ))
-            }
-        }
-        let kix = self.instantiated.len() as u32;
-        let instantiated = InstantiatedKey::new(
-            self.address_type,
-            self.network,
-            &self.master_public,
-            tweak,
-            kix,
-            scripter,
-            csv,
-            self.context.clone(),
-        )?;
-        self.instantiated.push(instantiated);
-        Ok(kix)
     }
 
     pub fn used(&self) -> usize {
@@ -356,10 +315,9 @@ impl Account {
                             input.witness.push(with_hashtype);
                             input.witness.push(instantiated.public.serialize());
                             signed += 1;
-                        }
-                        _ => {
-                            panic!("NOT SUPPORT YET")
-                        }
+                        } // _ => {
+                          //     panic!("NOT SUPPORT YET")
+                          // }
                     }
                 }
             }
