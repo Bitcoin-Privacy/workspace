@@ -23,8 +23,8 @@ pub enum Error {
     SymmetricCipherError(symmetriccipher::SymmetricCipherError),
     /// sighash error
     SigHash(bitcoin::sighash::Error),
+    PushBytesError(bitcoin::script::PushBytesError),
 }
-
 impl error::Error for Error {
     fn description(&self) -> &str {
         "description() is deprecated; use Display"
@@ -41,6 +41,7 @@ impl error::Error for Error {
             Error::SecpError(ref err) => Some(err),
             Error::SymmetricCipherError(_) => None,
             Error::SigHash(_) => None,
+            Error::PushBytesError(_) => None,
         }
     }
 }
@@ -65,7 +66,8 @@ impl fmt::Display for Error {
                     symmetriccipher::SymmetricCipherError::InvalidPadding => "invalid padding",
                 }
             ),
-            Error::SigHash(ref err) => write!(f, "Secp256k1 error: {}", err),
+            Error::SigHash(ref err) => write!(f, "Sighash error: {}", err),
+            Error::PushBytesError(ref err) => write!(f, "PushBytesError error: {}", err),
         }
     }
 }

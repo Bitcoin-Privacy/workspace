@@ -37,7 +37,7 @@ impl Account {
         sub_account_number: u32,
         look_ahead: u32,
     ) -> Result<Account, Error> {
-        let context = Arc::new(SecpContext::new());
+        let context = Arc::new(SecpContext::default());
         let master_private =
             unlocker.sub_account_key(address_type, account_number, sub_account_number)?;
         let pubic_key = context.extended_public_from_private(&master_private);
@@ -66,7 +66,7 @@ impl Account {
         look_ahead: u32,
         network: Network,
     ) -> Account {
-        let context = Arc::new(SecpContext::new());
+        let context = Arc::new(SecpContext::default());
         Account {
             address_type,
             account_number,
@@ -234,9 +234,9 @@ impl Account {
     }
 
     // get all pubkey scripts of this account
-    pub fn get_scripts<'a>(
-        &'a self,
-    ) -> impl Iterator<Item = (u32, ScriptBuf, Option<Vec<u8>>, Option<u16>)> + 'a {
+    pub fn get_scripts(
+        &self,
+    ) -> impl Iterator<Item = (u32, ScriptBuf, Option<Vec<u8>>, Option<u16>)> + '_ {
         self.instantiated.iter().enumerate().map(|(kix, i)| {
             (
                 kix as u32,
@@ -316,8 +316,12 @@ impl Account {
                             let signature =
                                 self.context.sign(array_ref, &priv_key)?.serialize_der();
                             let mut with_hashtype = PushBytesBuf::new();
-                            with_hashtype.extend_from_slice(&signature.to_vec());
-                            with_hashtype.push(hash_type.to_u32() as u8);
+                            with_hashtype
+                                .extend_from_slice(&signature)
+                                .map_err(Error::PushBytesError)?;
+                            with_hashtype
+                                .push(hash_type.to_u32() as u8)
+                                .map_err(Error::PushBytesError)?;
                             input.script_sig = Builder::new()
                                 .push_slice(with_hashtype)
                                 .push_slice(instantiated.public.serialize())
@@ -340,7 +344,7 @@ impl Account {
                                     spend.value,
                                     hash_type,
                                 )
-                                .map_err(|e| Error::SigHash(e))?;
+                                .map_err(Error::SigHash)?;
                             let slice: &[u8] = &sighash[..];
                             let array_ref: &[u8; 32] =
                                 slice.try_into().expect("Slice has incorrect length");
