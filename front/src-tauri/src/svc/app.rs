@@ -40,12 +40,12 @@ pub async fn init(pool: &PoolWrapper) -> Result<InitState> {
 }
 
 pub async fn signup(pool: &PoolWrapper, password: &str) -> Result<()> {
-    let hash = sha256::Hash::hash(&password.as_bytes());
+    let hash = sha256::Hash::hash(password.as_bytes());
     pool.set_password(&hash.to_string()).await
 }
 
 pub async fn signin(pool: &PoolWrapper, password: &str) -> Result<bool> {
-    let hash = sha256::Hash::hash(&password.as_bytes());
+    let hash = sha256::Hash::hash(password.as_bytes());
     let pw = pool.get_password().await?;
     match pw {
         Some(pw) => Ok(hash.to_string() == pw),
@@ -102,7 +102,7 @@ pub async fn create_txn(deriv: &str, receiver: &str, amount: u64) -> Result<()> 
     }
     if change > 0 {
         output.push(TxOut {
-            value: Amount::from_sat(change as u64),
+            value: Amount::from_sat(change),
             script_pubkey: account.get_checked_addr().script_pubkey(),
         });
     }
@@ -110,7 +110,7 @@ pub async fn create_txn(deriv: &str, receiver: &str, amount: u64) -> Result<()> 
     let checked_addr = addr.require_network(Network::Testnet).unwrap();
 
     output.push(TxOut {
-        value: Amount::from_sat(amount as u64),
+        value: Amount::from_sat(amount),
         script_pubkey: checked_addr.script_pubkey(),
     });
 

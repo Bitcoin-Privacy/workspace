@@ -25,7 +25,7 @@ pub fn get_account(deriv: &str) -> Result<(Account, Unlocker)> {
 
 pub fn get_internal_account(deriv: &str) -> Result<Account> {
     let master_account: MasterAccount = get_master().expect("Master account does not exist");
-    let parsed_path = parse_derivation_path(&deriv)?;
+    let parsed_path = parse_derivation_path(deriv)?;
     let account = master_account.accounts().get(&parsed_path);
     match account {
         Some(account) => Ok(account.clone()),
@@ -33,7 +33,7 @@ pub fn get_internal_account(deriv: &str) -> Result<Account> {
     }
 }
 
-pub fn parse_derivation_path<'a>(deriv: &str) -> Result<(u32, u32)> {
+pub fn parse_derivation_path(deriv: &str) -> Result<(u32, u32)> {
     let parts: Vec<&str> = deriv.split('/').collect();
     if parts.len() == 2 {
         let part0 = parts[0]
@@ -103,7 +103,7 @@ pub fn sign(
     let msg = Message::from(sighash);
     let priv_key = account.get_privkey(script_pubkey, unlocker)?;
     let sk = SecretKey::from_slice(&priv_key.to_bytes()).unwrap();
-    let pk = sk.public_key(&secp);
+    let pk = sk.public_key(secp);
 
     let sig = secp.sign_ecdsa(&msg, &sk);
 
