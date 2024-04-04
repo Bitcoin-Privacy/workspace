@@ -182,7 +182,7 @@ impl Account {
         self.instantiate_more()?;
         let key = &self.instantiated[self.next as usize];
         self.next += 1;
-        Ok(&key)
+        Ok(key)
     }
 
     pub fn compute_base_public_key(&self, kix: u32) -> Result<PublicKey, Error> {
@@ -242,7 +242,7 @@ impl Account {
                 kix as u32,
                 i.address.script_pubkey().clone(),
                 i.tweak.clone(),
-                i.csv.clone(),
+                i.csv,
             )
         })
     }
@@ -309,7 +309,7 @@ impl Account {
                                     &instantiated.address.script_pubkey(),
                                     hash_type.to_u32(),
                                 )
-                                .map_err(|e| Error::SigHash(e))?;
+                                .map_err(Error::SigHash)?;
                             let slice: &[u8] = &sighash[..];
                             let array_ref: &[u8; 32] =
                                 slice.try_into().expect("Slice has incorrect length");

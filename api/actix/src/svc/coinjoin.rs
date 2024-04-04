@@ -188,9 +188,9 @@ pub async fn check_tx_completed(
 
 // Function to encapsulate signature processing and error handling
 fn validate_signature(
-    hex_sig: &str,
-    public_key: RistrettoPoint, // Assuming you have some PublicKey type
-    output_address: &str,
+    _hex_sig: &str,
+    _public_key: RistrettoPoint, // Assuming you have some PublicKey type
+    _output_address: &str,
 ) -> Result<bool, String> {
     // let sig = WiredUnblindedSigData::try_from(hex_sig)?
     //     .to_internal_format()

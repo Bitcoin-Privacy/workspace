@@ -25,7 +25,10 @@ pub async fn deposit(
     .await
     {
         Ok(status) => response::success(status),
-        Err(message) => response::error(message),
+        Err(message) => {
+            println!("Deposit got error: {}", message);
+            response::error(message)
+        }
     }
 }
 
@@ -33,9 +36,13 @@ pub async fn create_bk_txn(
     statechain_repo: Data<StatechainRepo>,
     payload: Json<CreateBkTxnReq>,
 ) -> HttpResponse {
-    match statechain::create_bk_txn(&statechain_repo, &payload.txn_bk).await {
+    match statechain::create_bk_txn(&statechain_repo, &payload.statechain_id, &payload.txn_bk).await
+    {
         Ok(status) => response::success(status),
-        Err(message) => response::error(message.to_string()),
+        Err(message) => {
+            println!("Sign backup transaction got error: {}", message);
+            response::error(message.to_string())
+        }
     }
 }
 

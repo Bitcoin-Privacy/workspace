@@ -1,10 +1,11 @@
+use anyhow::Result;
 use async_trait::async_trait;
-use secp256k1::{PublicKey, SecretKey};
+use bitcoin::secp256k1::{PublicKey, SecretKey};
 
 mod source;
 pub use source::StatechainRepo;
-pub type StatechainError = String;
-pub type StatechainResult<T> = Result<T, StatechainError>;
+
+use crate::model::entity::statechain::StateCoin;
 
 #[async_trait]
 pub trait TraitStatechainRepo: Send + Sync + 'static {
@@ -14,7 +15,6 @@ pub trait TraitStatechainRepo: Send + Sync + 'static {
         auth_pubkey: &PublicKey,
         server_pubkey: &PublicKey,
         server_privkey: &SecretKey,
-        statechain_id: &str,
         amount: u32,
-    ) -> StatechainResult<()>;
+    ) -> Result<StateCoin>;
 }

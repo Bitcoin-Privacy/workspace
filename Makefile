@@ -5,7 +5,7 @@ fe:
 	@cd front && cargo tauri dev
 
 be:
-	@cargo run -p node-service
+	@cd api/actix && cargo watch -x run -p node-service
 
 start:
 	tmux new-session -d -s mySession 'cd front && yarn && cargo tauri dev'
