@@ -17,7 +17,7 @@ use crate::{
 
 pub async fn register(
     repo: &Data<CoinJoinRepo>,
-    utxo: &Vec<Utxo>,
+    utxo: &[Utxo],
     amount: u32,
     change_addr: &str,
     output_addr: &str,
@@ -39,7 +39,7 @@ pub async fn register(
         return Err("Insufficient funds for CoinJoin fee".to_string());
     };
 
-    let des_addr = match super::account::parse_addr_from_str(&change_addr, Network::Testnet) {
+    let des_addr = match super::account::parse_addr_from_str(change_addr, Network::Testnet) {
         Ok(a) => a,
         Err(e) => return Err(format!("Invalid address: {}", e)),
     };
@@ -69,17 +69,17 @@ pub async fn set_output(
     sig: &str,
 ) -> Result<u8, String> {
     // Attempt to get the room and handle the error if it doesn't exist
-    let room = repo.get_room_by_id(&room_id).await?;
+    let room = repo.get_room_by_id(room_id).await?;
 
     // Attempt to add output and handle any potential error
-    repo.add_output(&room_id, &output_addr, room.base_amount)
+    repo.add_output(room_id, output_addr, room.base_amount)
         .await
         .map_err(|e| format!("Failed to add output: {}", e))?;
 
     let keypair = CONFIG.blind_keypair;
 
     // Process signature errors in one go
-    let valid = validate_signature(&sig, keypair.public(), &output_addr)?;
+    let valid = validate_signature(sig, keypair.public(), output_addr)?;
 
     if valid {
         Ok(0)
@@ -95,17 +95,17 @@ pub async fn set_sig(
     sig: &str,
 ) -> Result<u8, String> {
     // Attempt to get the room and handle the error if it doesn't exist
-    let room = repo.get_room_by_id(&room_id).await?;
+    let room = repo.get_room_by_id(room_id).await?;
 
     // Attempt to add output and handle any potential error
-    repo.add_output(&room_id, &output_addr, room.base_amount)
+    repo.add_output(room_id, output_addr, room.base_amount)
         .await
         .map_err(|e| format!("Failed to add output: {}", e))?;
 
     let keypair = CONFIG.blind_keypair;
 
     // Process signature errors in one go
-    let valid = validate_signature(&sig, keypair.public(), &output_addr)?;
+    let valid = validate_signature(sig, keypair.public(), output_addr)?;
 
     if valid {
         Ok(0)
@@ -160,7 +160,7 @@ async fn get_txn(repo: Data<CoinJoinRepo>, room_id: &str) -> Result<bitcoin::Tra
 }
 
 pub async fn get_room_by_addr(repo: Data<CoinJoinRepo>, addr: &str) -> Result<Vec<Room>, String> {
-    Ok(repo.get_room_by_addr(addr).await?)
+    repo.get_room_by_addr(addr).await
 }
 
 pub async fn check_tx_completed(

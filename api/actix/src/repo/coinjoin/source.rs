@@ -53,7 +53,7 @@ impl TraitCoinJoinRepo for CoinJoinRepo {
             .await
             .map_err(|e| e.to_string())?;
 
-        if rooms.len() == 0 {
+        if rooms.is_empty() {
             self.create_room(base_amount, CONFIG.due_time_1, CONFIG.due_time_2)
                 .await
         } else {
