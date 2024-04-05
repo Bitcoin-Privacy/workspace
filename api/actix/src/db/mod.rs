@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use sqlx::{postgres::PgPoolOptions, Executor, PgPool};
 
-use crate::config::CONFIG;
+use crate::CFG;
 
 #[derive(Clone)]
 pub struct Database {
@@ -35,7 +35,7 @@ impl Database {
     pub async fn new() -> Self {
         let pool = PgPoolOptions::new()
             .max_connections(5)
-            .connect(&CONFIG.postgres_uri)
+            .connect(&CFG.postgres_uri)
             .await
             .unwrap();
         Database { pool }

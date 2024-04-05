@@ -36,7 +36,13 @@ pub async fn create_bk_txn(
     statechain_repo: Data<StatechainRepo>,
     payload: Json<CreateBkTxnReq>,
 ) -> HttpResponse {
-    match statechain::create_bk_txn(&statechain_repo, &payload.statechain_id, &payload.txn_bk).await
+    match statechain::create_bk_txn(
+        &statechain_repo,
+        &payload.statechain_id,
+        &payload.scriptpubkey,
+        &payload.txn_bk,
+    )
+    .await
     {
         Ok(status) => response::success(status),
         Err(message) => {

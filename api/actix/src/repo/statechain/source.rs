@@ -16,7 +16,7 @@ impl StatechainRepo {
         Self { pool }
     }
 
-    pub async fn get_statecoin(&self, id: &str) -> Result<StateCoin> {
+    pub async fn get_by_id(&self, id: &str) -> Result<StateCoin> {
         let statecoin =
             sqlx::query_as::<_, StateCoin>("select * from statechain_data where id = $1::uuid")
                 .bind(id)
@@ -41,7 +41,7 @@ impl TraitStatechainRepo for StatechainRepo {
         let auth_pubkey_bytes = auth_pubkey.serialize();
         let statecoin = sqlx::query_as::<_, StateCoin>(
             r#"
-            insert into statechain_data 
+            insert into statechain 
             (token_id, auth_xonly_public_key, server_public_key, server_private_key, amount) 
             values ($1, $2, $3, $4, $5)
             returning *

@@ -38,6 +38,7 @@ pub struct DepositRes {
 #[derive(Debug, Clone)]
 pub struct CreateBkTxnReq {
     pub statechain_id: String,
+    pub scriptpubkey: String,
     pub txn_bk: String, // hex
 }
 
@@ -45,7 +46,7 @@ pub struct CreateBkTxnReq {
 #[cfg_attr(feature = "frontend", derive(Deserialize))]
 #[derive(Debug, Clone)]
 pub struct CreateBkTxnRes {
-    pub signed_txn_bk: String,
+    pub sig: String,
     pub rand_key: String,
 }
 

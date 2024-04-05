@@ -17,6 +17,8 @@ mod route;
 mod svc;
 mod util;
 
+use config::CFG;
+
 #[actix_web::main]
 async fn main() -> io::Result<()> {
     dotenv::dotenv().ok();
@@ -43,7 +45,7 @@ async fn main() -> io::Result<()> {
             .configure(app::config)
             .configure(route::config)
     })
-    .bind(format!("127.0.0.1:{}", config::CONFIG.port))?
+    .bind(format!("127.0.0.1:{}", CFG.port))?
     .run()
     .await
 }

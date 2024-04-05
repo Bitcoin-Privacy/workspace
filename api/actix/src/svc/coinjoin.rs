@@ -6,14 +6,14 @@ use bitcoin::{
     Sequence, Transaction, TxIn, TxOut, Witness,
 };
 use curve25519_dalek::RistrettoPoint;
-use shared::model::Utxo;
 
 use crate::{
-    config::CONFIG,
     constance::COINJOIN_FEE,
     model::entity::coinjoin::Room,
     repo::coinjoin::{CoinJoinRepo, TraitCoinJoinRepo},
+    CFG,
 };
+use shared::model::Utxo;
 
 pub async fn register(
     repo: &Data<CoinJoinRepo>,
@@ -76,7 +76,7 @@ pub async fn set_output(
         .await
         .map_err(|e| format!("Failed to add output: {}", e))?;
 
-    let keypair = CONFIG.blind_keypair;
+    let keypair = CFG.blind_keypair;
 
     // Process signature errors in one go
     let valid = validate_signature(sig, keypair.public(), output_addr)?;
@@ -102,7 +102,7 @@ pub async fn set_sig(
         .await
         .map_err(|e| format!("Failed to add output: {}", e))?;
 
-    let keypair = CONFIG.blind_keypair;
+    let keypair = CFG.blind_keypair;
 
     // Process signature errors in one go
     let valid = validate_signature(sig, keypair.public(), output_addr)?;
