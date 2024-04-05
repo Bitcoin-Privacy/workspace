@@ -99,8 +99,8 @@ pub async fn register(
 pub async fn sign_txn(pool: &PoolWrapper, deriv: &str, room_id: &str) -> Result<()> {
     let (account, mut unlocker) = account::get_account(deriv)?;
 
-    let res = coinjoin::get_txn(&room_id).await?;
-    let parsed_tx = consensus::deserialize::<Transaction>(&hex::decode(&res.tx.clone())?)?;
+    let res = coinjoin::get_txn(room_id).await?;
+    let parsed_tx = consensus::deserialize::<Transaction>(&hex::decode(res.tx.clone())?)?;
     let mut unsigned_tx = parsed_tx.clone();
 
     let room = pool.get_room(deriv, room_id)?;
@@ -116,8 +116,7 @@ pub async fn sign_txn(pool: &PoolWrapper, deriv: &str, room_id: &str) -> Result<
         .filter(|(_, input)| {
             room.utxos
                 .iter()
-                .find(|utxo| input.previous_output.txid.to_string() == utxo.txid.to_string())
-                .is_some()
+                .any(|utxo| input.previous_output.txid.to_string() == utxo.txid)
         })
         .map(|(index, input)| tokio::spawn(account::find_and_join_txn(index, input.clone())))
         .collect();

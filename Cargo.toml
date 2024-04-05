@@ -16,14 +16,13 @@ wallet = { version = "0.1.0", path = "./wallet" }
 statechain_core = { version = "0.1.0", path = "./statechain-core" }
 
 # actix
-actix-web = "4.4.1"
+actix-web = "4.5.1"
 
 # utils
 anyhow = "1.0"
 thiserror = "1.0.58"
 dotenv = "0.15.0"
-uuid = { version = "1.6.1", features = ["serde", "v4"] }
-base64 = "0.21.5"
+lazy_static = "1.4.0"
 
 serde = { version = "1.0.192", features = ["derive"] }
 serde_json = "1.0.108"
@@ -31,9 +30,7 @@ serde_json = "1.0.108"
 reqwest = { version = "0.11.18", features = ["json"] }
 tokio = { version = "1.29.1", features = ["macros", "rt-multi-thread"] }
 
-secp256k1 = { version = "0.28.1", features = ["rand-std"] }
-
-# bitcoin
+# cryptography
 bitcoin = { version = "0.31.1", features = [
   "std",
   "rand-std",
@@ -42,6 +39,13 @@ bitcoin = { version = "0.31.1", features = [
   "bitcoinconsensus",
   "actual-serde",
 ] }
+curve25519-dalek = { version = "4.1.1", features = ["rand_core", "digest"] }
+rust-crypto = "0.2.36"
+secp256k1 = { version = "0.28.1", features = ["rand-std"] }
+hex = "0.4.3"
+rand = "0.8.5"
+uuid = { version = "1.6.1", features = ["serde", "v4"] }
+base64 = "0.22.0"
 
 # sqlx
 sqlx = { version = "0.7.3", default-features = false, features = [

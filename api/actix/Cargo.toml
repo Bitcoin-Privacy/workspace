@@ -8,18 +8,46 @@ edition = "2021"
 [dependencies]
 # internal
 shared = { workspace = true, features = ["backend"] }
+wallet = { workspace = true }
 
+# actix
 actix-web = { workspace = true }
-base64 = { workspace = true }
-uuid = { workspace = true }
-dotenv = { workspace = true }
+actix-rt = "2.9.0"
 
-serde = { workspace = true }
+# utils
+dotenv = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+
 serde_json = { workspace = true }
+serde = { workspace = true }
+
 tokio = { workspace = true }
 
-bitcoin = { workspace = true, features = ["serde"] }
+lazy_static = { workspace = true }
+chrono = { version = "0.4.31", features = ["serde"] }
 
+async-trait = "0.1.74"
+env_logger = "0.11.3"
+log = "0.4.20"
+num-bigint = "0.4.4"
+num-traits = "0.2.17"
+
+# cryptography
+bitcoin = { workspace = true, features = ["serde"] }
+curve25519-dalek = { workspace = true }
+secp256k1 = { workspace = true }
+openssl = "0.10.59"
+base64 = { workspace = true }
+uuid = { workspace = true }
+hex = { workspace = true }
+
+digest = "0.10.7"
+rand = { workspace = true }
+sha3 = "0.10.8"
+subtle = "2.5.0"
+
+# sqlx
 sqlx = { workspace = true, features = [
   "runtime-tokio-native-tls",
   "macros",
@@ -28,25 +56,3 @@ sqlx = { workspace = true, features = [
   "chrono",
   "json",
 ] }
-actix-rt = "2.9.0"
-async-trait = "0.1.74"
-chrono = { version = "0.4.31", features = ["serde"] }
-env_logger = "0.10.1"
-lazy_static = "1.4.0"
-listenfd = "1.0.1"
-log = "0.4.20"
-num-bigint = "0.4.4"
-num-traits = "0.2.17"
-openssl = "0.10.59"
-postgres = "0.19.7"
-r2d2 = "0.8.10"
-
-digest = "0.10.7"
-curve25519-dalek = { version = "4.1.1", features = ["rand_core", "digest"] }
-rand = "0.8.5"
-failure = "0.1.8"
-failure_derive = "0.1.8"
-sha3 = "0.10.8"
-subtle = "2.5.0"
-hex = "0.4.3"
-secp256k1.workspace = true

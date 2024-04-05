@@ -1,10 +1,10 @@
+use anyhow::Result;
 use async_trait::async_trait;
-use sqlx::Executor;
 
-use crate::db::Database;
-use secp256k1::{PublicKey, SecretKey, XOnlyPublicKey};
+use crate::{db::Database, model::entity::statechain::StateCoin};
+use bitcoin::secp256k1::{PublicKey, SecretKey};
 
-use super::{StatechainResult, TraitStatechainRepo};
+use super::TraitStatechainRepo;
 
 #[derive(Clone)]
 pub struct StatechainRepo {
@@ -14,6 +14,15 @@ pub struct StatechainRepo {
 impl StatechainRepo {
     pub fn new(pool: Database) -> Self {
         Self { pool }
+    }
+
+    pub async fn get_by_id(&self, id: &str) -> Result<StateCoin> {
+        let statecoin =
+            sqlx::query_as::<_, StateCoin>("select * from statechain_data where id = $1::uuid")
+                .bind(id)
+                .fetch_one(&self.pool.pool)
+                .await?;
+        Ok(statecoin)
     }
 }
 
@@ -25,23 +34,26 @@ impl TraitStatechainRepo for StatechainRepo {
         auth_pubkey: &PublicKey,
         server_pubkey: &PublicKey,
         server_privkey: &SecretKey,
-        statechain_id: &String,
         amount: u32,
-    ) -> StatechainResult<()> {
-        let server_privkey_bytes = server_privkey.secret_bytes();
+    ) -> Result<StateCoin> {
+        let server_privkey_bytes = server_privkey.display_secret().to_string();
         let server_pubkey_bytes = server_pubkey.serialize();
         let auth_pubkey_bytes = auth_pubkey.serialize();
-        let query = sqlx::query(r#"INSERT INTO statechain_data (token_id, auth_xonly_public_key, server_public_key, server_private_key, statechain_id,amount) VALUES ($1, $2, $3, $4, $5, $6)"#)
-            .bind(token_id)
-            .bind(&auth_pubkey_bytes)
-            .bind(&server_pubkey_bytes)
-            .bind(&server_privkey_bytes)
-            .bind(statechain_id)
-            .bind(amount as i64);
-        let res = self.pool.pool.execute((query)).await;
-        match res {
-            Ok(_) => Ok(()),
-            Err(e) => Err(e.to_string()),
-        }
+        let statecoin = sqlx::query_as::<_, StateCoin>(
+            r#"
+            insert into statechain 
+            (token_id, auth_xonly_public_key, server_public_key, server_private_key, amount) 
+            values ($1, $2, $3, $4, $5)
+            returning *
+            "#,
+        )
+        .bind(token_id)
+        .bind(auth_pubkey_bytes)
+        .bind(server_pubkey_bytes)
+        .bind(server_privkey_bytes)
+        .bind(amount as i64)
+        .fetch_one(&self.pool.pool)
+        .await?;
+        Ok(statecoin)
     }
 }

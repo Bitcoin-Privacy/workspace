@@ -1,3 +1,4 @@
+-- drop table if exists statechain_data;
 -- drop table if exists room, txin, txout, proof; 
 create extension if not exists "uuid-ossp";
 
@@ -42,13 +43,12 @@ create table if not exists proof (
 	foreign key (room_id) references room (id)
 );
 
-create table if not exists statechain_data (
-	id uuid default uuid_generate_v1() NOT NULL CONSTRAINT statechain_data_pkey PRIMARY KEY,
-	token_id varchar NULL UNIQUE,
+create table if not exists statechain (
+	id uuid default uuid_generate_v1() not null constraint statechain_pkey primary key,
+	token_id varchar NULL,
     auth_xonly_public_key varchar NULL UNIQUE,
-	server_public_key varchar NULL CONSTRAINT statechain_data_server_public_key_ukey UNIQUE ,
+	server_public_key varchar NULL CONSTRAINT statechain_server_public_key_ukey UNIQUE ,
     server_private_key varchar NULL UNIQUE,
-    statechain_id varchar NULL UNIQUE,
     amount int8 not null,
     created_at timestamp with time zone default current_timestamp,
     updated_at timestamp with time zone default current_timestamp

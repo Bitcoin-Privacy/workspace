@@ -102,9 +102,9 @@ impl MasterAccount {
         network: Network,
         passphrase: &str,
     ) -> Result<MasterAccount, Error> {
-        let context = SecpContext::new();
+        let context = SecpContext::default();
         let encrypted = seed.encrypt(passphrase)?;
-        let master_key = context.master_private_key(network, &seed)?;
+        let master_key = context.master_private_key(network, seed)?;
         let public_master_key = context.extended_public_from_private(&master_key);
         Ok(MasterAccount {
             master_public: public_master_key,
@@ -115,7 +115,7 @@ impl MasterAccount {
     }
 
     pub fn seed(&self, network: Network, passphrase: &str) -> Result<Seed, Error> {
-        let context = SecpContext::new();
+        let context = SecpContext::default();
         let seed = Seed::decrypt(self.encrypted.as_slice(), passphrase)?;
         let master_key = context.master_private_key(network, &seed)?;
         if self.master_public != context.extended_public_from_private(&master_key) {
@@ -148,7 +148,7 @@ impl MasterAccount {
         &self.accounts
     }
 
-    pub fn get_scripts<'a>(&'a self) -> impl Iterator<Item = (ScriptBuf, KeyDerivation)> + 'a {
+    pub fn get_scripts(&self) -> impl Iterator<Item = (ScriptBuf, KeyDerivation)> + '_ {
         self.accounts.iter().flat_map(|((an, sub), a)| {
             a.get_scripts().map(move |(kix, s, tweak, csv)| {
                 (

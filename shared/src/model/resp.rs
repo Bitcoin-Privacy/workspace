@@ -13,6 +13,6 @@ pub enum Status {
 #[derive(Debug)]
 pub struct ApiResponse<T> {
     pub status: Status,
-    pub message: String,
+    pub message: Option<String>,
     pub data: Option<T>,
 }

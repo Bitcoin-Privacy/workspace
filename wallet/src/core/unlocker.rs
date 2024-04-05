@@ -31,7 +31,7 @@ impl Unlocker {
         master_public: Option<&Xpub>,
     ) -> Result<Unlocker, Error> {
         let seed = Seed::decrypt(encrypted, passphrase)?;
-        let context = Arc::new(SecpContext::new());
+        let context = Arc::new(SecpContext::default());
         let master_private = context.master_private_key(network, &seed)?;
         if let Some(master_public) = master_public {
             if network != master_public.network {
@@ -94,9 +94,8 @@ impl Unlocker {
                 .private_child(&by_coin_type.0, ChildNumber::Hardened { index: account })?,
             HashMap::new(),
         ));
-        Ok(self
-            .context
-            .private_child(&by_account.0, ChildNumber::Normal { index: sub_account })?)
+        self.context
+            .private_child(&by_account.0, ChildNumber::Normal { index: sub_account })
     }
 
     pub fn unlock(

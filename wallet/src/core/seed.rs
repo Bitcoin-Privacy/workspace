@@ -28,13 +28,7 @@ impl Seed {
         let mut writer = buffer::RefWriteBuffer::new(&mut buffer);
         loop {
             let result = encryptor.encrypt(&mut reader, &mut writer, true)?;
-            encrypted.extend(
-                writer
-                    .take_read_buffer()
-                    .take_remaining()
-                    .iter()
-                    .map(|i| *i),
-            );
+            encrypted.extend(writer.take_read_buffer().take_remaining().iter().copied());
             match result {
                 BufferResult::BufferUnderflow => break,
                 BufferResult::BufferOverflow => {}
@@ -59,13 +53,7 @@ impl Seed {
             aes::ecb_decryptor(aes::KeySize::KeySize256, &key, blockmodes::PkcsPadding {});
         loop {
             let result = decryptor.decrypt(&mut reader, &mut writer, true)?;
-            decrypted.extend(
-                writer
-                    .take_read_buffer()
-                    .take_remaining()
-                    .iter()
-                    .map(|i| *i),
-            );
+            decrypted.extend(writer.take_read_buffer().take_remaining().iter().copied());
             match result {
                 BufferResult::BufferUnderflow => break,
                 BufferResult::BufferOverflow => {}

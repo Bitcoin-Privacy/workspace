@@ -1,4 +1,4 @@
-use std::io::Cursor;
+use std::{io::Cursor, str::FromStr};
 
 use bitcoin::bip158::{BitStreamReader, BitStreamWriter};
 use crypto::{
@@ -26,29 +26,9 @@ impl ToString for Mnemonic {
     }
 }
 
-impl Mnemonic {
-    pub fn to_seed_phrase(&self) -> Vec<String> {
-        self.0
-            .iter()
-            .map(|i| MNEMONIC[*i].to_string())
-            .collect::<Vec<String>>()
-    }
-
-    /// create a seed from mnemonic
-    /// with optional passphrase for plausible deniability see BIP39
-    pub fn to_seed(&self, pd_passphrase: Option<&str>) -> Seed {
-        let mut mac = Hmac::new(Sha512::new(), self.to_string().as_bytes());
-        let mut output = [0u8; 64];
-        let passphrase = "mnemonic".to_owned() + pd_passphrase.unwrap_or("");
-        pbkdf2(&mut mac, passphrase.as_bytes(), 2048, &mut output);
-        Seed(output.to_vec())
-    }
-
-    pub fn iter(&self) -> impl Iterator<Item = &str> {
-        self.0.iter().map(|s| MNEMONIC[*s])
-    }
-
-    pub fn from_str(s: &str) -> Result<Mnemonic, Error> {
+impl FromStr for Mnemonic {
+    type Err = Error;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         let words: Vec<_> = s.split(' ').collect();
         if words.len() < 6 || words.len() % 6 != 0 {
             return Err(Error::Mnemonic(
@@ -74,6 +54,29 @@ impl Mnemonic {
         }
 
         Ok(Mnemonic(mnemonic))
+    }
+}
+
+impl Mnemonic {
+    pub fn to_seed_phrase(&self) -> Vec<String> {
+        self.0
+            .iter()
+            .map(|i| MNEMONIC[*i].to_string())
+            .collect::<Vec<String>>()
+    }
+
+    /// create a seed from mnemonic
+    /// with optional passphrase for plausible deniability see BIP39
+    pub fn to_seed(&self, pd_passphrase: Option<&str>) -> Seed {
+        let mut mac = Hmac::new(Sha512::new(), self.to_string().as_bytes());
+        let mut output = [0u8; 64];
+        let passphrase = "mnemonic".to_owned() + pd_passphrase.unwrap_or("");
+        pbkdf2(&mut mac, passphrase.as_bytes(), 2048, &mut output);
+        Seed(output.to_vec())
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = &str> {
+        self.0.iter().map(|s| MNEMONIC[*s])
     }
 
     pub fn new_random(entropy: MasterKeyEntropy) -> Result<Mnemonic, Error> {

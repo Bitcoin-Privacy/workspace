@@ -5,13 +5,9 @@ use std::str::FromStr;
 use bitcoin::{Address, Network};
 
 pub fn parse_addr_from_str(raw_addr: &str, network: Network) -> Result<Address, String> {
-    match Address::from_str(&raw_addr)
+    Address::from_str(raw_addr)
         .map_err(|e| e.to_string())
         .and_then(|addr| addr.require_network(network).map_err(|e| e.to_string()))
-    {
-        Ok(a) => Ok(a),
-        Err(e) => Err(e),
-    }
 }
 
 /// UTXO Validator
@@ -24,7 +20,7 @@ pub async fn utxo_validator(utxo: Utxo) -> Result<bool, String> {
     Ok(true)
 }
 
-pub async fn validate_utxos(utxos: &Vec<Utxo>) -> Result<(), String> {
+pub async fn validate_utxos(utxos: &[Utxo]) -> Result<(), String> {
     let tasks = utxos
         .iter()
         .map(|utxo| tokio::spawn(utxo_validator(utxo.clone())))

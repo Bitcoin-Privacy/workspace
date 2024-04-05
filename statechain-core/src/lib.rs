@@ -25,9 +25,7 @@ pub fn encode_sc_address(user_pubkey: &PublicKey, auth_pubkey: &PublicKey) -> St
     data.append(&mut user_pubkey.clone().serialize().to_vec());
     data.append(&mut auth_pubkey.clone().serialize().to_vec());
 
-    let encoded = bech32::encode(hrp, data.to_base32(), variant).unwrap();
-
-    encoded
+    bech32::encode(hrp, data.to_base32(), variant).unwrap()
 }
 
 pub fn decode_transfer_address(sc_address: &str) -> Result<(u8, PublicKey, PublicKey)> {
@@ -59,18 +57,16 @@ fn get_key(
 ) -> SecretKey {
     // derive child xpub
     let path = DerivationPath::from_str(derivation_path).unwrap();
-    let child = root.derive_priv(&secp, &path).unwrap();
+    let child = root.derive_priv(secp, &path).unwrap();
 
     // generate key at m/change_index_number/address_index_number
     let change_index_number = ChildNumber::from_normal_idx(change_index).unwrap();
     let address_index_number = ChildNumber::from_normal_idx(address_index).unwrap();
 
-    let secret_key = child
-        .derive_priv(&secp, &[change_index_number, address_index_number])
+    child
+        .derive_priv(secp, &[change_index_number, address_index_number])
         .unwrap()
-        .private_key;
-
-    secret_key
+        .private_key
 }
 
 pub fn get_sc_address(mnemonic: &str, index: u32) -> String {
