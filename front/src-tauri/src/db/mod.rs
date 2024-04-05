@@ -1,5 +1,6 @@
 use anyhow::{anyhow, Result};
-use sqlx::{Executor, SqlitePool};
+use bitcoin::secp256k1::{PublicKey, SecretKey};
+use sqlx::{sqlite::SqliteQueryResult, Executor, SqlitePool};
 
 use crate::model::RoomEntity;
 
@@ -67,5 +68,31 @@ impl PoolWrapper {
         // } else {
         Err(anyhow!("Cannot find room"))
         // }
+    }
+    pub async fn insert_statecoin(
+        &self,
+        statechain_id: &str,
+        deriv: &str,
+        amount: u64,
+        auth_seckey: &SecretKey,
+        auth_pubkey: &PublicKey,
+        aggregated_pubkey: &str,
+        aggregated_address: &str,
+        owner_seckey: &SecretKey,
+        owner_pubkey: &PublicKey,
+    ) -> Result<SqliteQueryResult, sqlx::Error> {
+        sqlite::insert_statecoin(
+            &self.pool,
+            &statechain_id,
+            &deriv,
+            amount,
+            &auth_seckey,
+            &auth_pubkey,
+            &aggregated_pubkey,
+            &aggregated_address,
+            &owner_seckey,
+            &owner_pubkey,
+        )
+        .await
     }
 }

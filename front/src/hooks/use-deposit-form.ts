@@ -10,6 +10,8 @@ type CreateDepositFormInput = {
 export const useDepositForm = (derivationPath: string) => {
   const form = useForm<CreateDepositFormInput>();
 
+  const [aggAddress,setAggAddress] = useState<string>("");
+
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const handleFormSubmit = useMemo(
@@ -18,12 +20,12 @@ export const useDepositForm = (derivationPath: string) => {
         setIsLoading(true);
         try {
           console.log("send deposit");
-          await StatechainApi.deposit(
+          const res = await StatechainApi.deposit(
             derivationPath,
-            "hell",
             convertBtcToSats(data.amount),
           );
-
+          console.log("api response ",res);
+          setAggAddress(res.aggregated_address)
           form.reset({ amount: 0 });
         } catch (e) {
         } finally {
@@ -35,6 +37,7 @@ export const useDepositForm = (derivationPath: string) => {
 
   return {
     states: {
+      aggAddress,
       form,
       isLoading,
     },

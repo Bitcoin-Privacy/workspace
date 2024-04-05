@@ -21,7 +21,7 @@ pub async fn create_deposit(
     amount: u32,
 ) -> Result<DepositRes, String> {
     println!("Auth pubkey {}", auth_pubkey);
-    let auth_key = match Xpub::from_str(auth_pubkey) {
+    let auth_key = match PublicKey::from_str(auth_pubkey) {
         Ok(key) => key,
         Err(err) => return Err(format!("Invalid auth public key: {}", err)),
     };
@@ -33,7 +33,7 @@ pub async fn create_deposit(
     let statecoin = repo
         .create_deposit_tx(
             token_id,
-            &auth_key.to_pub().inner,
+            &auth_key,
             &pub_key,
             &secret_key,
             amount,
@@ -97,3 +97,21 @@ pub async fn create_bk_txn(
 
     Ok(res)
 }
+
+// pub async fn verify_signature(
+//     repo: &Data<StatechainRepo>,
+//     sign_message_hex: &str,
+//     statechain_id: &str,
+// ) -> bool {
+//     let auth_key = repo
+//         .get_auth_key_by_statechain_id(&statechain_id)
+//         .await
+//         .unwrap();
+
+//     let pub_key = XOnlyPublicKey::from_str(&auth_key).unwrap();
+//     let signed_message = Signature::from_str(sign_message_hex).unwrap();
+//     let msg = Message::from_hashed_data::<sha256::Hash>(statechain_id.to_string().as_bytes());
+
+//     let secp = Secp256k1::new();
+//     secp.verify_schnorr(&signed_message, &msg, &pub_key).is_ok()
+// }

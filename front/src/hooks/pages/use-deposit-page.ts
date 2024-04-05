@@ -20,12 +20,13 @@ export const useDepositPage = () => {
   );
 
   const {
-    states: { form, isLoading },
+    states: {  aggAddress, form, isLoading },
     methods: { handleFormSubmit },
   } = useDepositForm(deriv);
 
   return {
     states: {
+      aggAddress,
       deriv,
       form,
       isLoading,

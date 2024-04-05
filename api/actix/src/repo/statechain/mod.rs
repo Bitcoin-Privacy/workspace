@@ -1,6 +1,6 @@
 use anyhow::Result;
 use async_trait::async_trait;
-use bitcoin::secp256k1::{PublicKey, SecretKey};
+use bitcoin::secp256k1::{PublicKey, SecretKey, XOnlyPublicKey};
 
 mod source;
 pub use source::StatechainRepo;
