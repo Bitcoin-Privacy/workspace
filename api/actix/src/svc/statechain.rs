@@ -1,24 +1,18 @@
 use std::str::FromStr;
 
 use actix_web::web::Data;
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use bitcoin::{
     bip32::Xpub,
     consensus,
-    hashes::Hash,
-    hex::DisplayHex,
-    key::{Keypair, TapTweak, TweakedKeypair, UntweakedPublicKey, Verification},
+    key::{Keypair, TapTweak, TweakedKeypair},
     secp256k1::{rand, Message, PublicKey, Secp256k1, SecretKey},
     sighash::{Prevouts, SighashCache},
-    Amount, OutPoint, ScriptBuf, TapSighashType, Transaction, TxIn, TxOut, Txid,
+    Amount, ScriptBuf, TapSighashType, Transaction, TxOut,
 };
-use hex::ToHex;
 
 use crate::repo::statechain::{StatechainRepo, TraitStatechainRepo};
-use shared::{
-    intf::statechain::{CreateBkTxnRes, DepositRes},
-    model::Txn,
-};
+use shared::intf::statechain::{CreateBkTxnRes, DepositRes};
 
 pub async fn create_deposit(
     repo: &Data<StatechainRepo>,
