@@ -55,7 +55,7 @@ impl NodeConnector {
                             endpoint, parsed_res.message
                         );
                         Err(NodeConnErr::RequestFailed(format!(
-                            "{} ({:?}): {}",
+                            "{} ({:?}): {:?}",
                             endpoint, parsed_res.status, parsed_res.message
                         )))
                     }
@@ -71,7 +71,7 @@ impl NodeConnector {
     pub async fn post(&self, endpoint: &str, body: &Value) -> NodeConnectorResult<Value> {
         let client = reqwest::Client::new();
         let res = client
-            .post(self.get_url(&endpoint))
+            .post(self.get_url(endpoint))
             .json(&body)
             .header("content-type", "application/json")
             .send()
@@ -87,7 +87,7 @@ impl NodeConnector {
                             endpoint, parsed_res.message
                         );
                         Err(NodeConnErr::RequestFailed(format!(
-                            "{} ({:?}): {}",
+                            "{} ({:?}): {:?}",
                             endpoint, parsed_res.status, parsed_res.message
                         )))
                     }

@@ -39,14 +39,6 @@ export default function Deposit() {
 
   const [amount,setAmount] = useState<number>(0);
 
-  // const {
-  //   value: addr,
-  //   setValue: setAddr,
-  //   onCopy,
-  //   hasCopied,
-  // } = useClipboard("");
-
-
 
   return (
     <React.Fragment>
@@ -98,7 +90,7 @@ export default function Deposit() {
                   </HStack>
                   <Button
                     type="submit"
-                    onClick={() => {setAmount(3)}}
+                    onClick={() => {setAmount(form.getValues("amount"))}}
                     isLoading={isLoading}
                     isDisabled={(() => {
                       let formc = form.watch();
@@ -115,7 +107,7 @@ export default function Deposit() {
                 </VStack>
               </FormControl>
             </VStack>
-            {!isLoading && (
+            {aggAddress && (
               <VStack
                 bg={"gray.900"}
                 borderRadius={"8px"}

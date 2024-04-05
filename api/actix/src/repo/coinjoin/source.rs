@@ -2,9 +2,9 @@ use async_trait::async_trait;
 use sqlx::Executor;
 
 use crate::{
-    config::CONFIG,
     db::Database,
     model::entity::coinjoin::{Input, Output, Proof, Room},
+    CFG,
 };
 use uuid::Uuid;
 
@@ -53,8 +53,8 @@ impl TraitCoinJoinRepo for CoinJoinRepo {
             .await
             .map_err(|e| e.to_string())?;
 
-        if rooms.len() == 0 {
-            self.create_room(base_amount, CONFIG.due_time_1, CONFIG.due_time_2)
+        if rooms.is_empty() {
+            self.create_room(base_amount, CFG.due_time_1, CFG.due_time_2)
                 .await
         } else {
             Ok(rooms.first().unwrap().clone())

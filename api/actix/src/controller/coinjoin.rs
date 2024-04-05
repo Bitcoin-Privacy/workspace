@@ -80,7 +80,7 @@ pub async fn set_signature(
 ) -> HttpResponse {
     // TODO: verify sig
     let parsed_tx =
-        consensus::deserialize::<Transaction>(&hex::decode(&payload.txn.clone()).unwrap()).unwrap();
+        consensus::deserialize::<Transaction>(&hex::decode(payload.txn.clone()).unwrap()).unwrap();
 
     for vin in payload.vins.iter() {
         let signed_input = parsed_tx.input.get(*vin as usize);
@@ -118,7 +118,7 @@ pub async fn set_signature(
         Err(e) => println!("Check completed got error: {}", e),
     }
 
-    response::success({})
+    response::ok()
 }
 
 pub async fn get_room_by_id(

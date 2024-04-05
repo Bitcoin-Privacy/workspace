@@ -7,7 +7,7 @@ use shared::{
 };
 
 lazy_static! {
-    pub static ref CONFIG: Config = Config::new();
+    pub static ref CFG: Config = Config::new();
 }
 
 pub struct Config {

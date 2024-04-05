@@ -13,13 +13,15 @@ pub struct SecpContext {
     secp: Secp256k1<All>,
 }
 
-impl SecpContext {
-    pub fn new() -> SecpContext {
+impl Default for SecpContext {
+    fn default() -> Self {
         SecpContext {
             secp: Secp256k1::new(),
         }
     }
+}
 
+impl SecpContext {
     /// create a master private key from seed
     pub fn master_private_key(&self, network: Network, seed: &Seed) -> Result<Xpriv, Error> {
         Ok(Xpriv::new_master(network, &seed.0)?)

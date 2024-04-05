@@ -9,7 +9,6 @@ use bitcoin::{
     OutPoint, Transaction,
 };
 use bitcoin::{EcdsaSighashType, Network, PrivateKey, ScriptBuf};
-use core::panic;
 use std::sync::Arc;
 
 use crate::error::Error;
@@ -37,7 +36,7 @@ impl Account {
         sub_account_number: u32,
         look_ahead: u32,
     ) -> Result<Account, Error> {
-        let context = Arc::new(SecpContext::new());
+        let context = Arc::new(SecpContext::default());
         let master_private =
             unlocker.sub_account_key(address_type, account_number, sub_account_number)?;
         let pubic_key = context.extended_public_from_private(&master_private);
@@ -66,7 +65,7 @@ impl Account {
         look_ahead: u32,
         network: Network,
     ) -> Account {
-        let context = Arc::new(SecpContext::new());
+        let context = Arc::new(SecpContext::default());
         Account {
             address_type,
             account_number,
@@ -137,13 +136,13 @@ impl Account {
         let kix = self.instantiated.len() as u32;
 
         let scripter = |public: &PublicKey, _| match self.address_type {
-            AddrType::P2SHWPKH => Builder::new()
-                .push_opcode(all::OP_DUP)
-                .push_opcode(all::OP_HASH160)
-                .push_slice(hash160::Hash::hash(&public.serialize()).to_byte_array())
-                .push_opcode(all::OP_EQUALVERIFY)
-                .push_opcode(all::OP_CHECKSIG)
-                .into_script(),
+            // AddrType::P2SHWPKH => Builder::new()
+            //     .push_opcode(all::OP_DUP)
+            //     .push_opcode(all::OP_HASH160)
+            //     .push_slice(hash160::Hash::hash(&public.serialize()).to_byte_array())
+            //     .push_opcode(all::OP_EQUALVERIFY)
+            //     .push_opcode(all::OP_CHECKSIG)
+            //     .into_script(),
             AddrType::P2WPKH => Builder::new()
                 .push_opcode(all::OP_DUP)
                 .push_opcode(all::OP_HASH160)
@@ -171,18 +170,10 @@ impl Account {
 
     /// create a new key
     pub fn next_key(&mut self) -> Result<&InstantiatedKey, Error> {
-        match self.address_type {
-            AddrType::P2WSH(_) => {
-                return Err(Error::Unsupported(
-                    "next_key can not be used for P2WSH accounts",
-                ))
-            }
-            _ => {}
-        }
         self.instantiate_more()?;
         let key = &self.instantiated[self.next as usize];
         self.next += 1;
-        Ok(&key)
+        Ok(key)
     }
 
     pub fn compute_base_public_key(&self, kix: u32) -> Result<PublicKey, Error> {
@@ -197,52 +188,20 @@ impl Account {
         self.instantiated.get(kix as usize)
     }
 
-    pub fn add_script_key<W>(
-        &mut self,
-        scripter: W,
-        tweak: Option<&[u8]>,
-        csv: Option<u16>,
-    ) -> Result<u32, Error>
-    where
-        W: FnOnce(&PublicKey, Option<u16>) -> ScriptBuf,
-    {
-        match self.address_type {
-            AddrType::P2WSH(_) => {}
-            _ => {
-                return Err(Error::Unsupported(
-                    "add_script_key can only be used for P2WSH accounts",
-                ))
-            }
-        }
-        let kix = self.instantiated.len() as u32;
-        let instantiated = InstantiatedKey::new(
-            self.address_type,
-            self.network,
-            &self.master_public,
-            tweak,
-            kix,
-            scripter,
-            csv,
-            self.context.clone(),
-        )?;
-        self.instantiated.push(instantiated);
-        Ok(kix)
-    }
-
     pub fn used(&self) -> usize {
         self.next as usize
     }
 
     // get all pubkey scripts of this account
-    pub fn get_scripts<'a>(
-        &'a self,
-    ) -> impl Iterator<Item = (u32, ScriptBuf, Option<Vec<u8>>, Option<u16>)> + 'a {
+    pub fn get_scripts(
+        &self,
+    ) -> impl Iterator<Item = (u32, ScriptBuf, Option<Vec<u8>>, Option<u16>)> + '_ {
         self.instantiated.iter().enumerate().map(|(kix, i)| {
             (
                 kix as u32,
                 i.address.script_pubkey().clone(),
                 i.tweak.clone(),
-                i.csv.clone(),
+                i.csv,
             )
         })
     }
@@ -309,17 +268,21 @@ impl Account {
                                     &instantiated.address.script_pubkey(),
                                     hash_type.to_u32(),
                                 )
-                                .unwrap();
+                                .map_err(Error::SigHash)?;
                             let slice: &[u8] = &sighash[..];
                             let array_ref: &[u8; 32] =
                                 slice.try_into().expect("Slice has incorrect length");
                             let signature =
                                 self.context.sign(array_ref, &priv_key)?.serialize_der();
                             let mut with_hashtype = PushBytesBuf::new();
-                            // let mut with_hashtype = signature.to_vec();
-                            let _ = with_hashtype.push(hash_type.to_u32() as u8);
+                            with_hashtype
+                                .extend_from_slice(&signature)
+                                .map_err(Error::PushBytesError)?;
+                            with_hashtype
+                                .push(hash_type.to_u32() as u8)
+                                .map_err(Error::PushBytesError)?;
                             input.script_sig = Builder::new()
-                                .push_slice(with_hashtype.as_push_bytes())
+                                .push_slice(with_hashtype)
                                 .push_slice(instantiated.public.serialize())
                                 .into_script();
                             input.witness.clear();
@@ -330,7 +293,7 @@ impl Account {
                                 return Err(Error::Unsupported("can only sign all inputs for now"));
                             }
                             input.script_sig = ScriptBuf::new();
-                            println!("Script code 2: {}", instantiated.script_code.to_string());
+                            println!("Script code 2: {}", instantiated.script_code);
 
                             let sighash = bip143hasher
                                 .p2wpkh_signature_hash(
@@ -340,7 +303,7 @@ impl Account {
                                     spend.value,
                                     hash_type,
                                 )
-                                .unwrap();
+                                .map_err(Error::SigHash)?;
                             let slice: &[u8] = &sighash[..];
                             let array_ref: &[u8; 32] =
                                 slice.try_into().expect("Slice has incorrect length");
@@ -352,59 +315,8 @@ impl Account {
                             input.witness.push(with_hashtype);
                             input.witness.push(instantiated.public.serialize());
                             signed += 1;
-                        }
-                        _ => {
-                            panic!("NOT SUPPORT YET")
-                        } // AccountAddressType::P2SHWPKH => {
-                          //     if hash_type.to_u32() & EcdsaSighashType::All.to_u32() == 0 {
-                          //         return Err(Error::Unsupported("can only sign all inputs for now"));
-                          //     }
-                          //     input.script_sig = Builder::new()
-                          //         .push_slice(
-                          //             &Builder::new()
-                          //                 .push_int(0)
-                          //                 .push_slice(
-                          //                     &hash160::Hash::hash(
-                          //                         instantiated.public.to_bytes().as_slice(),
-                          //                     )[..],
-                          //                 )
-                          //                 .into_script()[..],
-                          //         )
-                          //         .into_script();
-                          //     let sighash = bip143hasher.signature_hash(
-                          //         ix,
-                          //         &instantiated.script_code,
-                          //         spend.value,
-                          //         hash_type,
-                          //     );
-                          //     let signature =
-                          //         self.context.sign(&sighash[..], &priv_key)?.serialize_der();
-                          //     let mut with_hashtype = signature.to_vec();
-                          //     with_hashtype.push(hash_type.as_u32() as u8);
-                          //     input.witness.clear();
-                          //     input.witness.push(with_hashtype);
-                          //     input.witness.push(instantiated.public.to_bytes());
-                          //     signed += 1;
-                          // }
-                          // AccountAddressType::P2WSH(_) => {
-                          //     if hash_type.to_u32() & EcdsaSighashType::All.to_u32() == 0 {
-                          //         return Err(Error::Unsupported("can only sign all inputs for now"));
-                          //     }
-                          //     input.script_sig = ScriptBuf::new();
-                          //     let sighash = bip143hasher.signature_hash(
-                          //         ix,
-                          //         &instantiated.script_code,
-                          //         spend.value,
-                          //         hash_type,
-                          //     );
-                          //     let signature =
-                          //         self.context.sign(&sighash[..], &priv_key)?.serialize_der();
-                          //     let mut with_hashtype = signature.to_vec();
-                          //     with_hashtype.push(hash_type.to_u32() as u8);
-                          //     input.witness.clear();
-                          //     input.witness.push(with_hashtype);
-                          //     input.witness.push(instantiated.script_code.to_bytes());
-                          //     signed += 1;
+                        } // _ => {
+                          //     panic!("NOT SUPPORT YET")
                           // }
                     }
                 }

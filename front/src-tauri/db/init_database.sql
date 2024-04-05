@@ -41,7 +41,7 @@ create table if not exists CoinJoinRoom (
 CREATE TABLE IF NOT EXISTS StateCoin (
     --statecoin info
     statechain_id TEXT NOT NULL PRIMARY KEY,
-    deriv TEXT UNIQUE NOT NULL,
+    deriv TEXT NOT NULL,
     amount INT,
 
     --key pairs
