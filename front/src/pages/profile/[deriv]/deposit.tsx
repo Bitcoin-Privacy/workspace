@@ -31,20 +31,22 @@ const INPUT_WIDTH = "75%";
 
 export default function Deposit() {
   const router = useRouter();
+
   const {
-    states: { deriv, form, isLoading, balanceQuery },
+    states: { aggAddress, deriv, form, isLoading, balanceQuery },
     methods: { handleFormSubmit },
   } = useDepositPage();
 
+  const [amount,setAmount] = useState<number>(0);
 
-  const {
-    value: addr,
-    setValue: setAddr,
-    onCopy,
-    hasCopied,
-  } = useClipboard("tb1qajhanrjvkzr5ktpjwxtg82fax2emn5apmhjtff");
+  // const {
+  //   value: addr,
+  //   setValue: setAddr,
+  //   onCopy,
+  //   hasCopied,
+  // } = useClipboard("");
 
-  const [hide, setHide] = useState(false);
+
 
   return (
     <React.Fragment>
@@ -95,10 +97,8 @@ export default function Deposit() {
                     </InputGroup>
                   </HStack>
                   <Button
-                    onClick={() => {
-                      setHide(!hide);
-                    }}
                     type="submit"
+                    onClick={() => {setAmount(3)}}
                     isLoading={isLoading}
                     isDisabled={(() => {
                       let formc = form.watch();
@@ -115,7 +115,7 @@ export default function Deposit() {
                 </VStack>
               </FormControl>
             </VStack>
-            {hide && (
+            {!isLoading && (
               <VStack
                 bg={"gray.900"}
                 borderRadius={"8px"}
@@ -131,7 +131,7 @@ export default function Deposit() {
                   <VStack
                     w="full"
                     alignItems={"center"}
-                    p="0px 16px"
+                    p="px 16px"
                     spacing="16px"
                   >
                     <Text>
@@ -139,7 +139,7 @@ export default function Deposit() {
                       The address below is the Multisig Address between you and
                       SE
                     </Text>
-                    <HStack spacing="8px">
+                    <HStack spacing="8px" p ="0px 8px" >
                       <Center
                         w="30%"
                         borderRadius={"16"}
@@ -147,20 +147,21 @@ export default function Deposit() {
                         p="10px 15px"
                       >
                         {" "}
-                        0.001 BTC
+                        {amount} BTC
                       </Center>
                       <Center>
                         <FaLongArrowAltRight size="40px" />
                       </Center>
 
                       <Button
-                        onClick={onCopy}
+                        //onClick={onCopy}
                         bgColor={"gray.700"}
-                        rightIcon={hasCopied ? <FiCheck /> : <FiCopy />}
+                      
+                        //rightIcon={hasCopied ? <FiCheck /> : <FiCopy />}
                         borderRadius={"16"}
                       >
-                        <Text color={"white"} isTruncated p="5px">
-                          {addr}
+                        <Text color={"white"} isTruncated maxW={"200px"} p="5px">
+                          {aggAddress}
                         </Text>
                       </Button>
                     </HStack>

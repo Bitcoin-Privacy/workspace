@@ -1,11 +1,11 @@
-use shared::intf::statechain::DepositRes;
+use shared::intf::statechain::{AggregatedPublicKey, DepositRes};
 use tauri::{
     command,
     plugin::{Builder, TauriPlugin},
     Runtime, State,
 };
 
-use crate::{connector::NodeConnector, svc::statechain, util, TResult};
+use crate::{connector::NodeConnector, db::PoolWrapper, svc::statechain, util, TResult};
 
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
     Builder::new("statechain")
@@ -20,8 +20,13 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
 // Modifiers --------------------------------------
 
 #[command]
-pub async fn deposit(conn: State<'_, NodeConnector>, amount: u64) -> TResult<DepositRes> {
-    statechain::deposit(&conn, amount)
+pub async fn deposit(
+    pool: State<'_, PoolWrapper>,
+    conn: State<'_, NodeConnector>,
+    deriv: &str,
+    amount: u64,
+) -> TResult<AggregatedPublicKey> {
+    statechain::deposit(&pool, &conn, &deriv, amount)
         .await
         .map_err(util::to_string)
 }

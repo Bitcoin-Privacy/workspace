@@ -6,7 +6,6 @@ export type StateChainDto = {
 };
 
 export type StatechainDepositResDto = {
-  server_pubkey: string,
-  statechain_id : string,
-  signed_statechain_id: string,
+  aggregated_pubkey : string,
+  aggregated_address : string
 };

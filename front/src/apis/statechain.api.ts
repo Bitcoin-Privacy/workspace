@@ -9,9 +9,11 @@ export const StatechainApi = Object.freeze({
 
   /* Modifiers */
   async deposit(
+    deriv : string,
     amount: number,
   ): Promise<StatechainDepositResDto> {
     return await TauriConnection.callAPI<StatechainDepositResDto>(this.name("deposit"), {
+      deriv,
       amount,
     });
   },

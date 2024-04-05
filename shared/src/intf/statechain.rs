@@ -1,5 +1,14 @@
 use serde::{Deserialize, Serialize};
 
+
+
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AggregatedPublicKey {
+    pub aggregated_pubkey: String,
+    pub aggregated_address: String,
+}
+
 // ---------------------------
 // create token
 // ---------------------------
@@ -39,8 +48,8 @@ pub struct SignFirstReq {
 // Sign first response
 // ---------------------------
 #[cfg_attr(feature = "backend", derive(Deserialize))]
-#[cfg_attr(feature = "frontend", derive(Serialize))]
-#[derive(Debug, Clone)]
+//#[cfg_attr(feature = "frontend", derive(Serialize))]
+#[derive(Debug, Clone, Serialize)]
 pub struct SignFirstRes {
     pub server_pub_nonce: String,
 }
