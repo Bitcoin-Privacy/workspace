@@ -9,3 +9,4 @@ export type StatechainDepositResDto = {
   aggregated_pubkey : string,
   aggregated_address : string
 };
+

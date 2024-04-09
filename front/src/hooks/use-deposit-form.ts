@@ -26,6 +26,8 @@ export const useDepositForm = (derivationPath: string) => {
           );
           console.log("api response ",res);
           setAggAddress(res.aggregated_address)
+          const deposit_tx = await StatechainApi.createDepositTx(derivationPath, convertBtcToSats(data.amount),res.aggregated_address);
+          console.log("deposit tx: ", deposit_tx);
           form.reset({ amount: 0 });
         } catch (e) {
         } finally {

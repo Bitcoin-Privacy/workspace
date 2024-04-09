@@ -1,19 +1,43 @@
-// use crate::{cfg::CFG, connector::NodeConnector};
+use anyhow::Result;
+use bitcoin::script;
+use shared::intf::statechain::{self, CreateBkTxnReq, CreateBkTxnRes, GetNonceReq, GetNonceRes};
 
-// pub async fn deposit(conn: &NodeConnector, amount: u64) -> Result<DepositRes> {
-//     let secp = Secp256k1::new();
-//     let keypair = Keypair::new(&secp, &mut rand::thread_rng());
-//     let xonly_pubkey = XOnlyPublicKey::from_keypair(&keypair);
+use crate::connector::NodeConnector;
 
-//     let req = DepositReq {
-//         token_id: "abc".to_string(),
-//         addr: serde_json::to_string(&xonly_pubkey).unwrap(),
-//         amount: amount as u32,
-//     };
-//     println!("Deposit {:#?}", req);
-//     let body = serde_json::to_value(req)?;
-//     let res = conn.post("statechain/deposit", &body).await?;
-//     let json: DepositRes = serde_json::from_value(res)?;
-//     println!("Deposit {:#?}", json);
-//     Ok(json)
-// }
+pub async fn get_nonce(
+    conn: &NodeConnector,
+    statechain_id: &str,
+    signed_statechain_id: &str,
+) -> Result<GetNonceRes> {
+    let req = GetNonceReq {
+        statechain_id: statechain_id.to_string(),
+        signed_statechain_id: signed_statechain_id.to_string(),
+    };
+
+    println!("get nonce : {:#?}", req);
+
+    let body = serde_json::to_value(req)?;
+    let res = conn.post("statechain/nonce", &body).await?;
+    let json: GetNonceRes = serde_json::from_value(res)?;
+    println!("Deposit {:#?}", json);
+    Ok(json)
+}
+
+pub async fn request_sign_bk_tx(
+    conn: &NodeConnector,
+    statechain_id: &str,
+    txn_bk: &str,
+    scriptpubkey: &str,
+) -> Result<CreateBkTxnRes> {
+    let req = CreateBkTxnReq {
+        statechain_id: statechain_id.to_string(),
+        scriptpubkey: scriptpubkey.to_string(),
+        txn_bk: txn_bk.to_string(),
+    };
+
+    let body = serde_json::to_value(req)?;
+    let res = conn.post("statechain/create-bk-txn", &body).await?;
+    let json: CreateBkTxnRes = serde_json::from_value(res)?;
+    println!("Sign backup transaction {:#?}", json);
+    Ok(json)
+}

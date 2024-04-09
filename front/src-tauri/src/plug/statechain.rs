@@ -12,6 +12,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
         .invoke_handler(tauri::generate_handler![
             // Modifier
             deposit,
+            create_deposit_tx
             // Accessors
         ])
         .build()
@@ -31,4 +32,15 @@ pub async fn deposit(
         .map_err(util::to_string)
 }
 
-// Accessors --------------------------------------
+#[command]
+pub async fn create_deposit_tx(
+    pool: State<'_, PoolWrapper>,
+    deriv: &str,
+    amount: u64,
+    aggregated_address: &str,
+) -> TResult<String> {
+    statechain::create_deposit_transaction(&pool, &deriv, amount, &aggregated_address)
+        .await
+        .map_err(util::to_string)
+}
+//Accessors --------------------------------------

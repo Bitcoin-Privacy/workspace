@@ -1,9 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-
-
-
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AggregatedPublicKey {
     pub aggregated_pubkey: String,
     pub aggregated_address: String,
@@ -153,4 +150,44 @@ pub struct UpdateKeyReq {
 #[derive(Debug, Clone)]
 pub struct UpdateKeyRes {
     pub status: u8,
+}
+
+#[cfg_attr(feature = "backend", derive(Deserialize))]
+#[cfg_attr(feature = "frontend", derive(Serialize))]
+#[derive(Debug, Clone)]
+pub struct GetNonceReq {
+    pub statechain_id: String,
+    pub signed_statechain_id: String,
+}
+
+#[cfg_attr(feature = "backend", derive(Serialize))]
+#[cfg_attr(feature = "frontend", derive(Deserialize))]
+#[derive(Debug, Clone)]
+pub struct GetNonceRes {
+    pub server_nonce: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct P2trUtxo<'a> {
+    pub txid: &'a str,
+    pub vout: u32,
+    pub script_pubkey: &'a str,
+    pub pubkey: &'a str,
+    pub master_fingerprint: &'a str,
+    pub amount_in_sats: u64,
+    pub pubderivation_path: &'a str,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DepositTx {
+    pub txid: String,
+    pub vout: String,
+}
+
+#[cfg_attr(feature = "backend", derive(Serialize))]
+#[cfg_attr(feature = "frontend", derive(Deserialize))]
+#[derive(Debug, Clone)]
+pub struct BkTxSignRes {
+   pub sign : String,
+   pub rand : String,
 }
