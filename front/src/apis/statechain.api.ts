@@ -18,6 +18,20 @@ export const StatechainApi = Object.freeze({
     });
   },
 
+
+  // async createDepositTx(
+  //   deriv : string,
+  //   amount: number,
+  //   aggregatedAddress: string,
+  // ): Promise<string> {
+  //   return await TauriConnection.callAPI<string>(this.name("create_deposit_tx"), {
+  //     deriv,
+  //     amount,
+  //     aggregatedAddress,
+  //   });
+  // },
+
+
   /* Accessors */
 
   // async signTx(deriv: string, roomId: string): Promise<RegisterResponseDto> {

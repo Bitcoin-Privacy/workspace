@@ -26,6 +26,7 @@ import { Layout, NavBar } from "@/components";
 import { TxStrategyEnum } from "@/dtos";
 import { FiCheck, FiCopy } from "react-icons/fi";
 import { useDepositPage } from "@/hooks/pages/use-deposit-page";
+import QRCodeGenerator from "@/components/qr-code-generator";
 
 const INPUT_WIDTH = "75%";
 
@@ -37,8 +38,7 @@ export default function Deposit() {
     methods: { handleFormSubmit },
   } = useDepositPage();
 
-  const [amount,setAmount] = useState<number>(0);
-
+  const [amount, setAmount] = useState<number>(0);
 
   return (
     <React.Fragment>
@@ -90,7 +90,9 @@ export default function Deposit() {
                   </HStack>
                   <Button
                     type="submit"
-                    onClick={() => {setAmount(form.getValues("amount"))}}
+                    onClick={() => {
+                      setAmount(form.getValues("amount"));
+                    }}
                     isLoading={isLoading}
                     isDisabled={(() => {
                       let formc = form.watch();
@@ -117,9 +119,8 @@ export default function Deposit() {
                 color={"white"}
               >
                 <HStack w="full" alignItems={"end"}>
-                  <Square bg="red" size="100px">
-                    QR
-                  </Square>
+                  <QRCodeGenerator text={aggAddress} />
+
                   <VStack
                     w="full"
                     alignItems={"center"}
@@ -131,7 +132,7 @@ export default function Deposit() {
                       The address below is the Multisig Address between you and
                       SE
                     </Text>
-                    <HStack spacing="8px" p ="0px 8px" >
+                    <HStack spacing="8px" p="0px 8px">
                       <Center
                         w="30%"
                         borderRadius={"16"}
@@ -148,11 +149,15 @@ export default function Deposit() {
                       <Button
                         //onClick={onCopy}
                         bgColor={"gray.700"}
-                      
                         //rightIcon={hasCopied ? <FiCheck /> : <FiCopy />}
                         borderRadius={"16"}
                       >
-                        <Text color={"white"} isTruncated maxW={"200px"} p="5px">
+                        <Text
+                          color={"white"}
+                          isTruncated
+                          maxW={"200px"}
+                          p="5px"
+                        >
                           {aggAddress}
                         </Text>
                       </Button>

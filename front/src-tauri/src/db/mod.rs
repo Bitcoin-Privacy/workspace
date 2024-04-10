@@ -2,7 +2,7 @@ use anyhow::{anyhow, Result};
 use bitcoin::secp256k1::{PublicKey, SecretKey};
 use sqlx::{sqlite::SqliteQueryResult, Executor, SqlitePool};
 
-use crate::model::RoomEntity;
+use crate::model::{RoomEntity, StateCoin};
 
 mod sqlite;
 
@@ -37,6 +37,13 @@ impl PoolWrapper {
 
     pub async fn get_seed(&self) -> Result<Option<String>> {
         sqlite::get_cfg(&self.pool, "seed").await
+    }
+    pub async fn get_statecoin_by_id(&self, statechain_id: &str) -> Result<StateCoin> {
+        sqlite::get_statecoin_by_id(&self.pool, &statechain_id).await
+    }
+
+    pub async fn get_seckey_by_id(&self, statechain_id: &str) -> Result<Option<String>> {
+        sqlite::get_seckey_by_id(&self.pool, &statechain_id).await
     }
 
     pub fn add_or_update_room(&self, deriv: &str, room: &RoomEntity) -> Result<()> {
@@ -92,6 +99,25 @@ impl PoolWrapper {
             &aggregated_address,
             &owner_seckey,
             &owner_pubkey,
+        )
+        .await
+    }
+
+    pub async fn update_deposit_tx(
+        &self,
+        statechain_id: &str,
+        funding_txid: &str,
+        funding_vout: u64,
+        status: &str,
+        funding_tx: &str,
+    ) -> Result<SqliteQueryResult, sqlx::Error> {
+        sqlite::update_deposit_tx(
+            &self.pool,
+            statechain_id,
+            funding_txid,
+            funding_vout,
+            status,
+            funding_tx,
         )
         .await
     }

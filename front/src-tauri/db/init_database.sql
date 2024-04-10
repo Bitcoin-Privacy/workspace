@@ -56,9 +56,8 @@ CREATE TABLE IF NOT EXISTS StateCoin (
     --deposit tx info
     funding_txid TEXT,
     funding_vout INT,
+    funding_tx TEXT,
     status TEXT,
-    locktime INT,
-    tx_withdraw TEXT,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
