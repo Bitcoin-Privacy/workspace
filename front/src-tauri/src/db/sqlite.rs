@@ -1,7 +1,7 @@
 use anyhow::Result;
 use bitcoin::hex::{Case, DisplayHex};
 use secp256k1::{PublicKey, SecretKey};
-use sqlx::{migrate::MigrateDatabase, query, sqlite::SqliteQueryResult, Row, Sqlite, SqlitePool};
+use sqlx::{migrate::MigrateDatabase, sqlite::SqliteQueryResult, Row, Sqlite, SqlitePool};
 
 use crate::{cfg::CFG, model::StateCoin};
 
@@ -45,6 +45,7 @@ pub async fn get_cfg(pool: &SqlitePool, key: &str) -> Result<Option<String>> {
     };
     Ok(val)
 }
+
 pub async fn get_statecoin_by_id(pool: &SqlitePool, statechain_id: &str) -> Result<StateCoin> {
     let row = sqlx::query_as::<_,StateCoin>(r#"select statechain_id, deriv, amount, owner_pubkey, owner_seckey, funding_txid, funding_vout, status, funding_tx from StateCoin where statechain_id = $1 "#).bind(statechain_id).fetch_one(pool).await.unwrap();
 

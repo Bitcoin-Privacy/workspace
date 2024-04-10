@@ -29,9 +29,6 @@ export const useDepositForm = (derivationPath: string) => {
           setAggAddress(res.aggregated_address)
 
           //create backup transaction
-
-       
-            
           form.reset({ amount: 0 });
         } catch (e) {
         } finally {

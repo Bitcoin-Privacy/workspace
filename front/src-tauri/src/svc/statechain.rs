@@ -38,6 +38,7 @@ pub async fn deposit(
 
     let (account, _) = account::get_account(deriv).unwrap();
     let account_address = account.get_addr();
+
     let req = DepositReq {
         token_id: "abc".to_string(),
         addr: auth_pubkey.to_string(),
@@ -79,6 +80,7 @@ pub async fn deposit(
     {
         panic!("Failed to insert statecoin data {:?}", e);
     }
+    
     let txid = create_deposit_transaction(
         &pool,
         &deriv,
