@@ -1,27 +1,26 @@
 use anyhow::{anyhow, Result};
 use bitcoin::{
     absolute, consensus,
-    secp256k1::{rand, Keypair, PublicKey, Secp256k1, SecretKey},
-    sighash::SighashCache,
+    key::{Keypair, TapTweak, TweakedKeypair},
+    secp256k1::{rand, schnorr::Signature, PublicKey, Secp256k1, SecretKey},
+    sighash::{Prevouts, SighashCache},
     transaction::Version,
-    Address, Amount, EcdsaSighashType, Network, OutPoint, ScriptBuf, Sequence, Transaction, TxIn,
-    TxOut, Witness,
+    Address, Amount, EcdsaSighashType, Network, OutPoint, ScriptBuf, Sequence, TapSighashType,
+    Transaction, TxIn, TxOut, Txid, Witness,
 };
-use std::{ops::ControlFlow, str::FromStr};
 
-use crate::{
-    cfg::BASE_TX_FEE,
-    db::PoolWrapper,
-    model::{AccountActions, AccountDTO, InitState},
-    store::master_account::{get_master, initialize_master_account},
-    svc::app::create_txn,
-};
+use secp256k1::Message;
+use tokio::sync::OwnedMutexGuard;
+
+use std::{num::ParseIntError, ops::ControlFlow, str::FromStr};
+
+use crate::{api::statechain, cfg::BASE_TX_FEE, db::PoolWrapper, model::AccountActions};
 use shared::intf::statechain::{AggregatedPublicKey, DepositReq, DepositRes};
-use wallet::core::Account;
 
 use crate::connector::NodeConnector;
 
 use super::account;
+use curve25519_dalek::scalar::Scalar;
 
 pub async fn deposit(
     pool: &PoolWrapper,
@@ -37,7 +36,7 @@ pub async fn deposit(
     let auth_seckey = SecretKey::from_keypair(&auth_keypair);
     let auth_pubkey = PublicKey::from_keypair(&auth_keypair);
 
-    let (account, mut unlocker) = account::get_account(deriv).unwrap();
+    let (account, _) = account::get_account(deriv).unwrap();
     let account_address = account.get_addr();
     let req = DepositReq {
         token_id: "abc".to_string(),
@@ -80,9 +79,29 @@ pub async fn deposit(
     {
         panic!("Failed to insert statecoin data {:?}", e);
     }
+    let txid = create_deposit_transaction(
+        &pool,
+        &deriv,
+        amount,
+        &key.aggregated_address,
+        &statechain_id,
+    )
+    .await?;
 
-    //let tx = create_deposit_transaction(&pool, &deriv, amount,  &key2.aggregated_address).await?;
-    //let tx = create_txn(deriv, &key2.aggregated_address, amount).await?;
+    let tx = create_bk_tx(
+        &pool,
+        &conn,
+        &key.aggregated_pubkey,
+        &key.aggregated_address,
+        &account_address,
+        &txid,
+        1,
+        amount,
+        &statechain_id,
+    )
+    .await
+    .unwrap();
+    println!("bk tx : {}", consensus::encode::serialize_hex(&tx));
 
     Ok(key)
 }
@@ -116,6 +135,7 @@ pub async fn create_deposit_transaction(
     deriv: &str,
     amount: u64,
     aggregated_address: &str,
+    statechain_id: &str,
 ) -> Result<String> {
     let (account, mut unlocker) = account::get_account(deriv).unwrap();
     let selected_utxos = account::get_utxos_set(&account.get_addr(), amount).await?;
@@ -207,10 +227,46 @@ pub async fn create_deposit_transaction(
     let tx_hex = consensus::encode::serialize_hex(&unsigned_deposit_tx);
     println!("hash: {:?}", tx_hex);
     println!("{:#?}", unsigned_deposit_tx);
-    Ok(tx_hex)
+    let funding_txid = unsigned_deposit_tx.txid().to_string();
+    let funding_vout = 1 as u64;
+    let _ = pool
+        .update_deposit_tx(
+            &statechain_id,
+            &funding_txid,
+            funding_vout,
+            "CONFIRM",
+            &tx_hex,
+        )
+        .await?;
+
+    Ok(funding_txid)
 }
 
-pub fn create_tx(receiver_address: &Address, prev_outpoint: OutPoint, amount: u64) -> Transaction {
+pub async fn create_bk_tx(
+    pool: &PoolWrapper,
+    conn: &NodeConnector,
+    agg_pubkey: &str,
+    agg_address: &str,
+    receiver_address: &str,
+    txid: &str,
+    vout: u32,
+    amount: u64,
+    statechain_id: &str,
+) -> Result<Transaction> {
+    let agg_addr = Address::from_str(&agg_address).unwrap();
+    let checked_agg_addr = agg_addr.require_network(Network::Testnet).unwrap();
+    let agg_scriptpubkey = checked_agg_addr.script_pubkey();
+
+    let utxo = TxOut {
+        value: Amount::from_sat(amount),
+        script_pubkey: checked_agg_addr.script_pubkey(),
+    };
+
+    let prev_outpoint = OutPoint {
+        txid: Txid::from_str(txid).unwrap(),
+        vout: vout,
+    };
+
     let input = TxIn {
         previous_output: prev_outpoint,
         script_sig: ScriptBuf::default(),
@@ -218,17 +274,60 @@ pub fn create_tx(receiver_address: &Address, prev_outpoint: OutPoint, amount: u6
         witness: Witness::default(),
     };
 
+    let output_address = Address::from_str(receiver_address).unwrap();
+    let checked_output_address = output_address.require_network(Network::Testnet).unwrap();
     let spend = TxOut {
         value: Amount::from_sat(amount),
-        script_pubkey: receiver_address.script_pubkey(),
+        script_pubkey: checked_output_address.script_pubkey(),
     };
 
-    let unsigned_tx = Transaction {
+    let mut unsigned_tx = Transaction {
         version: Version::TWO,               // Post BIP-68.
         lock_time: absolute::LockTime::ZERO, // Ignore the locktime.
         input: vec![input],                  // Input goes into index 0.
         output: vec![spend],                 // Outputs, order does not matter.
     };
 
-    unsigned_tx
+    // request signature from server
+    let res = statechain::request_sign_bk_tx(
+        &conn,
+        &statechain_id,
+        &consensus::encode::serialize_hex(&unsigned_tx),
+        &agg_scriptpubkey.to_hex_string(),
+    )
+    .await?;
+    print!("server sign bk: {}", res.sig);
+
+    let server_sig = Signature::from_str(&res.sig).unwrap();
+
+    // bee4638722356ded164fa78c66933f903af20672933ac49ed10305559e39ab2eb5ef3b7bb79852fdc5402ce5feefff45a63ad017648d791ff01451780c06ddf7
+
+    let input_index = 0;
+
+    let sighash_type = TapSighashType::Default;
+    let prevouts = vec![utxo];
+    let prevouts = Prevouts::All(&prevouts);
+
+    let mut sighasher = SighashCache::new(&mut unsigned_tx);
+    let sighash = sighasher
+        .taproot_key_spend_signature_hash(input_index, &prevouts, sighash_type)
+        .expect("failed to construct sighash");
+
+    let secp = Secp256k1::new();
+    let seckey = pool
+        .get_seckey_by_id(&statechain_id)
+        .await
+        .unwrap()
+        .unwrap();
+    let seckey = SecretKey::from_str(&seckey).unwrap();
+    let keypair = Keypair::from_secret_key(&secp, &seckey);
+
+    let tweaked: TweakedKeypair = keypair.tap_tweak(&secp, None);
+    let msg = Message::from(sighash);
+
+    let owner_sig = secp.sign_schnorr(&msg, &tweaked.to_inner());
+
+    // TO DO : Sign = owner_sign + server_sign
+
+    Ok(unsigned_tx)
 }

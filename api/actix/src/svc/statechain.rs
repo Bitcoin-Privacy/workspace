@@ -3,12 +3,7 @@ use std::str::FromStr;
 use actix_web::web::Data;
 use anyhow::Result;
 use bitcoin::{
-    bip32::Xpub,
-    consensus,
-    key::{Keypair, TapTweak, TweakedKeypair},
-    secp256k1::{rand, Message, PublicKey, Secp256k1, SecretKey},
-    sighash::{Prevouts, SighashCache},
-    Amount, ScriptBuf, TapSighashType, Transaction, TxOut,
+    bip32::Xpub, consensus, hex::{Case, DisplayHex}, key::{Keypair, TapTweak, TweakedKeypair}, secp256k1::{rand, Message, PublicKey, Secp256k1, SecretKey}, sighash::{Prevouts, SighashCache}, Amount, ScriptBuf, TapSighashType, Transaction, TxOut
 };
 
 use crate::repo::statechain::{StatechainRepo, TraitStatechainRepo};
@@ -84,11 +79,14 @@ pub async fn create_bk_txn(
 
     let tweaked: TweakedKeypair = keypair.tap_tweak(&secp, None);
     let msg = Message::from(sighash);
+
     let signature = secp.sign_schnorr(&msg, &tweaked.to_inner());
+    
     let signature = bitcoin::taproot::Signature {
         sig: signature,
         hash_ty: sighash_type,
     };
+    
 
     let res = CreateBkTxnRes {
         sig: hex::encode(signature.to_vec()),

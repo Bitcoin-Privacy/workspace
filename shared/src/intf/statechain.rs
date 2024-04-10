@@ -85,9 +85,9 @@ pub struct CreateBkTxnReq {
     pub txn_bk: String, // hex
 }
 
-#[cfg_attr(feature = "backend", derive(Serialize))]
-#[cfg_attr(feature = "frontend", derive(Deserialize))]
-#[derive(Debug, Clone)]
+// #[cfg_attr(feature = "backend", derive(Serialize))]
+// #[cfg_attr(feature = "frontend", derive(Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateBkTxnRes {
     pub sig: String,
     pub rand_key: String,
