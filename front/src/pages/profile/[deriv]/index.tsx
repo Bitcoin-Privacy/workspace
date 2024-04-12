@@ -8,11 +8,14 @@ import {
   TabPanel,
   TabIndicator,
   Spacer,
-  Grid,
-  GridItem,
   Box,
+  Text,
+  VStack,
+  Button,
+  HStack,
+  Image,
+  Flex,
 } from "@chakra-ui/react";
-import { Text, VStack, Button, HStack, Image, Flex } from "@chakra-ui/react";
 import {
   FiArrowDownLeft,
   FiArrowUpRight,
@@ -22,12 +25,15 @@ import {
 import { TiMinus } from "react-icons/ti";
 import { FaPlus } from "react-icons/fa";
 import { IoMdSwap } from "react-icons/io";
-import { Layout, NavBar } from "@/components";
-import { CoinJoinRoomCard } from "@/components";
+import {
+  Layout,
+  NavBar,
+  CoinJoinRoomCard,
+  UTXOCard,
+  StateChainCard,
+} from "@/components";
 import { useProfilePage } from "@/hooks";
-import { UTXOCard } from "@/components/utxo-card";
 import { StateChainDto } from "@/dtos/statechain.dto";
-import { StateChainCard } from "@/components/statechain-card";
 
 export default function ProfilePage() {
   const {
@@ -123,6 +129,7 @@ export default function ProfilePage() {
                     borderRadius="full"
                     boxSize="50px"
                     src="https://bit.ly/dan-abramov"
+                    alt="avatar"
                   />
                   <Button
                     onClick={onCopy}
