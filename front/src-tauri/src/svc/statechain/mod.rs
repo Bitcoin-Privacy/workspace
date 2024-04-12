@@ -9,18 +9,18 @@ use bitcoin::{
     Transaction, TxIn, TxOut, Txid, Witness,
 };
 
+use curve25519_dalek::Scalar;
 use secp256k1::Message;
-use tokio::sync::OwnedMutexGuard;
 
-use std::{num::ParseIntError, ops::ControlFlow, str::FromStr};
+use std::{ops::ControlFlow, str::FromStr};
 
 use crate::{api::statechain, cfg::BASE_TX_FEE, db::PoolWrapper, model::AccountActions};
 use shared::intf::statechain::{AggregatedPublicKey, DepositReq, DepositRes};
 
 use crate::connector::NodeConnector;
+use num_bigint::BigUint;
 
 use super::account;
-use curve25519_dalek::scalar::Scalar;
 
 pub async fn deposit(
     pool: &PoolWrapper,
@@ -80,19 +80,14 @@ pub async fn deposit(
     {
         panic!("Failed to insert statecoin data {:?}", e);
     }
-    
-    let txid = create_deposit_transaction(
-        &pool,
-        &deriv,
-        amount,
-        &key.aggregated_address,
-        &statechain_id,
-    )
-    .await?;
+
+    let txid =
+        create_deposit_transaction(pool, deriv, amount, &key.aggregated_address, &statechain_id)
+            .await?;
 
     let tx = create_bk_tx(
-        &pool,
-        &conn,
+        pool,
+        conn,
         &key.aggregated_pubkey,
         &key.aggregated_address,
         &account_address,
@@ -101,9 +96,8 @@ pub async fn deposit(
         amount,
         &statechain_id,
     )
-    .await
-    .unwrap();
-    println!("bk tx : {}", consensus::encode::serialize_hex(&tx));
+    .await?;
+    println!("bk tx: {}", consensus::encode::serialize_hex(&tx));
 
     Ok(key)
 }
@@ -139,7 +133,7 @@ pub async fn create_deposit_transaction(
     aggregated_address: &str,
     statechain_id: &str,
 ) -> Result<String> {
-    let (account, mut unlocker) = account::get_account(deriv).unwrap();
+    let (account, mut unlocker) = account::get_account(deriv)?;
     let selected_utxos = account::get_utxos_set(&account.get_addr(), amount).await?;
 
     let mut fee: u64 = 0;
@@ -147,7 +141,7 @@ pub async fn create_deposit_transaction(
         .iter()
         .map(|utxo| {
             fee += utxo.value;
-            println!("utxos set :{}", utxo.value);
+            println!("utxos set: {}", utxo.value);
             TxIn {
                 previous_output: OutPoint::new(utxo.txid.parse().unwrap(), utxo.vout.into()),
                 script_sig: ScriptBuf::from_bytes(vec![]),
@@ -169,8 +163,8 @@ pub async fn create_deposit_transaction(
         });
     }
 
-    let addr = Address::from_str(aggregated_address).unwrap();
-    let checked_addr = addr.require_network(Network::Testnet).unwrap();
+    let addr = Address::from_str(aggregated_address)?;
+    let checked_addr = addr.require_network(Network::Testnet)?;
 
     output.push(TxOut {
         value: Amount::from_sat(amount),
@@ -180,8 +174,8 @@ pub async fn create_deposit_transaction(
     let deposit_tx = Transaction {
         version: Version::TWO,
         lock_time: absolute::LockTime::ZERO,
-        input: input,
-        output: output,
+        input,
+        output,
     };
 
     let mut unsigned_deposit_tx = deposit_tx.clone();
@@ -194,17 +188,12 @@ pub async fn create_deposit_transaction(
         .input
         .iter()
         .enumerate()
-        .map(|(index, input)| {
-            tokio::spawn(tokio::spawn(account::find_and_join_txn(
-                index,
-                input.clone(),
-            )))
-        })
+        .map(|(index, input)| tokio::spawn(account::find_and_join_txn(index, input.clone())))
         .collect();
 
     let mut results = Vec::new();
     for job in future_tasks {
-        results.push(job.await.unwrap().unwrap().unwrap());
+        results.push(job.await??);
     }
 
     let res = results.iter().try_for_each(|(index, input, tx)| {
@@ -227,13 +216,13 @@ pub async fn create_deposit_transaction(
     }
 
     let tx_hex = consensus::encode::serialize_hex(&unsigned_deposit_tx);
-    println!("hash: {:?}", tx_hex);
-    println!("{:#?}", unsigned_deposit_tx);
+    println!("deposit transaction hash: {:?}", tx_hex);
+    println!("deposit transaction hash: {:#?}", unsigned_deposit_tx);
     let funding_txid = unsigned_deposit_tx.txid().to_string();
-    let funding_vout = 1 as u64;
+    let funding_vout = 1_u64;
     let _ = pool
         .update_deposit_tx(
-            &statechain_id,
+            statechain_id,
             &funding_txid,
             funding_vout,
             "CONFIRM",
@@ -255,8 +244,8 @@ pub async fn create_bk_tx(
     amount: u64,
     statechain_id: &str,
 ) -> Result<Transaction> {
-    let agg_addr = Address::from_str(&agg_address).unwrap();
-    let checked_agg_addr = agg_addr.require_network(Network::Testnet).unwrap();
+    let agg_addr = Address::from_str(agg_address)?;
+    let checked_agg_addr = agg_addr.require_network(Network::Testnet)?;
     let agg_scriptpubkey = checked_agg_addr.script_pubkey();
 
     let utxo = TxOut {
@@ -266,7 +255,7 @@ pub async fn create_bk_tx(
 
     let prev_outpoint = OutPoint {
         txid: Txid::from_str(txid).unwrap(),
-        vout: vout,
+        vout,
     };
 
     let input = TxIn {
@@ -276,8 +265,8 @@ pub async fn create_bk_tx(
         witness: Witness::default(),
     };
 
-    let output_address = Address::from_str(receiver_address).unwrap();
-    let checked_output_address = output_address.require_network(Network::Testnet).unwrap();
+    let output_address = Address::from_str(receiver_address)?;
+    let checked_output_address = output_address.require_network(Network::Testnet)?;
     let spend = TxOut {
         value: Amount::from_sat(amount),
         script_pubkey: checked_output_address.script_pubkey(),
@@ -292,15 +281,15 @@ pub async fn create_bk_tx(
 
     // request signature from server
     let res = statechain::request_sign_bk_tx(
-        &conn,
-        &statechain_id,
+        conn,
+        statechain_id,
         &consensus::encode::serialize_hex(&unsigned_tx),
         &agg_scriptpubkey.to_hex_string(),
     )
     .await?;
     print!("server sign bk: {}", res.sig);
 
-    let server_sig = Signature::from_str(&res.sig).unwrap();
+    let server_sig = Signature::from_str(&res.sig)?;
 
     // bee4638722356ded164fa78c66933f903af20672933ac49ed10305559e39ab2eb5ef3b7bb79852fdc5402ce5feefff45a63ad017648d791ff01451780c06ddf7
 
@@ -316,12 +305,8 @@ pub async fn create_bk_tx(
         .expect("failed to construct sighash");
 
     let secp = Secp256k1::new();
-    let seckey = pool
-        .get_seckey_by_id(&statechain_id)
-        .await
-        .unwrap()
-        .unwrap();
-    let seckey = SecretKey::from_str(&seckey).unwrap();
+    let seckey = pool.get_seckey_by_id(statechain_id).await?.unwrap();
+    let seckey = SecretKey::from_str(&seckey)?;
     let keypair = Keypair::from_secret_key(&secp, &seckey);
 
     let tweaked: TweakedKeypair = keypair.tap_tweak(&secp, None);
@@ -329,7 +314,25 @@ pub async fn create_bk_tx(
 
     let owner_sig = secp.sign_schnorr(&msg, &tweaked.to_inner());
 
-    // TO DO : Sign = owner_sign + server_sign
+    let sig1 = BigUint::from_slice(&owner_sig.serialize()); //Scalar::from_bytes_mod_order_wide(&owner_sig.serialize());
+    let sig2 = Scalar::from_bytes_mod_order_wide(&server_sig.serialize());
+
+    // calculate_musig_session(coin, hash, encoded_unsigned_tx)
+    // TODO: Sign = owner_sign + server_sign
+    let sig = sig1 + sig2;
+    let sig = Signature::from_slice(&sig.as_bytes());
+
+    let signature = bitcoin::taproot::Signature {
+        sig,
+        hash_ty: sighash_type,
+    };
+    *sighasher.witness_mut(input_index).unwrap() = Witness::p2tr_key_spend(&signature);
+
+    // Get the signed transaction.
+    let tx = sighasher.into_transaction();
+
+    // BOOM! Transaction signed and ready to broadcast.
+    println!("{:#?}", tx);
 
     Ok(unsigned_tx)
 }

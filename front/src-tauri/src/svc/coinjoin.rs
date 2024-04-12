@@ -33,10 +33,13 @@ pub async fn register(
     let utxo = utxos
         .iter()
         .find(|x: &&Utxo| x.value > amount)
-        .expect(&format!(
-            "Donot have compatible utxo {}, {:?}",
-            amount, utxos
-        ))
+        .ok_or_else(|| {
+            anyhow::anyhow!(
+                "Can't find compatible UTXO for amount {}: {:?}",
+                amount,
+                utxos
+            )
+        })?
         .to_owned();
 
     let (blinded_address, unblinder) = blindsign::blind_message(conn, dest).await?;

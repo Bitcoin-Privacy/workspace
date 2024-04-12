@@ -100,4 +100,3 @@ pub fn create_aggregated_address(coin: &Coin, network: String) -> Result<Aggrega
         aggregate_address: aggregate_address.to_string(),
     })
 }
-

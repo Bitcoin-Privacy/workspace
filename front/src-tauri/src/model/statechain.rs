@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+
 #[derive(sqlx::FromRow, Debug, Clone, Deserialize, Serialize)]
 pub struct StateCoin {
     pub statechain_id: String,
