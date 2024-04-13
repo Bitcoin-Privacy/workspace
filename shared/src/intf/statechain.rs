@@ -1,10 +1,10 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AggregatedPublicKey {
-    pub aggregated_pubkey: String,
-    pub aggregated_address: String,
-}
+// #[derive(Debug, Clone, Serialize, Deserialize)]
+// pub struct AggregatedPublicKey {
+//     pub aggregated_pubkey: String,
+//     pub aggregated_address: String,
+// }
 
 // ---------------------------
 // create token
@@ -24,8 +24,16 @@ pub struct CreateTokenReq {
 #[derive(Debug, Clone)]
 pub struct DepositReq {
     pub token_id: String,
-    pub addr: String,
+    pub auth_key: String,
     pub amount: u32, // Limitation for coinjoin transaction, only able to transfer 2^32 - 1 satoshis
+}
+
+// #[cfg_attr(feature = "backend", derive(Serialize))]
+#[cfg_attr(feature = "frontend", derive(Deserialize))]
+#[derive(Debug, Clone, Serialize)]
+pub struct DepositRes {
+    pub se_pubkey: String,
+    pub statechain_id: String,
 }
 
 // ---------------------------
@@ -63,14 +71,6 @@ pub struct SignSecondReq {
     pub session: String,
     pub signed_statechain_id: String,
     pub server_pub_nonce: String,
-}
-
-// #[cfg_attr(feature = "backend", derive(Serialize))]
-#[cfg_attr(feature = "frontend", derive(Deserialize))]
-#[derive(Debug, Clone, Serialize)]
-pub struct DepositRes {
-    pub se_pubkey_1: String,
-    pub statechain_id: String,
 }
 
 // ---------------------------
@@ -188,6 +188,6 @@ pub struct DepositTx {
 #[cfg_attr(feature = "frontend", derive(Deserialize))]
 #[derive(Debug, Clone)]
 pub struct BkTxSignRes {
-   pub sign : String,
-   pub rand : String,
+    pub sign: String,
+    pub rand: String,
 }

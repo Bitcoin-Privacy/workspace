@@ -246,14 +246,14 @@ pub fn get_musig_session(
     output: &TxOut,
     network: Network,
 ) -> Result<PartialSignatureMsg1> {
-    let input_pubkey = PublicKey::from_str(&coin.aggregated_pubkey.as_ref().unwrap())?;
+    let input_pubkey = PublicKey::from_str(coin.aggregated_pubkey.as_ref().unwrap())?;
     let input_xonly_pubkey = input_pubkey.x_only_public_key().0;
 
     let outputs = [output.to_owned()].to_vec();
 
     let lock_time = absolute::LockTime::from_height(block_height)?;
 
-    let input_txid = Txid::from_str(&coin.utxo_txid.as_ref().unwrap())?;
+    let input_txid = Txid::from_str(coin.utxo_txid.as_ref().unwrap())?;
     let input_vout = coin.utxo_vout.unwrap();
 
     let tx1 = Transaction {
@@ -276,7 +276,7 @@ pub fn get_musig_session(
     let input_amount = coin.amount.unwrap() as u64;
 
     let input_address =
-        Address::from_str(&coin.aggregated_address.as_ref().unwrap())?.require_network(network)?;
+        Address::from_str(coin.aggregated_address.as_ref().unwrap())?.require_network(network)?;
     let input_scriptpubkey = input_address.script_pubkey();
     let mut input = Input {
         witness_utxo: Some(TxOut {
@@ -298,7 +298,7 @@ pub fn get_musig_session(
     assert!(psbt.inputs.len() == 1);
 
     let vout = 0; // the vout is always 0 (only one input)
-    let input = psbt.inputs.iter_mut().nth(vout).unwrap();
+    let input = psbt.inputs.get_mut(vout).unwrap();
 
     let hash_ty = input
         .sighash_type
@@ -329,7 +329,7 @@ pub fn calculate_musig_session(
 ) -> Result<PartialSignatureMsg1> {
     let secp = Secp256k1::new();
 
-    let aggregate_pubkey = PublicKey::from_str(&coin.aggregated_pubkey.as_ref().unwrap())?;
+    let aggregate_pubkey = PublicKey::from_str(coin.aggregated_pubkey.as_ref().unwrap())?;
 
     let tap_tweak = TapTweakHash::from_key_and_tweak(aggregate_pubkey.x_only_public_key().0, None);
     let tap_tweak_bytes = tap_tweak.as_byte_array();

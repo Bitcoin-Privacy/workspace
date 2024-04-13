@@ -1,98 +1,121 @@
-use std::str::FromStr;
-
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use bitcoin::{
-    absolute,
-    psbt::{Input, PsbtSighashType},
-    secp256k1::PublicKey,
-    sighash::{self, SighashCache},
-    transaction::Version,
-    Address, Amount, Network, OutPoint, Psbt, ScriptBuf, TapSighashType, Transaction, TxIn, TxOut,
-    Txid, Witness,
-};
-use statechain_core::{
-    transaction::{calculate_musig_session, PartialSignatureMsg1},
-    wallet::Coin,
+    absolute, consensus, secp256k1::Secp256k1, sighash::SighashCache, transaction::Version,
+    Address, Amount, EcdsaSighashType, Network, OutPoint, ScriptBuf, Sequence, Transaction, TxIn,
+    TxOut, Witness,
 };
 
-pub fn get_musig_session(
-    coin: &Coin,
-    block_height: u32,
-    output: &TxOut,
-    network: Network,
-) -> Result<PartialSignatureMsg1> {
-    let input_pubkey = PublicKey::from_str(&coin.aggregated_pubkey.as_ref().unwrap())?;
-    let input_xonly_pubkey = input_pubkey.x_only_public_key().0;
+use std::{ops::ControlFlow, str::FromStr};
 
-    let outputs = [output.to_owned()].to_vec();
+use super::account;
+use crate::{cfg::BASE_TX_FEE, db::PoolWrapper, model::AccountActions};
 
-    let lock_time = absolute::LockTime::from_height(block_height)?;
+pub async fn create_deposit_transaction(
+    pool: &PoolWrapper,
+    deriv: &str,
+    amount: u64,
+    aggregated_address: &str,
+    statechain_id: &str,
+) -> Result<String> {
+    let (account, mut unlocker) = account::get_account(deriv)?;
+    let selected_utxos = account::get_utxos_set(&account.get_addr(), amount).await?;
 
-    let input_txid = Txid::from_str(&coin.utxo_txid.as_ref().unwrap())?;
-    let input_vout = coin.utxo_vout.unwrap();
+    let mut fee: u64 = 0;
+    let input: Vec<TxIn> = selected_utxos
+        .iter()
+        .map(|utxo| {
+            fee += utxo.value;
+            println!("utxos set: {}", utxo.value);
+            TxIn {
+                previous_output: OutPoint::new(utxo.txid.parse().unwrap(), utxo.vout.into()),
+                script_sig: ScriptBuf::from_bytes(vec![]),
+                sequence: Sequence::MAX,
+                witness: Witness::new(),
+            }
+        })
+        .collect();
 
-    let tx1 = Transaction {
+    // Setup output
+    let mut output: Vec<TxOut> = Vec::new();
+    {
+        let (change, overflow) = fee.overflowing_sub(amount + BASE_TX_FEE);
+        if overflow {
+            return Err(anyhow!("Total input cannot cover amount and fee"));
+        }
+        // Transfer to aggregated_address
+        let addr = Address::from_str(aggregated_address)?;
+        let checked_addr = addr.require_network(Network::Testnet)?;
+        output.push(TxOut {
+            value: Amount::from_sat(amount),
+            script_pubkey: checked_addr.script_pubkey(),
+        });
+        // Set change (if needed)
+        if change > 0 {
+            output.push(TxOut {
+                value: Amount::from_sat(change),
+                script_pubkey: account.get_checked_addr().script_pubkey(),
+            });
+        }
+    };
+
+    let deposit_tx = Transaction {
         version: Version::TWO,
-        lock_time,
-        input: vec![TxIn {
-            previous_output: OutPoint {
-                txid: input_txid,
-                vout: input_vout,
-            },
-            script_sig: ScriptBuf::new(),
-            sequence: bitcoin::Sequence(0xFFFFFFFF), // Ignore nSequence.
-            witness: Witness::default(),
-        }],
-        output: outputs,
+        lock_time: absolute::LockTime::ZERO,
+        input,
+        output,
     };
 
-    let mut psbt = Psbt::from_unsigned_tx(tx1)?;
+    let mut unsigned_deposit_tx = deposit_tx.clone();
 
-    let input_amount = coin.amount.unwrap() as u64;
+    let secp = Secp256k1::new();
+    let sighash_type = EcdsaSighashType::All;
+    let mut sighasher = SighashCache::new(&mut unsigned_deposit_tx);
 
-    let input_address =
-        Address::from_str(&coin.aggregated_address.as_ref().unwrap())?.require_network(network)?;
-    let input_scriptpubkey = input_address.script_pubkey();
-    let mut input = Input {
-        witness_utxo: Some(TxOut {
-            value: Amount::from_sat(input_amount),
-            script_pubkey: input_scriptpubkey,
-        }),
-        ..Default::default()
-    };
+    let future_tasks: Vec<_> = deposit_tx
+        .input
+        .iter()
+        .enumerate()
+        .map(|(index, input)| tokio::spawn(account::find_and_join_txn(index, input.clone())))
+        .collect();
 
-    let ty = PsbtSighashType::from_str("SIGHASH_ALL")?;
-    input.sighash_type = Some(ty);
-    input.tap_internal_key = Some(input_xonly_pubkey.to_owned());
-    psbt.inputs = vec![input];
+    let mut results = Vec::new();
+    for job in future_tasks {
+        results.push(job.await??);
+    }
 
-    let unsigned_tx = psbt.unsigned_tx.clone();
+    let res = results.iter().try_for_each(|(index, input, tx)| {
+        match account::sign(
+            &secp,
+            &mut sighasher,
+            sighash_type,
+            &account,
+            &mut unlocker,
+            index,
+            input,
+            tx,
+        ) {
+            Ok(_) => ControlFlow::Continue(()),
+            Err(e) => ControlFlow::Break(e),
+        }
+    });
+    if let ControlFlow::Break(e) = res {
+        return Err(e);
+    }
 
-    // There must not be more than one input.
-    // The input is the funding transaction and the output the backup address.
-    assert!(psbt.inputs.len() == 1);
+    let tx_hex = consensus::encode::serialize_hex(&unsigned_deposit_tx);
+    println!("deposit transaction hash: {:?}", tx_hex);
+    println!("deposit transaction hash: {:#?}", unsigned_deposit_tx);
+    let funding_txid = unsigned_deposit_tx.txid().to_string();
+    let funding_vout = 1_u64;
+    let _ = pool
+        .update_deposit_tx(
+            statechain_id,
+            &funding_txid,
+            funding_vout,
+            "CONFIRM",
+            &tx_hex,
+        )
+        .await?;
 
-    let vout = 0; // the vout is always 0 (only one input)
-    let input = psbt.inputs.iter_mut().nth(vout).unwrap();
-
-    let hash_ty = input
-        .sighash_type
-        .and_then(|psbt_sighash_type| psbt_sighash_type.taproot_hash_ty().ok())
-        .unwrap_or(TapSighashType::All);
-
-    let hash = SighashCache::new(&unsigned_tx).taproot_key_spend_signature_hash(
-        vout,
-        &sighash::Prevouts::All(&[TxOut {
-            value: input.witness_utxo.as_ref().unwrap().value,
-            script_pubkey: input.witness_utxo.as_ref().unwrap().script_pubkey.clone(),
-        }]),
-        hash_ty,
-    )?;
-
-    let tx_bytes = bitcoin::consensus::encode::serialize(&unsigned_tx);
-    let encoded_unsigned_tx = hex::encode(tx_bytes);
-
-    let session = calculate_musig_session(coin, hash, encoded_unsigned_tx)?;
-
-    Ok(session)
+    Ok(funding_txid)
 }

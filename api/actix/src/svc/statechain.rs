@@ -3,7 +3,11 @@ use std::str::FromStr;
 use actix_web::web::Data;
 use anyhow::Result;
 use bitcoin::{
-    bip32::Xpub, consensus, hex::{Case, DisplayHex}, key::{Keypair, TapTweak, TweakedKeypair}, secp256k1::{rand, Message, PublicKey, Secp256k1, SecretKey}, sighash::{Prevouts, SighashCache}, Amount, ScriptBuf, TapSighashType, Transaction, TxOut
+    consensus,
+    key::{Keypair, TapTweak, TweakedKeypair},
+    secp256k1::{rand, Message, PublicKey, Secp256k1, SecretKey},
+    sighash::{Prevouts, SighashCache},
+    Amount, ScriptBuf, TapSighashType, Transaction, TxOut,
 };
 
 use crate::repo::statechain::{StatechainRepo, TraitStatechainRepo};
@@ -26,18 +30,12 @@ pub async fn create_deposit(
     let pub_key = PublicKey::from_secret_key(&secp, &secret_key);
 
     let statecoin = repo
-        .create_deposit_tx(
-            token_id,
-            &auth_key,
-            &pub_key,
-            &secret_key,
-            amount,
-        )
+        .create_deposit_tx(token_id, &auth_key, &pub_key, &secret_key, amount)
         .await
         .map_err(|e| format!("Failed to add deposit: {}", e))?;
 
     let res = DepositRes {
-        se_pubkey_1: pub_key.to_string(),
+        se_pubkey: pub_key.to_string(),
         statechain_id: statecoin.id.to_string(),
     };
 
@@ -81,12 +79,11 @@ pub async fn create_bk_txn(
     let msg = Message::from(sighash);
 
     let signature = secp.sign_schnorr(&msg, &tweaked.to_inner());
-    
+
     let signature = bitcoin::taproot::Signature {
         sig: signature,
         hash_ty: sighash_type,
     };
-    
 
     let res = CreateBkTxnRes {
         sig: hex::encode(signature.to_vec()),

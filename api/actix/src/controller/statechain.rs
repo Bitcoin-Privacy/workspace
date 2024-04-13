@@ -19,7 +19,7 @@ pub async fn deposit(
     match statechain::create_deposit(
         &statechain_repo,
         &payload.token_id,
-        &payload.addr,
+        &payload.auth_key,
         payload.amount,
     )
     .await
