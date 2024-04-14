@@ -2,7 +2,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 
 use crate::{db::Database, model::entity::statechain::StateCoin};
-use bitcoin::secp256k1::{PublicKey, XOnlyPublicKey, SecretKey};
+use bitcoin::secp256k1::{PublicKey, SecretKey, XOnlyPublicKey};
 
 use super::TraitStatechainRepo;
 
@@ -55,7 +55,25 @@ impl TraitStatechainRepo for StatechainRepo {
         .fetch_one(&self.pool.pool)
         .await?;
         Ok(statecoin)
-    }}
+    }
+    async fn update_nonce(
+        &self,
+        statechain_id: &str,
+        secnonce: &str,
+        pubnonce: &str,
+    ) -> Result<()> {
+        println!("nonce 1 : {},{}", secnonce, pubnonce);
+        let query = sqlx::query(
+            "update statechain set sec_nonce = $1, pub_nonce = $2 where id = $3::uuid ",
+        )
+        .bind(secnonce)
+        .bind(pubnonce)
+        .bind(statechain_id)
+        .execute(&self.pool.pool)
+        .await?;
+        Ok(())
+    }
+}
 
 //     async fn get_auth_key_by_statechain_id(&self, statechain_id: &str) -> StatechainResult<String> {
 //         let row = sqlx::query(

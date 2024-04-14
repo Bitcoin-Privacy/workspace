@@ -56,3 +56,4 @@ sqlx = { workspace = true, features = [
   "chrono",
   "json",
 ] }
+musig2 = "0.0.11"

@@ -1,3 +1,5 @@
+use std::string;
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -188,6 +190,20 @@ pub struct DepositTx {
 #[cfg_attr(feature = "frontend", derive(Deserialize))]
 #[derive(Debug, Clone)]
 pub struct BkTxSignRes {
-   pub sign : String,
-   pub rand : String,
+    pub sign: String,
+    pub rand: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GetPartialSignatureReq {
+    pub serialized_key_agg_ctx : String, 
+    pub statechain_id: String,
+    pub signed_statechain_id: String,
+    pub parsed_tx :String,
+    pub agg_pubnonce: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GetPartialSignatureRes {
+    pub partial_signature: String,
 }

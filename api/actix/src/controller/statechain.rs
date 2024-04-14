@@ -3,7 +3,7 @@ use actix_web::{
     HttpResponse,
 };
 use shared::intf::statechain::{
-    CreateBkTxnReq, CreateTokenReq, DepositReq, ListStatecoinsReq, TransferReq, UpdateKeyReq,
+    CreateBkTxnReq, CreateTokenReq, DepositReq, GetNonceReq, GetPartialSignatureReq, GetPartialSignatureRes, ListStatecoinsReq, TransferReq, UpdateKeyReq
 };
 
 use crate::{repo::statechain::StatechainRepo, svc::statechain, util::response};
@@ -41,6 +41,48 @@ pub async fn create_bk_txn(
         &payload.statechain_id,
         &payload.scriptpubkey,
         &payload.txn_bk,
+    )
+    .await
+    {
+        Ok(status) => response::success(status),
+        Err(message) => {
+            println!("Sign backup transaction got error: {}", message);
+            response::error(message.to_string())
+        }
+    }
+}
+
+pub async fn get_nonce(
+    statechain_repo: Data<StatechainRepo>,
+    payload: Json<GetNonceReq>,
+) -> HttpResponse {
+    match statechain::get_nonce(
+        &statechain_repo,
+        &payload.statechain_id,
+        &payload.signed_statechain_id,
+    )
+    .await
+    {
+        Ok(status) => response::success(status),
+        Err(message) => {
+            println!("Sign backup transaction got error: {}", message);
+            response::error(message.to_string())
+        }
+    }
+}
+
+pub async fn get_sig(
+    statechain_repo: Data<StatechainRepo>,
+    payload: Json<GetPartialSignatureReq>,
+) -> HttpResponse{
+
+    match statechain::get_sig(
+        &statechain_repo,
+        &payload.serialized_key_agg_ctx,
+        &payload.statechain_id,
+        &payload.signed_statechain_id,
+        &payload.parsed_tx,
+        &payload.agg_pubnonce
     )
     .await
     {

@@ -1,16 +1,27 @@
 use anyhow::{anyhow, Result};
 use bitcoin::{
-    absolute, consensus,
-    key::{Keypair, TapTweak, TweakedKeypair},
-    secp256k1::{rand, schnorr::Signature, PublicKey, Secp256k1, SecretKey},
+    absolute,
+    consensus::{self, serde::hex::Lower},
+    hashes::sha256,
+    hex::DisplayHex,
+    key::{TapTweak, TweakedKeypair},
+    secp256k1::{rand, Keypair, PublicKey, Secp256k1, SecretKey},
     sighash::{Prevouts, SighashCache},
     transaction::Version,
     Address, Amount, EcdsaSighashType, Network, OutPoint, ScriptBuf, Sequence, TapSighashType,
     Transaction, TxIn, TxOut, Txid, Witness,
 };
 
-use secp256k1::Message;
-use tokio::sync::OwnedMutexGuard;
+use musig2::{
+    AggNonce, BinaryEncoding, FirstRound, KeyAggContext, PartialSignature, PubNonce, SecNonce,
+    SecNonceSpices, SecondRound,
+};
+
+use curve25519_dalek::scalar::Scalar;
+
+use secp256k1::{schnorr::Signature, Message};
+use serde::Serialize;
+use serde_json::Serializer;
 
 use std::{num::ParseIntError, ops::ControlFlow, str::FromStr};
 
@@ -20,7 +31,6 @@ use shared::intf::statechain::{AggregatedPublicKey, DepositReq, DepositRes};
 use crate::connector::NodeConnector;
 
 use super::account;
-use curve25519_dalek::scalar::Scalar;
 
 pub async fn deposit(
     pool: &PoolWrapper,
@@ -29,8 +39,6 @@ pub async fn deposit(
     amount: u64,
 ) -> Result<AggregatedPublicKey> {
     let secp = Secp256k1::new();
-    // let keypair = Keypair::new(&secp, &mut rand::thread_rng());
-    // let xonly_pubkey = XOnlyPublicKey::from_keypair(&keypair).0;
 
     let auth_keypair = Keypair::new(&secp, &mut rand::thread_rng());
     let auth_seckey = SecretKey::from_keypair(&auth_keypair);
@@ -62,8 +70,25 @@ pub async fn deposit(
     //gen auth_key
 
     // combine 2 address
-    let key =
-        create_aggregated_address(owner_pubkey.to_string(), se_pubkey, Network::Testnet).unwrap();
+    let mut pubkeys: Vec<PublicKey> = vec![];
+    pubkeys.push(se_pubkey.parse::<PublicKey>().unwrap());
+    pubkeys.push(owner_pubkey);
+    let key_agg_ctx = KeyAggContext::new(pubkeys).unwrap();
+
+    let aggregated_pubkey: PublicKey = key_agg_ctx.aggregated_pubkey();
+
+    let aggregated_address = Address::p2tr(
+        &secp,
+        aggregated_pubkey.x_only_public_key().0,
+        None,
+        Network::Testnet,
+    );
+
+    let key = AggregatedPublicKey {
+        aggregated_pubkey: aggregated_pubkey.to_string(),
+        aggregated_address: aggregated_address.to_string(),
+    };
+
     if let Err(e) = pool
         .insert_statecoin(
             &statechain_id,
@@ -71,8 +96,8 @@ pub async fn deposit(
             amount,
             &auth_seckey,
             &auth_pubkey,
-            &key.aggregated_pubkey,
-            &key.aggregated_address,
+            &aggregated_pubkey.to_string(),
+            &aggregated_address.to_string(),
             &owner_seckey,
             &owner_pubkey,
         )
@@ -80,12 +105,12 @@ pub async fn deposit(
     {
         panic!("Failed to insert statecoin data {:?}", e);
     }
-    
+
     let txid = create_deposit_transaction(
         &pool,
         &deriv,
         amount,
-        &key.aggregated_address,
+        &aggregated_address.to_string(),
         &statechain_id,
     )
     .await?;
@@ -93,8 +118,9 @@ pub async fn deposit(
     let tx = create_bk_tx(
         &pool,
         &conn,
-        &key.aggregated_pubkey,
-        &key.aggregated_address,
+        &key_agg_ctx,
+        &aggregated_pubkey,
+        &aggregated_address,
         &account_address,
         &txid,
         1,
@@ -108,29 +134,35 @@ pub async fn deposit(
     Ok(key)
 }
 
-pub fn create_aggregated_address(
-    k1: String,
-    k2: String,
-    network: Network,
-) -> Result<AggregatedPublicKey> {
-    let secp = Secp256k1::new();
-    let pub_k1 = PublicKey::from_str(&k1)?;
-    let pub_k2 = PublicKey::from_str(&k2)?;
+// pub fn create_aggregated_address(
+//     k1: String,
+//     k2: String,
+//     network: Network,
+// ) -> (AggregatedPublicKey, KeyAggContext) {
+//     let secp = Secp256k1::new();
 
-    let aggregated_pubkey = pub_k1.combine(&pub_k2)?;
+//     let mut pubkeys: Vec<PublicKey> = vec;
+//     pubkeys.push(k1.parse::<PublicKey>().unwrap());
+//     pubkeys.push(k2.parse::<PublicKey>().unwrap());
+//     let key_agg_ctx = KeyAggContext::new(pubkeys).unwrap();
 
-    let aggregated_address = Address::p2tr(
-        &secp,
-        aggregated_pubkey.x_only_public_key().0,
-        None,
-        network,
-    );
+//     let aggregated_pubkey: PublicKey = key_agg_ctx.aggregated_pubkey();
 
-    Ok(AggregatedPublicKey {
-        aggregated_pubkey: aggregated_pubkey.to_string(),
-        aggregated_address: aggregated_address.to_string(),
-    })
-}
+//     let aggregated_address = Address::p2tr(
+//         &secp,
+//         aggregated_pubkey.x_only_public_key().0,
+//         None,
+//         network,
+//     );
+
+//     (
+//         AggregatedPublicKey {
+//             aggregated_pubkey: aggregated_pubkey.to_string(),
+//             aggregated_address: aggregated_address.to_string(),
+//         },
+//         key_agg_ctx,
+//     )
+// }
 
 pub async fn create_deposit_transaction(
     pool: &PoolWrapper,
@@ -227,7 +259,7 @@ pub async fn create_deposit_transaction(
     }
 
     let tx_hex = consensus::encode::serialize_hex(&unsigned_deposit_tx);
-    println!("hash: {:?}", tx_hex);
+    println!("deposit transaction: {:?}", tx_hex);
     println!("{:#?}", unsigned_deposit_tx);
     let funding_txid = unsigned_deposit_tx.txid().to_string();
     let funding_vout = 1 as u64;
@@ -247,21 +279,28 @@ pub async fn create_deposit_transaction(
 pub async fn create_bk_tx(
     pool: &PoolWrapper,
     conn: &NodeConnector,
-    agg_pubkey: &str,
-    agg_address: &str,
+    key_agg_ctx: &KeyAggContext,
+    agg_pubkey: &PublicKey,
+    agg_address: &Address,
     receiver_address: &str,
     txid: &str,
     vout: u32,
     amount: u64,
     statechain_id: &str,
 ) -> Result<Transaction> {
-    let agg_addr = Address::from_str(&agg_address).unwrap();
-    let checked_agg_addr = agg_addr.require_network(Network::Testnet).unwrap();
-    let agg_scriptpubkey = checked_agg_addr.script_pubkey();
+    let secp = Secp256k1::new();
+    let seckey = pool
+        .get_seckey_by_id(&statechain_id)
+        .await
+        .unwrap()
+        .unwrap();
+    let seckey = SecretKey::from_str(&seckey).unwrap();
+
+    let agg_scriptpubkey = agg_address.script_pubkey();
 
     let utxo = TxOut {
         value: Amount::from_sat(amount),
-        script_pubkey: checked_agg_addr.script_pubkey(),
+        script_pubkey: agg_scriptpubkey,
     };
 
     let prev_outpoint = OutPoint {
@@ -283,53 +322,117 @@ pub async fn create_bk_tx(
         script_pubkey: checked_output_address.script_pubkey(),
     };
 
-    let mut unsigned_tx = Transaction {
+    let unsigned_tx = Transaction {
         version: Version::TWO,               // Post BIP-68.
         lock_time: absolute::LockTime::ZERO, // Ignore the locktime.
         input: vec![input],                  // Input goes into index 0.
         output: vec![spend],                 // Outputs, order does not matter.
     };
 
-    // request signature from server
-    let res = statechain::request_sign_bk_tx(
-        &conn,
-        &statechain_id,
-        &consensus::encode::serialize_hex(&unsigned_tx),
-        &agg_scriptpubkey.to_hex_string(),
-    )
-    .await?;
-    print!("server sign bk: {}", res.sig);
-
-    let server_sig = Signature::from_str(&res.sig).unwrap();
-
-    // bee4638722356ded164fa78c66933f903af20672933ac49ed10305559e39ab2eb5ef3b7bb79852fdc5402ce5feefff45a63ad017648d791ff01451780c06ddf7
-
-    let input_index = 0;
-
     let sighash_type = TapSighashType::Default;
     let prevouts = vec![utxo];
     let prevouts = Prevouts::All(&prevouts);
 
     let mut sighasher = SighashCache::new(&mut unsigned_tx);
+
     let sighash = sighasher
-        .taproot_key_spend_signature_hash(input_index, &prevouts, sighash_type)
+        .taproot_key_spend_signature_hash(1, &prevouts, sighash_type)
         .expect("failed to construct sighash");
 
-    let secp = Secp256k1::new();
-    let seckey = pool
-        .get_seckey_by_id(&statechain_id)
-        .await
-        .unwrap()
-        .unwrap();
-    let seckey = SecretKey::from_str(&seckey).unwrap();
-    let keypair = Keypair::from_secret_key(&secp, &seckey);
+    let msg = Message::from(sighash); // message to sign
 
-    let tweaked: TweakedKeypair = keypair.tap_tweak(&secp, None);
-    let msg = Message::from(sighash);
+    let parsed_msg = msg.to_string();
 
-    let owner_sig = secp.sign_schnorr(&msg, &tweaked.to_inner());
+    let msg_clone = parsed_msg.clone();
+    let msg = parsed_msg.clone();
 
-    // TO DO : Sign = owner_sign + server_sign
+    let signed_statechain_id = sign_message(&statechain_id, &seckey).to_string();
+
+    let get_nonce_res = statechain::get_nonce(&conn, statechain_id, &signed_statechain_id).await?;
+    let server_pubnonce = get_nonce_res.server_nonce;
+
+    let nonce_seed = [0xACu8; 32];
+
+    let secnonce = SecNonce::build(nonce_seed)
+        .with_seckey(seckey)
+        .with_message(&parsed_msg)
+        .with_aggregated_pubkey(*agg_pubkey)
+        .with_extra_input(&(0 as u32).to_be_bytes())
+        .build();
+
+    let our_public_nonce = secnonce.public_nonce();
+
+    let public_nonces = [
+        our_public_nonce,
+        server_pubnonce.parse::<PubNonce>().unwrap(),
+    ];
+
+    let agg_pubnonce: AggNonce = public_nonces.iter().sum();
+
+    let agg_pubnonce_str = agg_pubnonce.to_string();
+
+    let our_partial_signature: PartialSignature =
+        musig2::sign_partial(&key_agg_ctx, seckey, secnonce, &agg_pubnonce, parsed_msg)
+            .expect("error creating partial signature");
+
+    let serialized_key_agg_ctx = key_agg_ctx
+        .to_bytes()
+        .to_hex_string(bitcoin::hex::Case::Lower);
+
+    let get_sign_res = statechain::get_partial_signature(
+        &conn,
+        &serialized_key_agg_ctx,
+        &statechain_id,
+        &signed_statechain_id,
+        &msg_clone,
+        &agg_pubnonce_str,
+    )
+    .await?;
+
+    let server_signature = get_sign_res.partial_signature;
+
+    let partial_signatures = [
+        our_partial_signature,
+        PartialSignature::from_hex(&server_signature).unwrap(),
+    ];
+
+    let final_signature: [u8; 64] = musig2::aggregate_partial_signatures(
+        &key_agg_ctx,
+        &agg_pubnonce,
+        partial_signatures,
+        msg_clone,
+    )
+    .expect("error aggregating signatures");
+
+    musig2::verify_single(*agg_pubkey, &final_signature, msg)
+        .expect("aggregated signature must be valid");
+
+    let signature = bitcoin::taproot::Signature {
+        sig: Signature::from_slice(&final_signature.to_vec()).unwrap(),
+        hash_ty: sighash_type,
+    };
+
+    *sighasher.witness_mut(0).unwrap() = Witness::p2tr_key_spend(&signature);
+
+
+    let tx = sighasher.into_transaction();
+
+
+    println!(
+        "Backup transaction: {}",
+        consensus::encode::serialize_hex(&tx)
+    );
 
     Ok(unsigned_tx)
+}
+
+fn sign_message(msg: &str, seckey: &SecretKey) -> Signature {
+    let secp = Secp256k1::new();
+
+    // Convert the hash result to a slice
+    let message = Message::from_hashed_data::<sha256::Hash>(msg.to_string().as_bytes());
+    let keypair = Keypair::from_seckey_slice(&secp, seckey.as_ref()).unwrap();
+    let signed_message = secp.sign_schnorr(&message, &keypair);
+
+    signed_message
 }

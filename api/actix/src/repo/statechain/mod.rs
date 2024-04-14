@@ -17,4 +17,6 @@ pub trait TraitStatechainRepo: Send + Sync + 'static {
         server_privkey: &SecretKey,
         amount: u32,
     ) -> Result<StateCoin>;
+
+    async fn update_nonce(&self,statechain_id : &str, secnonce: &str, pubnonce: &str) -> Result<()>;
 }
