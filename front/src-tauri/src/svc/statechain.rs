@@ -322,7 +322,7 @@ pub async fn create_bk_tx(
         script_pubkey: checked_output_address.script_pubkey(),
     };
 
-    let unsigned_tx = Transaction {
+    let mut unsigned_tx = Transaction {
         version: Version::TWO,               // Post BIP-68.
         lock_time: absolute::LockTime::ZERO, // Ignore the locktime.
         input: vec![input],                  // Input goes into index 0.
@@ -412,11 +412,16 @@ pub async fn create_bk_tx(
         hash_ty: sighash_type,
     };
 
-    *sighasher.witness_mut(0).unwrap() = Witness::p2tr_key_spend(&signature);
+    let b = signature.to_vec();
 
+    println!("signature byte: {}", b.to_lower_hex_string());
+
+    let mut wit = Witness::new();
+    wit.push(b);
+
+    *sighasher.witness_mut(0).unwrap() = wit;
 
     let tx = sighasher.into_transaction();
-
 
     println!(
         "Backup transaction: {}",
