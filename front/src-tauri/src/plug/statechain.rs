@@ -1,5 +1,5 @@
 use bitcoin::consensus;
-use shared::intf::statechain::{AggregatedPublicKey, DepositRes};
+use shared::intf::statechain::{DepositInfo, DepositRes};
 use tauri::{
     command,
     plugin::{Builder, TauriPlugin},
@@ -27,7 +27,7 @@ pub async fn deposit(
     conn: State<'_, NodeConnector>,
     deriv: &str,
     amount: u64,
-) -> TResult<AggregatedPublicKey> {
+) -> TResult<DepositInfo> {
     statechain::deposit(&pool, &conn, &deriv, amount)
         .await
         .map_err(util::to_string)

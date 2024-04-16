@@ -1,9 +1,12 @@
 use anyhow::Result;
-use bitcoin::hex::{Case, DisplayHex};
+use bitcoin::{
+    hex::{Case, DisplayHex},
+    XOnlyPublicKey,
+};
 use secp256k1::{PublicKey, SecretKey};
 use sqlx::{migrate::MigrateDatabase, sqlite::SqliteQueryResult, Row, Sqlite, SqlitePool};
 
-use crate::{cfg::CFG, model::StateCoin};
+use crate::{cfg::CFG, model::StateCoin, model::StateCoinInfo};
 
 pub async fn init_db() -> sqlx::Result<SqlitePool> {
     let db_url = &CFG.database_url;
@@ -47,7 +50,7 @@ pub async fn get_cfg(pool: &SqlitePool, key: &str) -> Result<Option<String>> {
 }
 
 pub async fn get_statecoin_by_id(pool: &SqlitePool, statechain_id: &str) -> Result<StateCoin> {
-    let row = sqlx::query_as::<_,StateCoin>(r#"select statechain_id, deriv, amount, owner_pubkey, owner_seckey, funding_txid, funding_vout, status, funding_tx from StateCoin where statechain_id = $1 "#).bind(statechain_id).fetch_one(pool).await.unwrap();
+    let row = sqlx::query_as::<_,StateCoin>(r#"select statechain_id, deriv, aggregated_address, amount,funding_tx, backup_tx, tx_n, n_lock_time from StateCoin where statechain_id = $1 "#).bind(statechain_id).fetch_one(pool).await.unwrap();
 
     Ok(row)
 }
@@ -65,13 +68,21 @@ pub async fn get_seckey_by_id(pool: &SqlitePool, statechain_id: &str) -> Result<
     Ok(val)
 }
 
+pub async fn get_statecoins_by_account(
+    pool: &SqlitePool,
+    account: &str,
+) -> Result<Vec<StateCoinInfo>> {
+    let statecoins = sqlx::query_as::<_,StateCoinInfo>("select statechain_id, aggregated_address, amount, funding_txid, funding_vout, n_lock_time from StateCoin where deriv = $1").bind(account).fetch_all(pool).await?;
+    Ok(statecoins)
+}
+
 pub async fn insert_statecoin(
     pool: &SqlitePool,
     statechain_id: &str,
     deriv: &str,
     amount: u64,
     auth_seckey: &SecretKey,
-    auth_pubkey: &PublicKey,
+    auth_pubkey: &XOnlyPublicKey,
     aggregated_pubkey: &str,
     aggregated_address: &str,
     owner_seckey: &SecretKey,
@@ -122,6 +133,29 @@ pub async fn update_deposit_tx(
         .execute(pool)
         .await;
     match res {
+        Ok(result) => Ok(result),
+        Err(err) => {
+            println!("error when update database {}", err.to_string());
+            Err(err)
+        }
+    }
+}
+
+pub async fn update_bk_tx(
+    pool: &SqlitePool,
+    statechain_id: &str,
+    backup_tx: &str,
+    agg_pubnonce: &str,
+) -> Result<SqliteQueryResult, sqlx::Error> {
+    match sqlx::query(
+        "update StateCoin set backup_tx = $1, agg_pubnonce = $2 where statechain_id = $3",
+    )
+    .bind(backup_tx)
+    .bind(agg_pubnonce)
+    .bind(statechain_id)
+    .execute(pool)
+    .await
+    {
         Ok(result) => Ok(result),
         Err(err) => {
             println!("error when update database {}", err.to_string());

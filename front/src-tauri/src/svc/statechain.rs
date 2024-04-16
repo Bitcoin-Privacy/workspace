@@ -1,32 +1,24 @@
 use anyhow::{anyhow, Result};
 use bitcoin::{
     absolute,
-    consensus::{self, serde::hex::Lower},
+    consensus,
     hashes::sha256,
     hex::DisplayHex,
-    key::{TapTweak, TweakedKeypair},
     secp256k1::{rand, Keypair, PublicKey, Secp256k1, SecretKey},
     sighash::{Prevouts, SighashCache},
     transaction::Version,
     Address, Amount, EcdsaSighashType, Network, OutPoint, ScriptBuf, Sequence, TapSighashType,
-    Transaction, TxIn, TxOut, Txid, Witness,
+    Transaction, TxIn, TxOut, Txid, Witness, XOnlyPublicKey,
 };
 
-use musig2::{
-    AggNonce, BinaryEncoding, FirstRound, KeyAggContext, PartialSignature, PubNonce, SecNonce,
-    SecNonceSpices, SecondRound,
-};
-
-use curve25519_dalek::scalar::Scalar;
+use musig2::{AggNonce, BinaryEncoding, KeyAggContext, PartialSignature, PubNonce, SecNonce};
 
 use secp256k1::{schnorr::Signature, Message};
-use serde::Serialize;
-use serde_json::Serializer;
 
-use std::{num::ParseIntError, ops::ControlFlow, str::FromStr};
+use std::{ops::ControlFlow, str::FromStr};
 
 use crate::{api::statechain, cfg::BASE_TX_FEE, db::PoolWrapper, model::AccountActions};
-use shared::intf::statechain::{AggregatedPublicKey, DepositReq, DepositRes};
+use shared::intf::statechain::{DepositInfo, DepositReq, DepositRes};
 
 use crate::connector::NodeConnector;
 
@@ -37,19 +29,19 @@ pub async fn deposit(
     conn: &NodeConnector,
     deriv: &str,
     amount: u64,
-) -> Result<AggregatedPublicKey> {
+) -> Result<DepositInfo> {
     let secp = Secp256k1::new();
 
     let auth_keypair = Keypair::new(&secp, &mut rand::thread_rng());
     let auth_seckey = SecretKey::from_keypair(&auth_keypair);
-    let auth_pubkey = PublicKey::from_keypair(&auth_keypair);
+    let xonly_pubkey = XOnlyPublicKey::from_keypair(&auth_keypair).0;
 
     let (account, _) = account::get_account(deriv).unwrap();
     let account_address = account.get_addr();
 
     let req = DepositReq {
         token_id: "abc".to_string(),
-        addr: auth_pubkey.to_string(),
+        addr: xonly_pubkey.to_string(),
         amount: amount as u32,
     };
     println!("Deposit request {:#?}", req);
@@ -84,18 +76,13 @@ pub async fn deposit(
         Network::Testnet,
     );
 
-    let key = AggregatedPublicKey {
-        aggregated_pubkey: aggregated_pubkey.to_string(),
-        aggregated_address: aggregated_address.to_string(),
-    };
-
     if let Err(e) = pool
         .insert_statecoin(
             &statechain_id,
             &account_address,
             amount,
             &auth_seckey,
-            &auth_pubkey,
+            &xonly_pubkey,
             &aggregated_pubkey.to_string(),
             &aggregated_address.to_string(),
             &owner_seckey,
@@ -106,7 +93,7 @@ pub async fn deposit(
         panic!("Failed to insert statecoin data {:?}", e);
     }
 
-    let txid = create_deposit_transaction(
+    let deposit_tx = create_deposit_transaction(
         &pool,
         &deriv,
         amount,
@@ -115,7 +102,9 @@ pub async fn deposit(
     )
     .await?;
 
-    let tx = create_bk_tx(
+    let txid = deposit_tx.txid().to_string();
+
+    create_bk_tx(
         &pool,
         &conn,
         &key_agg_ctx,
@@ -124,45 +113,16 @@ pub async fn deposit(
         &account_address,
         &txid,
         1,
-        amount,
+        amount - BASE_TX_FEE,
         &statechain_id,
     )
-    .await
-    .unwrap();
-    println!("bk tx : {}", consensus::encode::serialize_hex(&tx));
+    .await?;
 
-    Ok(key)
+    Ok(DepositInfo {
+        aggregated_address: aggregated_address.to_string(),
+        deposit_tx_hex: consensus::encode::serialize_hex(&deposit_tx),
+    })
 }
-
-// pub fn create_aggregated_address(
-//     k1: String,
-//     k2: String,
-//     network: Network,
-// ) -> (AggregatedPublicKey, KeyAggContext) {
-//     let secp = Secp256k1::new();
-
-//     let mut pubkeys: Vec<PublicKey> = vec;
-//     pubkeys.push(k1.parse::<PublicKey>().unwrap());
-//     pubkeys.push(k2.parse::<PublicKey>().unwrap());
-//     let key_agg_ctx = KeyAggContext::new(pubkeys).unwrap();
-
-//     let aggregated_pubkey: PublicKey = key_agg_ctx.aggregated_pubkey();
-
-//     let aggregated_address = Address::p2tr(
-//         &secp,
-//         aggregated_pubkey.x_only_public_key().0,
-//         None,
-//         network,
-//     );
-
-//     (
-//         AggregatedPublicKey {
-//             aggregated_pubkey: aggregated_pubkey.to_string(),
-//             aggregated_address: aggregated_address.to_string(),
-//         },
-//         key_agg_ctx,
-//     )
-// }
 
 pub async fn create_deposit_transaction(
     pool: &PoolWrapper,
@@ -170,9 +130,9 @@ pub async fn create_deposit_transaction(
     amount: u64,
     aggregated_address: &str,
     statechain_id: &str,
-) -> Result<String> {
+) -> Result<Transaction> {
     let (account, mut unlocker) = account::get_account(deriv).unwrap();
-    let selected_utxos = account::get_utxos_set(&account.get_addr(), amount).await?;
+    let selected_utxos = account::get_utxos_set(&account.get_addr(), amount + BASE_TX_FEE).await?;
 
     let mut fee: u64 = 0;
     let input: Vec<TxIn> = selected_utxos
@@ -259,8 +219,8 @@ pub async fn create_deposit_transaction(
     }
 
     let tx_hex = consensus::encode::serialize_hex(&unsigned_deposit_tx);
-    println!("deposit transaction: {:?}", tx_hex);
-    println!("{:#?}", unsigned_deposit_tx);
+    println!("deposit tx hex: {:?}", tx_hex);
+    println!("deposit tx raw {:#?}", unsigned_deposit_tx);
     let funding_txid = unsigned_deposit_tx.txid().to_string();
     let funding_vout = 1 as u64;
     let _ = pool
@@ -273,7 +233,7 @@ pub async fn create_deposit_transaction(
         )
         .await?;
 
-    Ok(funding_txid)
+    Ok(unsigned_deposit_tx)
 }
 
 pub async fn create_bk_tx(
@@ -287,8 +247,7 @@ pub async fn create_bk_tx(
     vout: u32,
     amount: u64,
     statechain_id: &str,
-) -> Result<Transaction> {
-    let secp = Secp256k1::new();
+) -> Result<()> {
     let seckey = pool
         .get_seckey_by_id(&statechain_id)
         .await
@@ -412,29 +371,31 @@ pub async fn create_bk_tx(
         hash_ty: sighash_type,
     };
 
-    let b = signature.to_vec();
+    let signature_bytes = signature.to_vec();
 
-    println!("signature byte: {}", b.to_lower_hex_string());
+    println!("signature byte: {}", signature_bytes.to_lower_hex_string());
 
     let mut wit = Witness::new();
-    wit.push(b);
+    wit.push(signature_bytes);
 
     *sighasher.witness_mut(0).unwrap() = wit;
 
     let tx = sighasher.into_transaction();
 
-    println!(
-        "Backup transaction: {}",
-        consensus::encode::serialize_hex(&tx)
-    );
+    let tx_hex = consensus::encode::serialize_hex(&tx);
 
-    Ok(unsigned_tx)
+    pool.update_bk_tx(&statechain_id, &tx_hex, &agg_pubnonce.to_string())
+        .await?;
+
+    println!("Bk tx raw {:#?}", tx);
+
+    println!("Bk tx hex: {}", tx_hex);
+
+    Ok(())
 }
 
 fn sign_message(msg: &str, seckey: &SecretKey) -> Signature {
     let secp = Secp256k1::new();
-
-    // Convert the hash result to a slice
     let message = Message::from_hashed_data::<sha256::Hash>(msg.to_string().as_bytes());
     let keypair = Keypair::from_seckey_slice(&secp, seckey.as_ref()).unwrap();
     let signed_message = secp.sign_schnorr(&message, &keypair);

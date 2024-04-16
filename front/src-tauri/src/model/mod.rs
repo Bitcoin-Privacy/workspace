@@ -7,3 +7,4 @@ pub use account::{AccountActions, AccountDTO};
 pub use room::RoomEntity;
 pub use state::InitState;
 pub use statechain::StateCoin;
+pub use statechain::StateCoinInfo;

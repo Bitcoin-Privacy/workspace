@@ -34,7 +34,7 @@ export default function Deposit() {
   const router = useRouter();
 
   const {
-    states: { aggAddress, deriv, form, isLoading, balanceQuery },
+    states: { depositInfo, deriv, form, isLoading, isError, balanceQuery },
     methods: { handleFormSubmit },
   } = useDepositPage();
 
@@ -109,7 +109,7 @@ export default function Deposit() {
                 </VStack>
               </FormControl>
             </VStack>
-            {aggAddress && (
+            {depositInfo && (
               <VStack
                 bg={"gray.900"}
                 borderRadius={"8px"}
@@ -119,7 +119,7 @@ export default function Deposit() {
                 color={"white"}
               >
                 <HStack w="full" alignItems={"end"}>
-                  <QRCodeGenerator text={aggAddress} />
+                  <QRCodeGenerator text={depositInfo.aggregated_address} />
 
                   <VStack
                     w="full"
@@ -158,7 +158,7 @@ export default function Deposit() {
                           maxW={"200px"}
                           p="5px"
                         >
-                          {aggAddress}
+                          {depositInfo.aggregated_address}
                         </Text>
                       </Button>
                     </HStack>

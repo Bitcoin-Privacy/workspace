@@ -3,9 +3,9 @@ use std::string;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AggregatedPublicKey {
-    pub aggregated_pubkey: String,
+pub struct DepositInfo {
     pub aggregated_address: String,
+    pub deposit_tx_hex: String,
 }
 
 // ---------------------------
@@ -158,7 +158,6 @@ pub struct UpdateKeyRes {
 #[cfg_attr(feature = "frontend", derive(Serialize))]
 #[derive(Debug, Clone)]
 pub struct GetNonceReq {
-    pub statechain_id: String,
     pub signed_statechain_id: String,
 }
 
@@ -196,10 +195,9 @@ pub struct BkTxSignRes {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GetPartialSignatureReq {
-    pub serialized_key_agg_ctx : String, 
-    pub statechain_id: String,
+    pub serialized_key_agg_ctx: String,
     pub signed_statechain_id: String,
-    pub parsed_tx :String,
+    pub parsed_tx: String,
     pub agg_pubnonce: String,
 }
 

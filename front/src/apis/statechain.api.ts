@@ -17,43 +17,4 @@ export const StatechainApi = Object.freeze({
       amount,
     });
   },
-
-
-  // async createDepositTx(
-  //   deriv : string,
-  //   amount: number,
-  //   aggregatedAddress: string,
-  // ): Promise<string> {
-  //   return await TauriConnection.callAPI<string>(this.name("create_deposit_tx"), {
-  //     deriv,
-  //     amount,
-  //     aggregatedAddress,
-  //   });
-  // },
-
-
-  /* Accessors */
-
-  // async signTx(deriv: string, roomId: string): Promise<RegisterResponseDto> {
-  //   return await TauriConnection.callAPI<RegisterResponseDto>("sign_tx", {
-  //     deriv,
-  //     roomId,
-  //   });
-  // },
-  // /* Fetching Data APIs */
-  // async getListRooms(deriv: string): Promise<RoomDto[]> {
-  //   return await TauriConnection.callAPI<RoomDto[]>("get_rooms", {
-  //     deriv,
-  //   });
-  // },
-  // async getTx(roomId: string): Promise<object> {
-  //   return await TauriConnection.callAPI<object>("get_tx", {
-  //     roomId,
-  //   });
-  // },
-  // async getStatus(roomId: string): Promise<object> {
-  //   return await TauriConnection.callAPI<object>("get_status", {
-  //     roomId,
-  //   });
-  // },
 });

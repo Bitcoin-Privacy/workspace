@@ -1,9 +1,13 @@
 use anyhow::Result;
 use bitcoin::script;
+use reqwest::{Client, Response};
 use shared::intf::statechain::{
     self, CreateBkTxnReq, CreateBkTxnRes, GetNonceReq, GetNonceRes, GetPartialSignatureReq,
     GetPartialSignatureRes,
 };
+use tauri::http::Uri;
+
+extern crate reqwest;
 
 use crate::connector::NodeConnector;
 
@@ -13,14 +17,15 @@ pub async fn get_nonce(
     signed_statechain_id: &str,
 ) -> Result<GetNonceRes> {
     let req = GetNonceReq {
-        statechain_id: statechain_id.to_string(),
         signed_statechain_id: signed_statechain_id.to_string(),
     };
 
     println!("get nonce : {:#?}", req);
 
     let body = serde_json::to_value(req)?;
-    let res = conn.post("statechain/nonce", &body).await?;
+    let res = conn
+        .post(&format!("statechain/{}/nonce", statechain_id), &body)
+        .await?;
     let json: GetNonceRes = serde_json::from_value(res)?;
     println!("Deposit {:#?}", json);
     Ok(json)
@@ -54,16 +59,28 @@ pub async fn get_partial_signature(
     agg_pubnonce: &str,
 ) -> Result<GetPartialSignatureRes> {
     let req = GetPartialSignatureReq {
-        serialized_key_agg_ctx : serialized_key_agg_ctx.to_string(),
-        statechain_id: statechain_id.to_string(),
+        serialized_key_agg_ctx: serialized_key_agg_ctx.to_string(),
         signed_statechain_id: signed_statechain_id.to_string(),
         parsed_tx: parsed_tx.to_string(),
         agg_pubnonce: agg_pubnonce.to_string(),
     };
 
     let body = serde_json::to_value(req)?;
-    let res = conn.post("statechain/get-sig", &body).await?;
+    let res = conn
+        .post(&format!("statechain/{}/get-sig", statechain_id), &body)
+        .await?;
     let json: GetPartialSignatureRes = serde_json::from_value(res)?;
     println!("Sign partial signature {:#?}", json);
     Ok(json)
+}
+
+pub async fn broadcast_tx(tx_hex: String) -> Result<String, String> {
+    let url = "https://blockstream.info/testnet/api/tx";
+    let client = reqwest::Client::new();
+    let res = client.post(url).body(tx_hex).send().await;
+
+    match res {
+        Ok(res) => Ok(res.json().await.unwrap()),
+        Err(err) => Err(err.to_string()),
+    }
 }

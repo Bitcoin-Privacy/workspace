@@ -1,20 +1,22 @@
-use std::str::FromStr;
+use std::{fmt::Display, str::FromStr};
 
 use actix_web::web::Data;
-use anyhow::Result;
+use anyhow::{bail, Error, Result};
 use bitcoin::{
     bip32::Xpub,
     consensus::{self, serde::hex::Lower},
+    hashes::sha256,
     hex::{Case, DisplayHex},
     key::{Keypair, TapTweak, TweakedKeypair},
     secp256k1::{rand, Message, PublicKey, Secp256k1, SecretKey},
     sighash::{Prevouts, SighashCache},
-    Amount, ScriptBuf, TapSighashType, Transaction, TxOut,
+    Amount, ScriptBuf, TapSighashType, Transaction, TxOut, XOnlyPublicKey,
 };
 use musig2::{
     secp::MaybeScalar, AggNonce, BinaryEncoding, FirstRound, KeyAggContext, PartialSignature,
     SecNonce, SecNonceSpices,
 };
+use secp256k1::schnorr::Signature;
 
 use crate::repo::statechain::{StatechainRepo, TraitStatechainRepo};
 use shared::intf::statechain::{CreateBkTxnRes, DepositRes, GetNonceRes, GetPartialSignatureRes};
@@ -26,7 +28,7 @@ pub async fn create_deposit(
     amount: u32,
 ) -> Result<DepositRes, String> {
     println!("Auth pubkey {}", auth_pubkey);
-    let auth_key = match PublicKey::from_str(auth_pubkey) {
+    let auth_key = match XOnlyPublicKey::from_str(auth_pubkey) {
         Ok(key) => key,
         Err(err) => return Err(format!("Invalid auth public key: {}", err)),
     };
@@ -35,8 +37,21 @@ pub async fn create_deposit(
     let secret_key = SecretKey::new(&mut rand::thread_rng());
     let pub_key = PublicKey::from_secret_key(&secp, &secret_key);
 
+    let nonce_seed = [0xACu8; 32];
+    let secnonce = musig2::SecNonceBuilder::new(nonce_seed).build();
+
+    let pubnonce = secnonce.public_nonce();
+
     let statecoin = repo
-        .create_deposit_tx(token_id, &auth_key, &pub_key, &secret_key, amount)
+        .create_deposit_tx(
+            token_id,
+            &auth_key,
+            &pub_key,
+            &secret_key,
+            amount,
+            &secnonce,
+            &pubnonce,
+        )
         .await
         .map_err(|e| format!("Failed to add deposit: {}", e))?;
 
@@ -104,20 +119,13 @@ pub async fn get_nonce(
     statechain_id: &str,
     signed_statechain_id: &str,
 ) -> Result<GetNonceRes> {
-    let nonce_seed = [0xACu8; 32];
-    let secnonce = musig2::SecNonceBuilder::new(nonce_seed).build();
-
-    let pubnonce = secnonce.public_nonce();
-
-    repo.update_nonce(
-        &statechain_id,
-        &secnonce.to_bytes().to_hex_string(Case::Lower),
-        &pubnonce.to_bytes().to_hex_string(Case::Lower),
-    )
-    .await?;
+    // if !verify_signature(&repo, &signed_statechain_id, &statechain_id).await? {
+    //     bail!("Invalid signature")
+    // }
+    let res = repo.get_nonce(&statechain_id).await?;
 
     Ok(GetNonceRes {
-        server_nonce: pubnonce.to_string(),
+        server_nonce: res.pub_nonce.to_string(),
     })
 }
 
@@ -129,12 +137,14 @@ pub async fn get_sig(
     parsed_tx: &str,
     agg_pubnonce: &str,
 ) -> Result<GetPartialSignatureRes> {
+    // if !verify_signature(&repo, &signed_statechain_id, &statechain_id).await? {
+    //     bail!("Invalid signature")
+    // }
     let statecoin = repo.get_by_id(statechain_id).await?;
     let secnonce = statecoin.sec_nonce.unwrap();
     println!("nonce 2 : {}", secnonce);
     let seckey = SecretKey::from_str(&statecoin.server_private_key)?;
     let secnonce = SecNonce::from_hex(&secnonce).unwrap();
-   
 
     let key_agg_ctx = KeyAggContext::from_hex(serialized_key_agg_ctx).unwrap();
 
@@ -143,20 +153,7 @@ pub async fn get_sig(
         serialized_key_agg_ctx, agg_pubnonce
     );
 
-    // let first_round = FirstRound::new(
-    //     key_agg_ctx.clone(),
-    //     nonce_seed,
-    //     1,
-    //     SecNonceSpices::new()
-    //         .with_seckey(seckey)
-    //         .with_message(&parsed_tx),
-    // )
-    // .unwrap();
-
     let agg_nonce = AggNonce::from_str(agg_pubnonce).unwrap();
-    // let our_partial_signature: MaybeScalar = first_round
-    //     .sign_for_aggregator(seckey, parsed_tx, &agg_nonce)
-    //     .unwrap();
 
     let our_partial_signature: PartialSignature =
         musig2::sign_partial(&key_agg_ctx, seckey, secnonce, &agg_nonce, parsed_tx)?;
@@ -168,20 +165,17 @@ pub async fn get_sig(
     })
 }
 
-// pub async fn verify_signature(
-//     repo: &Data<StatechainRepo>,
-//     sign_message_hex: &str,
-//     statechain_id: &str,
-// ) -> bool {
-//     let auth_key = repo
-//         .get_auth_key_by_statechain_id(&statechain_id)
-//         .await
-//         .unwrap();
+pub async fn verify_signature(
+    repo: &Data<StatechainRepo>,
+    signature: &str,
+    statechain_id: &str,
+) -> Result<bool> {
+    let auth_key = repo.get_auth_key_by_statechain_id(&statechain_id).await?;
 
-//     let pub_key = XOnlyPublicKey::from_str(&auth_key).unwrap();
-//     let signed_message = Signature::from_str(sign_message_hex).unwrap();
-//     let msg = Message::from_hashed_data::<sha256::Hash>(statechain_id.to_string().as_bytes());
+    let pub_key = XOnlyPublicKey::from_str(&auth_key.auth_xonly_public_key)?;
+    let signed_message = Signature::from_str(signature).unwrap();
+    let msg = Message::from_hashed_data::<sha256::Hash>(statechain_id.to_string().as_bytes());
 
-//     let secp = Secp256k1::new();
-//     secp.verify_schnorr(&signed_message, &msg, &pub_key).is_ok()
-// }
+    let secp = Secp256k1::new();
+    Ok(secp.verify_schnorr(&signed_message, &msg, &pub_key).is_ok())
+}
