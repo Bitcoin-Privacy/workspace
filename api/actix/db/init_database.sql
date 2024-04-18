@@ -50,6 +50,9 @@ create table if not exists statechain (
 	server_public_key varchar NULL CONSTRAINT statechain_server_public_key_ukey UNIQUE ,
     server_private_key varchar NULL UNIQUE,
     amount int8 not null,
+
+    sec_nonce varchar null, 
+    pub_nonce varchar null,
     created_at timestamp with time zone default current_timestamp,
     updated_at timestamp with time zone default current_timestamp
 );

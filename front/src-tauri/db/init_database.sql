@@ -57,7 +57,15 @@ CREATE TABLE IF NOT EXISTS StateCoin (
     funding_txid TEXT,
     funding_vout INT,
     funding_tx TEXT,
-    status TEXT,
+
+    --backup tx info
+
+    n_lock_time INT,
+    tx_n INT,
+    backup_tx  TEXT,
+    agg_pubnonce TEXT,
+    blinding_factor  TEXT,
+
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -65,9 +73,7 @@ CREATE TABLE IF NOT EXISTS BackupTransaction (
     id TEXT NOT NULL PRIMARY KEY,
     tx_n INT,
     statechain_id TEXT,
-    client_pubnonce TEXT,
-    server_pubnonce  TEXT,
-    client_pubkey  TEXT,
+    agg_pubnonce TEXT,
     server_pubkey  TEXT,
     blinding_factor  TEXT,
     backup_tx  TEXT,

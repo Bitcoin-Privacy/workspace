@@ -1,8 +1,15 @@
 use anyhow::Result;
 use async_trait::async_trait;
+use musig2::{BinaryEncoding, PubNonce, SecNonce};
 
-use crate::{db::Database, model::entity::statechain::StateCoin};
-use bitcoin::secp256k1::{PublicKey, XOnlyPublicKey, SecretKey};
+use crate::{
+    db::Database,
+    model::entity::statechain::{AuthPubkey, Pubnonce, StateCoin},
+};
+use bitcoin::{
+    hex::DisplayHex,
+    secp256k1::{PublicKey, SecretKey, XOnlyPublicKey},
+};
 
 use super::TraitStatechainRepo;
 
@@ -31,19 +38,23 @@ impl TraitStatechainRepo for StatechainRepo {
     async fn create_deposit_tx(
         &self,
         token_id: &str,
-        auth_pubkey: &PublicKey,
+        auth_pubkey: &XOnlyPublicKey,
         server_pubkey: &PublicKey,
         server_privkey: &SecretKey,
         amount: u32,
+        secnonce: &SecNonce,
+        pubnonce: &PubNonce,
     ) -> Result<StateCoin> {
         let server_privkey_bytes = server_privkey.display_secret().to_string();
         let server_pubkey_bytes = server_pubkey.to_string();
         let auth_pubkey_bytes = auth_pubkey.to_string();
+        let secnonce_bytes = secnonce.to_bytes().to_lower_hex_string();
+        let pubnonce_bytes = pubnonce.to_bytes().to_upper_hex_string();
         let statecoin = sqlx::query_as::<_, StateCoin>(
             r#"
             insert into statechain 
-            (token_id, auth_xonly_public_key, server_public_key, server_private_key, amount) 
-            values ($1, $2, $3, $4, $5)
+            (token_id, auth_xonly_public_key, server_public_key, server_private_key, amount,sec_nonce,pub_nonce) 
+            values ($1, $2, $3, $4, $5, $6, $7)
             returning *
             "#,
         )
@@ -52,26 +63,32 @@ impl TraitStatechainRepo for StatechainRepo {
         .bind(server_pubkey_bytes)
         .bind(server_privkey_bytes)
         .bind(amount as i64)
+        .bind(secnonce_bytes)
+        .bind(pubnonce_bytes)
         .fetch_one(&self.pool.pool)
         .await?;
         Ok(statecoin)
-    }}
+    }
+    async fn get_nonce(&self, statechain_id: &str) -> Result<Pubnonce> {
+        let row =
+            sqlx::query_as::<_, Pubnonce>("select pub_nonce from statechain where id = $1::uuid ")
+                .bind(statechain_id)
+                .fetch_one(&self.pool.pool)
+                .await?;
 
-//     async fn get_auth_key_by_statechain_id(&self, statechain_id: &str) -> StatechainResult<String> {
-//         let row = sqlx::query(
-//             r#"select auth_xonly_public_key from statechain_data where statechain_id = $1"#,
-//         )
-//         .bind(statechain_id)
-//         .fetch_one(&self.pool.pool)
-//         .await
-//         .map_err(|e| e.to_string());
-//         println!(
-//             "auth xonly {:?}",
-//             row.unwrap().column("auth_xonly_public_key")
-//         );
+        Ok(row)
+    }
+    async fn get_auth_key_by_statechain_id(&self, statechain_id: &str) -> Result<AuthPubkey> {
+        let row = sqlx::query_as::<_, AuthPubkey>(
+            r#"select auth_xonly_public_key from statechain where id = $1::uuid"#,
+        )
+        .bind(statechain_id)
+        .fetch_one(&self.pool.pool)
+        .await?;
 
-//         Ok("asdf".to_string())
-//     }
+        Ok(row)
+    }
+}
 
 //     async fn insert_signature_data(
 //         &self,

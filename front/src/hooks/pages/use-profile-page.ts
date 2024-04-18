@@ -45,6 +45,7 @@ export const useProfilePage = () => {
     { enabled: !!addr },
   );
 
+
   const onSendBtnClick = useCallback(() => {
     router.push(`/profile/${b64EncodeUnicode(deriv)}/send`);
   }, [deriv]);

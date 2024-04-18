@@ -1,4 +1,5 @@
 import { StatechainApi } from "@/apis";
+import { StatechainDepositResDto } from "@/dtos";
 import { convertBtcToSats } from "@/utils";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -10,9 +11,11 @@ type CreateDepositFormInput = {
 export const useDepositForm = (derivationPath: string) => {
   const form = useForm<CreateDepositFormInput>();
 
-  const [aggAddress,setAggAddress] = useState<string>("");
+  const [depositInfo,setDepositInfo] = useState<StatechainDepositResDto>();
+
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isError,setIsError] = useState<boolean>(false);
 
   const handleFormSubmit = useMemo(
     () =>
@@ -26,9 +29,7 @@ export const useDepositForm = (derivationPath: string) => {
           );
           // get the aggregated address
           console.log("api response ",res);
-          setAggAddress(res.aggregated_address)
-
-          //create backup transaction
+          setDepositInfo(res);
           form.reset({ amount: 0 });
         } catch (e) {
         } finally {
@@ -40,9 +41,10 @@ export const useDepositForm = (derivationPath: string) => {
 
   return {
     states: {
-      aggAddress,
+      depositInfo,
       form,
       isLoading,
+      isError
     },
     methods: {
       handleFormSubmit,

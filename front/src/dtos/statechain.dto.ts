@@ -6,6 +6,6 @@ export type StateChainDto = {
 };
 
 export type StatechainDepositResDto = {
-  aggregated_pubkey : string,
-  aggregated_address : string
+  aggregated_address : string,
+  deposit_tx_hex : string,
 };
