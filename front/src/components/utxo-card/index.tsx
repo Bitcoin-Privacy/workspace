@@ -1,15 +1,7 @@
 import { UtxoDto } from "@/dtos";
-import {
-  Box,
-  Text,
-  Image,
-  VStack,
-  Flex,
-  HStack,
-  Spacer,
-  Button,
-} from "@chakra-ui/react";
+import { Text, Image, VStack, Flex, HStack, Button } from "@chakra-ui/react";
 import { useClipboard } from "@chakra-ui/react";
+import { FaCheckCircle, FaClock } from "react-icons/fa";
 import { FiCheck, FiCopy } from "react-icons/fi";
 
 interface UTXOCardProps {
@@ -26,8 +18,7 @@ export function UTXOCard(props: UTXOCardProps) {
       key={key}
       color="white"
       textAlign="start"
-      w="70%"
-      //maxW="80%"
+      w="100%"
       bg="#3a3a3a"
       p="8px 16px"
       borderRadius="8px"
@@ -35,19 +26,18 @@ export function UTXOCard(props: UTXOCardProps) {
       alignItems={"center"}
     >
       <Image
+        alt=""
         borderRadius="full"
         boxSize="50px"
         src="https://i.ibb.co/M6xxyd6/istockphoto-905413264-612x612.jpg"
       />
-      <Flex w="full" alignItems={"center"}>
+      <Flex w="full" alignItems={"center"} justify="space-between">
         <VStack>
           <Text fontSize={"20"} fontWeight={"1000"}>
             Bitcoin
           </Text>
           <Text>{val.value} Sats</Text>
         </VStack>
-
-        <Spacer />
 
         <VStack alignItems={"end"}>
           <Button
@@ -62,6 +52,14 @@ export function UTXOCard(props: UTXOCardProps) {
             </Text>
           </Button>
           <Text>vout: {val.vout}</Text>
+          <Flex align="center" gap="10px">
+            Confirm:
+            {val.status.confirmed ? (
+              <FaCheckCircle color="#41c300" />
+            ) : (
+              <FaClock color="#fa8100" />
+            )}
+          </Flex>
         </VStack>
       </Flex>
     </HStack>
