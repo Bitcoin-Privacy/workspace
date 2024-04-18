@@ -1,10 +1,18 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Utxo {
+    pub txid: String,
+    pub vout: u16,
+    pub value: u64,
+    pub status: Status,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Status {
-    pub block_hash: String,
-    pub block_height: u64,
-    pub block_time: u64,
+    // pub block_hash: Option<String>,
+    // pub block_height: Option<u64>,
+    // pub block_time: Option<u64>,
     pub confirmed: bool,
 }
 
@@ -49,11 +57,4 @@ pub struct Txn {
     pub vin: Vec<Vin>,
     pub vout: Vec<Vout>,
     pub weight: u64,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Utxo {
-    pub txid: String,
-    pub vout: u16,
-    pub value: u64,
 }
