@@ -63,21 +63,8 @@ pub async fn deposit(
     //gen auth_key
 
     // combine 2 address
-    let mut pubkeys: Vec<PublicKey> = vec![];
-    pubkeys.push(owner_pubkey);
-    pubkeys.push(se_pubkey.parse::<PublicKey>().unwrap());
-    let key_agg_ctx = KeyAggContext::new(pubkeys)
-        .unwrap()
-        .with_unspendable_taproot_tweak()?;
-
-    let aggregated_pubkey: PublicKey = key_agg_ctx.aggregated_pubkey_untweaked();
-
-    let aggregated_address = Address::p2tr(
-        &secp,
-        aggregated_pubkey.x_only_public_key().0,
-        None,
-        Network::Testnet,
-    );
+    let (aggregated_pubkey, aggregated_address, key_agg_ctx) =
+        aggregate_pubkeys(owner_pubkey, PublicKey::from_str(&se_pubkey).unwrap());
 
     if let Err(e) = pool
         .insert_statecoin(
@@ -275,25 +262,21 @@ pub async fn create_bk_tx(
         witness: Witness::default(),
     };
 
-    let change_amount = 1000;
+
 
     let output_address = Address::from_str(receiver_address).unwrap();
     let checked_output_address = output_address.require_network(Network::Testnet).unwrap();
     let spend = TxOut {
-        value: Amount::from_sat(amount - BASE_TX_FEE - change_amount),
+        value: Amount::from_sat(amount - BASE_TX_FEE),
         script_pubkey: checked_output_address.script_pubkey(),
     };
 
-    let change = TxOut {
-        value: Amount::from_sat(change_amount),
-        script_pubkey: ScriptBuf::new_p2tr(&secp, agg_pubkey.x_only_public_key().0, None), // Change comes back to us.
-    };
 
     let unsigned_tx = Transaction {
         version: transaction::Version::TWO,  // Post BIP-68.
         lock_time: absolute::LockTime::ZERO, // Ignore the locktime.
         input: vec![input],                  // Input goes into index 0.
-        output: vec![spend, change],         // Outputs, order does not matter.
+        output: vec![spend],         // Outputs, order does not matter.
     };
 
     let mut psbt = Psbt::from_unsigned_tx(unsigned_tx)?;
@@ -473,11 +456,36 @@ pub async fn create_bk_tx(
     Ok(())
 }
 
-fn sign_message(msg: &str, seckey: &SecretKey) -> Signature {
+pub fn sign_message(msg: &str, seckey: &SecretKey) -> Signature {
     let secp = Secp256k1::new();
     let message = Message::from_hashed_data::<sha256::Hash>(msg.to_string().as_bytes());
     let keypair = Keypair::from_seckey_slice(&secp, seckey.as_ref()).unwrap();
     let signed_message = secp.sign_schnorr(&message, &keypair);
 
     signed_message
+}
+
+pub fn aggregate_pubkeys(
+    owner_pubkey: PublicKey,
+    se_pubkey: PublicKey,
+) -> (PublicKey, Address, KeyAggContext) {
+    let secp = Secp256k1::new();
+    let mut pubkeys: Vec<PublicKey> = vec![];
+    pubkeys.push(owner_pubkey);
+    pubkeys.push(se_pubkey);
+    let key_agg_ctx = KeyAggContext::new(pubkeys)
+        .unwrap()
+        .with_unspendable_taproot_tweak()
+        .unwrap();
+
+    let aggregated_pubkey: PublicKey = key_agg_ctx.aggregated_pubkey_untweaked();
+
+    let aggregated_address = Address::p2tr(
+        &secp,
+        aggregated_pubkey.x_only_public_key().0,
+        None,
+        Network::Testnet,
+    );
+
+    (aggregated_pubkey, aggregated_address, key_agg_ctx)
 }
