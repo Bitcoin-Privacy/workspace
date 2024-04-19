@@ -124,11 +124,10 @@ pub async fn update_deposit_tx(
     funding_tx: &str,
 ) -> Result<SqliteQueryResult, sqlx::Error> {
     let vout_i64: i64 = funding_vout as i64;
-    let res = sqlx::query(r#"UPDATE StateCoin SET funding_txid = $1, funding_vout = $2, funding_tx = $3, status = $4  WHERE statechain_id = $5"#)
+    let res = sqlx::query(r#"UPDATE StateCoin SET funding_txid = $1, funding_vout = $2, funding_tx = $3  WHERE statechain_id = $4"#)
         .bind(funding_txid)
         .bind(vout_i64)
         .bind(funding_tx)
-        .bind(status)
         .bind(statechain_id)
         .execute(pool)
         .await;
