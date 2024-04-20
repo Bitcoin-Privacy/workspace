@@ -1,4 +1,6 @@
 use shared::model::Utxo;
+use shared::util;
+
 use tauri::{
     command,
     plugin::{Builder, TauriPlugin},
@@ -9,7 +11,7 @@ use crate::{
     db::PoolWrapper,
     model::{AccountDTO, InitState},
     svc::app,
-    util, TResult,
+    TResult,
 };
 
 pub fn init<R: Runtime>() -> TauriPlugin<R> {

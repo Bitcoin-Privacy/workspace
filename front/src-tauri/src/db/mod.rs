@@ -3,10 +3,7 @@ use bitcoin::{
     secp256k1::{PublicKey, SecretKey},
     XOnlyPublicKey,
 };
-use sqlx::{
-    sqlite::{SqliteLockingMode, SqliteQueryResult},
-    Executor, SqlitePool,
-};
+use sqlx::{sqlite::SqliteQueryResult, Executor, SqlitePool};
 
 use crate::model::{RoomEntity, StateCoin, StateCoinInfo};
 
@@ -100,15 +97,15 @@ impl PoolWrapper {
     ) -> Result<SqliteQueryResult, sqlx::Error> {
         sqlite::insert_statecoin(
             &self.pool,
-            &statechain_id,
-            &deriv,
+            statechain_id,
+            deriv,
             amount,
-            &auth_seckey,
-            &auth_pubkey,
-            &aggregated_pubkey,
-            &aggregated_address,
-            &owner_seckey,
-            &owner_pubkey,
+            auth_seckey,
+            auth_pubkey,
+            aggregated_pubkey,
+            aggregated_address,
+            owner_seckey,
+            owner_pubkey,
         )
         .await
     }

@@ -1,12 +1,15 @@
 use bitcoin::consensus;
+
 use shared::intf::statechain::{DepositInfo, DepositRes};
+use shared::util;
+
 use tauri::{
     command,
     plugin::{Builder, TauriPlugin},
     Runtime, State,
 };
 
-use crate::{connector::NodeConnector, db::PoolWrapper, svc::statechain, util, TResult};
+use crate::{connector::NodeConnector, db::PoolWrapper, svc::statechain, TResult};
 
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
     Builder::new("statechain")

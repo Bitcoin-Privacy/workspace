@@ -1,4 +1,6 @@
 use shared::intf::coinjoin::{GetStatusRes, GetUnsignedTxnRes, RoomDto};
+use shared::util;
+
 use tauri::{
     command,
     plugin::{Builder, TauriPlugin},
@@ -7,7 +9,7 @@ use tauri::{
 
 use tauri::State;
 
-use crate::{connector::NodeConnector, db::PoolWrapper, svc::coinjoin, util, TResult};
+use crate::{connector::NodeConnector, db::PoolWrapper, svc::coinjoin, TResult};
 
 pub fn init() -> TauriPlugin<Wry> {
     Builder::new("coinjoin")

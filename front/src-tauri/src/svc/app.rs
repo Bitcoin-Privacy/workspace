@@ -166,6 +166,8 @@ pub async fn create_txn(deriv: &str, receiver: &str, amount: u64) -> Result<()> 
     let tx_hex = consensus::encode::serialize_hex(&unsigned_tx);
     println!("hash: {:?}", tx_hex);
     println!("{:#?}", unsigned_tx);
+    let res = shared::api::broadcast_txn(&tx_hex).await;
+    println!("Boadcasted txn: {} \n-> res: {:#?}", tx_hex, res);
 
     Ok(())
 }

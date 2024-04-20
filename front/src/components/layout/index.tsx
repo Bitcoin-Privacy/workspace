@@ -82,7 +82,7 @@ export const Layout: React.FC<ILayout> = ({
           </HStack>
         </>
       )}
-      <Box w="100%" maxW="1200px" p="24px">
+      <Box w="100%" h="100%" maxW="1200px" p="24px">
         {children}
       </Box>
     </VStack>

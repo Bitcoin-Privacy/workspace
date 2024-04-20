@@ -111,7 +111,7 @@ export default function ProfilePage() {
         </Button>
       }
     >
-      <VStack spacing="36px" h="100vh" w="100%">
+      <VStack spacing="36px" w="100%">
         <VStack
           justifyContent={"center"}
           id="control_box"
