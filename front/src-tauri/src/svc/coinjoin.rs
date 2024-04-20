@@ -7,23 +7,24 @@ use bitcoin::hex::DisplayHex;
 use bitcoin::{
     consensus, secp256k1::Secp256k1, sighash::SighashCache, EcdsaSighashType, Transaction,
 };
-use shared::intf::coinjoin::GetStatusRes;
+use shared::intf::coinjoin::{GetStatusRes, RoomDto};
 use tokio::time::{sleep, Duration};
 
 use shared::api;
 use shared::blindsign::WiredUnblindedSigData;
 use shared::model::Utxo;
 
-use crate::api::coinjoin;
 use crate::connector::NodeConnector;
 use crate::db::PoolWrapper;
 use crate::model::{AccountActions, RoomEntity};
 use crate::svc::account;
 use crate::svc::blindsign;
+use crate::{api::coinjoin, model::event};
 
 pub async fn register(
     pool: &PoolWrapper,
     conn: &NodeConnector,
+    window: tauri::Window,
     deriv: &str,
     amount: u64,
     dest: &str,
@@ -77,19 +78,19 @@ pub async fn register(
 
         if let Err(e) = coinjoin::set_output(&room_id, &address, &sig_cloned).await {
             println!("Set output got error {}", e);
-            // tauri::Window::emit(
-            //     &window,
-            //     "coinjoin-register-complete",
-            //     Some(event::CoinJoinRegisterCompleteEvent { room_id, status: 0 }),
-            // )
-            // .expect("Failed to emit event");
+            tauri::Window::emit(
+                &window,
+                "coinjoin-register-complete",
+                Some(event::CoinJoinRegisterCompleteEvent { room_id, status: 0 }),
+            )
+            .expect("Failed to emit event");
         } else {
-            // tauri::Window::emit(
-            //     &window,
-            //     "coinjoin-register-complete",
-            //     Some(event::CoinJoinRegisterCompleteEvent { room_id, status: 1 }),
-            // )
-            // .expect("Failed to emit event");
+            tauri::Window::emit(
+                &window,
+                "coinjoin-register-complete",
+                Some(event::CoinJoinRegisterCompleteEvent { room_id, status: 1 }),
+            )
+            .expect("Failed to emit event");
         }
     });
 
@@ -160,9 +161,10 @@ pub async fn sign_txn(pool: &PoolWrapper, deriv: &str, room_id: &str) -> Result<
 }
 
 pub async fn get_status(room_id: &str) -> Result<GetStatusRes> {
-    crate::api::coinjoin::get_status(room_id).await
+    coinjoin::get_status(room_id).await
 }
 
-pub async fn get_rooms(pool: &PoolWrapper, deriv: &str) -> Result<Vec<RoomEntity>> {
-    pool.get_all_rooms(deriv)
+pub async fn get_rooms(_: &NodeConnector, deriv: &str) -> Result<Vec<RoomDto>> {
+    let acct = account::get_internal_account(deriv)?;
+    coinjoin::get_rooms(acct.get_addr().as_str()).await
 }

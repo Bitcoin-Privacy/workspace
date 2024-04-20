@@ -4,9 +4,9 @@ use crate::model::Utxo;
 
 use super::PaginationQuery;
 
-#[cfg_attr(feature = "backend", derive(Serialize))]
+// #[cfg_attr(feature = "backend", derive(Serialize))]
 #[cfg_attr(feature = "frontend", derive(Deserialize))]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct RoomDto {
     pub id: String,
     pub base_amount: u32,
