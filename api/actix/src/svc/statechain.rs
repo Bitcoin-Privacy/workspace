@@ -5,18 +5,18 @@ use anyhow::{bail, Error, Result};
 use bitcoin::{
     bip32::Xpub,
     consensus::{self, serde::hex::Lower},
-    hashes::sha256,
+    hashes::{sha256, Hash},
     hex::{Case, DisplayHex},
     key::{Keypair, TapTweak, TweakedKeypair},
-    secp256k1::{rand, Message, PublicKey, Secp256k1, SecretKey},
+    secp256k1::{rand, PublicKey, Secp256k1, SecretKey},
     sighash::{Prevouts, SighashCache},
-    Amount, ScriptBuf, TapSighashType, Transaction, TxOut, XOnlyPublicKey,
+    Amount, ScriptBuf, TapSighash, TapSighashType, Transaction, TxOut, XOnlyPublicKey,
 };
 use musig2::{
     secp::MaybeScalar, AggNonce, BinaryEncoding, FirstRound, KeyAggContext, PartialSignature,
     SecNonce, SecNonceSpices,
 };
-use secp256k1::schnorr::Signature;
+use secp256k1::{schnorr::Signature, Message};
 
 use crate::repo::statechain::{StatechainRepo, TraitStatechainRepo};
 use shared::intf::statechain::{CreateBkTxnRes, DepositRes, GetNonceRes, GetPartialSignatureRes};
@@ -140,7 +140,11 @@ pub async fn get_sig(
     // if !verify_signature(&repo, &signed_statechain_id, &statechain_id).await? {
     //     bail!("Invalid signature")
     // }
+
     let statecoin = repo.get_by_id(statechain_id).await?;
+
+    println!("messsagee : {}", parsed_tx);
+
     let secnonce = statecoin.sec_nonce.unwrap();
     println!("nonce 2 : {}", secnonce);
     let seckey = SecretKey::from_str(&statecoin.server_private_key)?;

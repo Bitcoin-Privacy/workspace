@@ -1,6 +1,6 @@
 pub const PASSPHRASE: &str = "correct horse battery staple";
 
-pub const BASE_TX_FEE: u64 = 4000;
+pub const BASE_TX_FEE: u64 = 5000;
 // pub const COINJOIN_FEE: u64 = 150;
 
 use dotenv::dotenv;
