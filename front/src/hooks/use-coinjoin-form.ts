@@ -38,7 +38,7 @@ export const useCreateTxForm = (derivationPath: string) => {
           setIsLoading(false);
         }
       }),
-    [derivationPath],
+    [derivationPath, form],
   );
 
   return {

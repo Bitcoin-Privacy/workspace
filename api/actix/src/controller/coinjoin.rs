@@ -121,6 +121,16 @@ pub async fn set_signature(
     response::ok()
 }
 
+pub async fn get_room_list(
+    coinjoin_repo: Data<CoinJoinRepo>,
+    query: web::Query<RoomListQuery>,
+) -> HttpResponse {
+    match coinjoin::get_room_by_addr(coinjoin_repo, &query.address).await {
+        Ok(tx) => response::success(tx.iter().map(|dto| dto.into()).collect::<Vec<RoomDto>>()),
+        Err(e) => response::error(e),
+    }
+}
+
 pub async fn get_room_by_id(
     coinjoin_repo: Data<CoinJoinRepo>,
     path: web::Path<RoomQueryReq>,
@@ -150,16 +160,6 @@ pub async fn get_txn(
 ) -> HttpResponse {
     match coinjoin::get_txn_hex(coinjoin_repo, &path.id).await {
         Ok(tx) => response::success(GetUnsignedTxnRes { tx }),
-        Err(e) => response::error(e),
-    }
-}
-
-pub async fn get_room_list(
-    coinjoin_repo: Data<CoinJoinRepo>,
-    query: web::Query<RoomListQuery>,
-) -> HttpResponse {
-    match coinjoin::get_room_by_addr(coinjoin_repo, &query.address).await {
-        Ok(tx) => response::success(tx.iter().map(|dto| dto.into()).collect::<Vec<RoomDto>>()),
         Err(e) => response::error(e),
     }
 }

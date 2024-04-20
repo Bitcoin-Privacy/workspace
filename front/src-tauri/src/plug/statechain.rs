@@ -28,7 +28,7 @@ pub async fn deposit(
     deriv: &str,
     amount: u64,
 ) -> TResult<DepositInfo> {
-    statechain::deposit(&pool, &conn, &deriv, amount)
+    statechain::deposit(&pool, &conn, deriv, amount)
         .await
         .map_err(util::to_string)
 }

@@ -18,4 +18,9 @@ export type UtxoDto = {
   txid: string;
   vout: number;
   value: number;
+  status: UtxoStatus;
+};
+
+export type UtxoStatus = {
+  confirmed: boolean;
 };

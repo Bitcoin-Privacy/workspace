@@ -19,6 +19,7 @@ import { ChakraStylesConfig, Select } from "chakra-react-select";
 
 import { Layout, NavBar } from "@/components";
 import { TxStrategyEnum } from "@/dtos";
+import { useSendStateCoinPage } from "@/hooks/pages/use-send-statecoin-page";
 
 const INPUT_WIDTH = "90%";
 
@@ -27,53 +28,10 @@ export default function SendStateCoin() {
   const {
     states: { deriv, form, isLoading, balanceQuery },
     methods: { handleFormSubmit },
-  } = useSendPage();
+  } = useSendStateCoinPage();
 
-  const chakraStyles: ChakraStylesConfig = useMemo(
-    () => ({
-      menuList: (provided) => ({
-        ...provided,
-        // ...bgThemeListSearch,
-      }),
-      menu: (provided) => ({
-        ...provided,
-        // ...bgThemeListSearch,
-      }),
-      inputContainer: (provided) => ({
-        ...provided,
-        fontSize: "14px",
-        color: "white",
-        textAlign: "start",
-      }),
-      dropdownIndicator: (provided) => ({
-        ...provided,
-        w: "80px",
-      }),
-      control: (provided) => ({
-        ...provided,
-        background: "transparent",
-        fontSize: "12px",
-        color: "textSloganHomepage",
-      }),
-      container: (provided) => ({
-        ...provided,
-        width: INPUT_WIDTH,
-      }),
-      singleValue: (provided) => ({
-        ...provided,
-        fontSize: "14px",
-        color: "white",
-        textAlign: "start",
-      }),
-      placeholder: (provided) => ({
-        ...provided,
-        color: "#a6a6a6",
-        fontSize: "14px",
-        textAlign: "start",
-      }),
-    }),
-    [],
-  );
+  
+
 
   return (
     <React.Fragment>
@@ -122,7 +80,7 @@ export default function SendStateCoin() {
                     placeholder="tb1qtperkdhmm9hesga45wzzdzks6rrtejtp2uec40"
                     w={INPUT_WIDTH}
                     color="white"
-                    {...form.register("address", {
+                    {...form.register("o2_address", {
                       required: "Receiver address is required",
                       pattern: {
                         value: /^(tb1)[a-z0-9]{39,59}$/,
@@ -140,7 +98,7 @@ export default function SendStateCoin() {
                     placeholder="tb1qtperkdhmm9hesga45wzzdzks6rrtejtp2uec40"
                     w={INPUT_WIDTH}
                     color="white"
-                    {...form.register("address", {
+                    {...form.register("o2_authkey", {
                       required: "Authen address is required",
                       pattern: {
                         value: /^(tb1)[a-z0-9]{39,59}$/,

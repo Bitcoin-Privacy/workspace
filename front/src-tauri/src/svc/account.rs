@@ -51,7 +51,9 @@ pub fn parse_derivation_path(deriv: &str) -> Result<(u32, u32)> {
 }
 
 pub async fn get_utxos_set(addr: &str, amount: u64) -> Result<Vec<Utxo>> {
-    let mut utxos = api::get_utxo(addr).await?;
+    let utxos = api::get_utxo(addr).await?;
+    let mut utxos: Vec<&Utxo> = utxos.iter().filter(|utxo| utxo.status.confirmed).collect();
+
     // Sort UTXOs in descending order by value
     utxos.sort_by(|a, b| b.value.cmp(&a.value));
 
