@@ -4,7 +4,7 @@ use actix_web::{
 };
 use shared::intf::statechain::{
     CreateBkTxnReq, CreateTokenReq, DepositReq, GetNonceReq, GetPartialSignatureReq,
-    GetPartialSignatureRes, ListStatecoinsReq, TransferReq, UpdateKeyReq,
+    ListStatecoinsReq, TransferReq, UpdateKeyReq,
 };
 
 use crate::{repo::statechain::StatechainRepo, svc::statechain, util::response};
