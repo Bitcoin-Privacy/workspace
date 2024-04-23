@@ -438,4 +438,6 @@ pub fn aggregate_pubkeys(
         aggregated_address,
         key_agg_ctx_tw,
     )
+pub async fn get_statecoins(conn: &NodeConnector, addr: &str) -> Result<Vec<StatecoinDto>> {
+    statechain::get_statecoins(conn, addr).await
 }

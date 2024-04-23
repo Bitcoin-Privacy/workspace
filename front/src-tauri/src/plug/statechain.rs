@@ -1,6 +1,6 @@
 use bitcoin::consensus;
 
-use shared::intf::statechain::{DepositInfo, DepositRes};
+use shared::intf::statechain::{DepositInfo, DepositRes, StatecoinDto};
 use shared::util;
 
 use tauri::{
@@ -18,6 +18,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             deposit,
             //create_deposit_tx
             // Accessors
+            get_statecoins,
         ])
         .build()
 }
@@ -75,4 +76,15 @@ pub async fn deposit(
 //         .await
 //         .map_err(util::to_string)
 // }
+
 //Accessors --------------------------------------
+
+#[command]
+pub async fn get_statecoins(
+    conn: State<'_, NodeConnector>,
+    deriv: &str,
+) -> TResult<Vec<StatecoinDto>> {
+    statechain::get_statecoins(&conn, deriv)
+        .await
+        .map_err(util::to_string)
+}

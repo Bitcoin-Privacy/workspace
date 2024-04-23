@@ -17,6 +17,12 @@ tauri-build = { version = "1.5.0", features = [] }
 [dependencies]
 tauri = { version = "1.5.3", features = ["fs-all", "path-all", "wry"] }
 
+secp256k1-zkp = { git = "https://github.com/tinguyen1107/rust-secp256k1-zkp.git", branch = "blinded-musig-scheme", features = [
+  "rand-std",
+  "hashes",
+  "std",
+] }
+
 # Workspace
 shared = { workspace = true, features = ["frontend"] }
 wallet = { workspace = true }

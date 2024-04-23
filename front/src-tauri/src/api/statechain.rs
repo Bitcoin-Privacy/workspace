@@ -3,13 +3,13 @@ use bitcoin::script;
 use reqwest::{Client, Response};
 use shared::intf::statechain::{
     self, CreateBkTxnReq, CreateBkTxnRes, GetNonceReq, GetNonceRes, GetPartialSignatureReq,
-    GetPartialSignatureRes,
+    GetPartialSignatureRes, ListStatecoinsReq, StatecoinDto,
 };
 use tauri::http::Uri;
 
 extern crate reqwest;
 
-use crate::connector::NodeConnector;
+use crate::{connector::NodeConnector, model::StateCoin};
 
 pub async fn get_nonce(
     conn: &NodeConnector,
@@ -71,6 +71,17 @@ pub async fn get_partial_signature(
         .await?;
     let json: GetPartialSignatureRes = serde_json::from_value(res)?;
     println!("Sign partial signature {:#?}", json);
+    Ok(json)
+}
+
+pub async fn get_statecoins(conn: &NodeConnector, addr: &str) -> Result<Vec<StatecoinDto>> {
+    let req = ListStatecoinsReq {
+        addr: "abc".to_string(), //addr.to_string(),
+    };
+
+    let body = serde_json::to_value(req)?;
+    let res = conn.post("statechain/statecoins", &body).await?;
+    let json: Vec<StatecoinDto> = serde_json::from_value(res)?;
     Ok(json)
 }
 
