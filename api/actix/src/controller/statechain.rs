@@ -4,7 +4,7 @@ use actix_web::{
 };
 use shared::intf::statechain::{
     CreateBkTxnReq, CreateTokenReq, DepositReq, GetNonceReq, GetPartialSignatureReq,
-    ListStatecoinsReq, TransferReq, UpdateKeyReq,
+    ListStatecoinsReq, StatecoinDto, TransferReq, UpdateKeyReq,
 };
 
 use crate::{repo::statechain::StatechainRepo, svc::statechain, util::response};
@@ -37,7 +37,7 @@ pub async fn create_bk_txn(
     statechain_repo: Data<StatechainRepo>,
     payload: Json<CreateBkTxnReq>,
 ) -> HttpResponse {
-    match statechain::create_bk_txn(
+    match statechain::sign_txn_bk(
         &statechain_repo,
         &payload.statechain_id,
         &payload.scriptpubkey,
@@ -103,8 +103,17 @@ pub async fn transfer(payload: Json<TransferReq>) -> HttpResponse {
     response::success("hello from statechain endpoint")
 }
 
-pub async fn list_statecoins(payload: Json<ListStatecoinsReq>) -> HttpResponse {
-    response::success("hello from statechain endpoint")
+pub async fn list_statecoins(
+    statechain_repo: Data<StatechainRepo>,
+    payload: Json<ListStatecoinsReq>,
+) -> HttpResponse {
+    match statechain::list_statecoins(&statechain_repo, &payload.addr).await {
+        Ok(sc) => response::success(sc.iter().map(|e| e.into()).collect::<Vec<StatecoinDto>>()),
+        Err(message) => {
+            println!("Sign backup transaction got error: {}", message);
+            response::error(message.to_string())
+        }
+    }
 }
 
 pub async fn update_key(payload: Json<UpdateKeyReq>) -> HttpResponse {

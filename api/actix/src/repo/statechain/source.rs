@@ -31,6 +31,15 @@ impl StatechainRepo {
                 .await?;
         Ok(statecoin)
     }
+
+    pub async fn get_by_token_id(&self, id: &str) -> Result<Vec<StateCoin>> {
+        let statecoins =
+            sqlx::query_as::<_, StateCoin>("select * from statechain where token_id = $1")
+                .bind(id)
+                .fetch_all(&self.pool.pool)
+                .await?;
+        Ok(statecoins)
+    }
 }
 
 #[async_trait]

@@ -1,6 +1,20 @@
-use std::string;
-
 use serde::{Deserialize, Serialize};
+
+#[cfg_attr(feature = "backend", derive(Serialize))]
+#[cfg_attr(feature = "frontend", derive(Deserialize))]
+#[derive(Debug, Clone)]
+pub struct StatecoinDto {
+    pub id: String,
+    pub token_id: String,
+    pub auth_xonly_public_key: String,
+    pub server_public_key: String,
+    pub server_private_key: String,
+    pub amount: u32,
+    pub sec_nonce: Option<String>,
+    pub pub_nonce: Option<String>,
+    pub created_at: u64,
+    pub updated_at: u64,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DepositInfo {
@@ -123,19 +137,12 @@ pub struct ListStatecoinsReq {
     pub addr: String,
 }
 
-#[cfg_attr(feature = "backend", derive(Serialize))]
-#[cfg_attr(feature = "frontend", derive(Deserialize))]
-#[derive(Debug, Clone)]
-pub struct ListStatecoinsRes {
-    // pub id: String,
-    // pub base_amount: u32,
-    // pub no_peer: u8, // should limit number of peer for a room, <= 255
-    // pub status: u8, // WaitForNewParticipant=0, WaitForSignature=1, Submitting=2, Success=3, Failed=4
-    // pub due1: u32,  // 3h -> 3*24*60*1000
-    // pub due2: u32,  // 3h -> 3*24*60*1000 calc from due01 -> total time = due01 + due02
-    // pub created_at: u64,
-    // pub updated_at: u64,
-}
+// #[cfg_attr(feature = "backend", derive(Serialize))]
+// #[cfg_attr(feature = "frontend", derive(Deserialize))]
+// #[derive(Debug, Clone)]
+// pub struct StatecoinDto {
+//     pub
+// }
 
 // ---------------------------
 // Update key

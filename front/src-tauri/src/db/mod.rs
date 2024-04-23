@@ -46,11 +46,11 @@ impl PoolWrapper {
     }
 
     pub async fn get_seckey_by_id(&self, statechain_id: &str) -> Result<Option<String>> {
-        sqlite::get_seckey_by_id(&self.pool, &statechain_id).await
+        sqlite::get_seckey_by_id(&self.pool, statechain_id).await
     }
 
     pub async fn get_statecoins_by_account(&self, account: &str) -> Result<Vec<StateCoinInfo>> {
-        sqlite::get_statecoins_by_account(&self.pool, &account).await
+        sqlite::get_statecoins_by_account(&self.pool, account).await
     }
 
     pub fn add_or_update_room(&self, deriv: &str, room: &RoomEntity) -> Result<()> {

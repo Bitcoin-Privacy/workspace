@@ -1,6 +1,7 @@
 use std::str::FromStr;
 
-use actix_web::{web::Data, Result};
+use actix_web::web::Data;
+use anyhow::{anyhow, Result};
 use bitcoin::{
     absolute, consensus, transaction::Version, Address, Amount, Network, OutPoint, ScriptBuf,
     Sequence, Transaction, TxIn, TxOut, Witness,
@@ -21,12 +22,9 @@ pub async fn register(
     amount: u32,
     change_addr: &str,
     output_addr: &str,
-) -> Result<(Room, String), String> {
+) -> Result<(Room, String)> {
     // Find compatible room
-    let room = match repo.get_compatible_room(amount).await {
-        Ok(room) => room,
-        Err(e) => return Err(e),
-    };
+    let room = repo.get_compatible_room(amount).await?;
 
     // Update room
     let first_utxo = utxo.first().unwrap();
@@ -36,14 +34,10 @@ pub async fn register(
     let change = if total > est {
         total - est
     } else {
-        return Err("Insufficient funds for CoinJoin fee".to_string());
+        return Err(anyhow!("Insufficient funds for CoinJoin fee"));
     };
 
-    let des_addr = match super::account::parse_addr_from_str(change_addr, Network::Testnet) {
-        Ok(a) => a,
-        Err(e) => return Err(format!("Invalid address: {}", e)),
-    };
-
+    let des_addr = super::account::parse_addr_from_str(change_addr, Network::Testnet)?;
     let add_peer_res = repo
         .add_peer(
             room.id,
@@ -67,14 +61,14 @@ pub async fn set_output(
     room_id: &str,
     output_addr: &str,
     sig: &str,
-) -> Result<u8, String> {
+) -> Result<u8> {
     // Attempt to get the room and handle the error if it doesn't exist
     let room = repo.get_room_by_id(room_id).await?;
 
     // Attempt to add output and handle any potential error
     repo.add_output(room_id, output_addr, room.base_amount)
         .await
-        .map_err(|e| format!("Failed to add output: {}", e))?;
+        .map_err(|e| anyhow!("Failed to add output: {}", e))?;
 
     let keypair = CFG.blind_keypair;
 
@@ -84,42 +78,58 @@ pub async fn set_output(
     if valid {
         Ok(0)
     } else {
-        Err("Invalid signature".to_string())
+        Err(anyhow!("Invalid signature"))
     }
 }
 
 pub async fn set_sig(
     repo: Data<CoinJoinRepo>,
     room_id: &str,
-    output_addr: &str,
-    sig: &str,
-) -> Result<u8, String> {
-    // Attempt to get the room and handle the error if it doesn't exist
-    let room = repo.get_room_by_id(room_id).await?;
+    vins: &[u16],
+    txn: &str,
+) -> Result<bool> {
+    let parsed_tx = consensus::deserialize::<Transaction>(&hex::decode(txn)?)?;
 
-    // Attempt to add output and handle any potential error
-    repo.add_output(room_id, output_addr, room.base_amount)
-        .await
-        .map_err(|e| format!("Failed to add output: {}", e))?;
+    for vin in vins.iter() {
+        let signed_input = parsed_tx.input.get(*vin as usize);
+        if let Some(signed_input) = signed_input {
+            let witness = &signed_input.witness;
+            if witness.is_empty() {
+                return Err(anyhow!("Empty witness!"));
+            };
+            let result = repo
+                .add_script(
+                    room_id,
+                    *vin,
+                    &serde_json::to_string(signed_input).expect("Cannot encode input"),
+                )
+                .await?;
+        } else {
+            return Err(anyhow!("Cannot get signed input"));
+        }
+    }
 
-    let keypair = CFG.blind_keypair;
-
-    // Process signature errors in one go
-    let valid = validate_signature(sig, keypair.public(), output_addr)?;
-
-    if valid {
-        Ok(0)
-    } else {
-        Err("Invalid signature".to_string())
+    let completed = check_tx_completed(Data::clone(&repo), room_id).await;
+    match completed {
+        Ok(tx) => {
+            let tx_hex = consensus::encode::serialize_hex(&tx);
+            println!("TX: {:#?}", tx);
+            println!("TX completed: {}", tx_hex);
+            Ok(true)
+        }
+        Err(e) => {
+            println!("Check completed got error: {}", e);
+            Ok(false)
+        }
     }
 }
 
-pub async fn get_txn_hex(repo: Data<CoinJoinRepo>, room_id: &str) -> Result<String, String> {
+pub async fn get_txn_hex(repo: Data<CoinJoinRepo>, room_id: &str) -> Result<String> {
     let txn = get_txn(repo, room_id).await?;
     Ok(consensus::encode::serialize_hex(&txn))
 }
 
-async fn get_txn(repo: Data<CoinJoinRepo>, room_id: &str) -> Result<bitcoin::Transaction, String> {
+async fn get_txn(repo: Data<CoinJoinRepo>, room_id: &str) -> Result<bitcoin::Transaction> {
     let raw_inputs = repo.get_inputs(room_id).await?;
     let raw_outputs = repo.get_outputs(room_id).await?;
 
@@ -159,8 +169,10 @@ async fn get_txn(repo: Data<CoinJoinRepo>, room_id: &str) -> Result<bitcoin::Tra
     })
 }
 
-pub async fn get_room_by_addr(repo: Data<CoinJoinRepo>, addr: &str) -> Result<Vec<Room>, String> {
-    repo.get_room_by_addr(addr).await
+pub async fn get_room_by_addr(repo: Data<CoinJoinRepo>, addr: &str) -> Result<Vec<Room>> {
+    let rooms = repo.get_room_by_addr(addr).await?;
+
+    Ok(rooms)
 }
 
 pub async fn check_tx_completed(
@@ -191,7 +203,7 @@ fn validate_signature(
     _hex_sig: &str,
     _public_key: RistrettoPoint, // Assuming you have some PublicKey type
     _output_address: &str,
-) -> Result<bool, String> {
+) -> Result<bool> {
     // let sig = WiredUnblindedSigData::try_from(hex_sig)?
     //     .to_internal_format()
     //     .map_err(|_| "Invalid signature type".to_string())?;

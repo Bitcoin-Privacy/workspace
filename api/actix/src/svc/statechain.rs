@@ -18,7 +18,10 @@ use musig2::{
 };
 use secp256k1::{schnorr::Signature, Message};
 
-use crate::repo::statechain::{StatechainRepo, TraitStatechainRepo};
+use crate::{
+    model::entity::statechain::StateCoin,
+    repo::statechain::{StatechainRepo, TraitStatechainRepo},
+};
 use shared::intf::statechain::{CreateBkTxnRes, DepositRes, GetNonceRes, GetPartialSignatureRes};
 
 pub async fn create_deposit(
@@ -182,4 +185,11 @@ pub async fn verify_signature(
 
     let secp = Secp256k1::new();
     Ok(secp.verify_schnorr(&signed_message, &msg, &pub_key).is_ok())
+}
+
+pub async fn list_statecoins(
+    repo: &Data<StatechainRepo>,
+    token_id: &str,
+) -> Result<Vec<StateCoin>> {
+    repo.get_by_token_id(token_id).await
 }

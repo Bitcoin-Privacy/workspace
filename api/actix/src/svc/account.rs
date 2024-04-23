@@ -1,13 +1,12 @@
 use shared::{api, intf::coinjoin::ProofSignature, model::Utxo};
 
+use anyhow::Result;
 use std::str::FromStr;
 
 use bitcoin::{Address, Network};
 
-pub fn parse_addr_from_str(raw_addr: &str, network: Network) -> Result<Address, String> {
-    Address::from_str(raw_addr)
-        .map_err(|e| e.to_string())
-        .and_then(|addr| addr.require_network(network).map_err(|e| e.to_string()))
+pub fn parse_addr_from_str(raw_addr: &str, network: Network) -> Result<Address> {
+    Ok(Address::from_str(raw_addr)?.require_network(network)?)
 }
 
 /// UTXO Validator

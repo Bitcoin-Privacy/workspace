@@ -1,4 +1,5 @@
 use crate::CFG;
+use anyhow::{anyhow, Result};
 
 pub fn get_session() -> (String, String) {
     let session = CFG.blind_session;
@@ -10,15 +11,13 @@ pub fn get_session() -> (String, String) {
     )
 }
 
-pub fn blind_sign(msg: &str) -> Result<String, String> {
-    let msg: [u8; 32] = hex::decode(msg)
-        .map_err(|e: hex::FromHexError| e.to_string())?
+pub fn blind_sign(msg: &str) -> Result<String> {
+    let msg: [u8; 32] = hex::decode(msg)?
         .try_into()
-        .map_err(|e: Vec<u8>| format!("Invalid length: {:#?}", e))?;
+        .map_err(|e: Vec<u8>| anyhow!("Invalid length: {:#?}", e))?;
 
     let session = CFG.blind_session;
-    match session.sign_ep(&msg, CFG.blind_keypair.private()) {
-        Ok(signed_blind_output) => Ok(hex::encode(signed_blind_output)),
-        Err(e) => Err(e.to_string()), // Assuming e can be converted to String
-    }
+    Ok(hex::encode(
+        session.sign_ep(&msg, CFG.blind_keypair.private())?,
+    ))
 }
