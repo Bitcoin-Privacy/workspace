@@ -1,5 +1,6 @@
 -- drop table if exists statechain_data;
 -- drop table if exists room, txin, txout, proof; 
+
 create extension if not exists "uuid-ossp";
 
 create table if not exists room (
@@ -14,6 +15,16 @@ create table if not exists room (
     constraint chk_status check (status in (0, 1, 2, 3, 4))
 );
 
+-- create table if not exists peer (
+--     id uuid default uuid_generate_v1() not null constraint rooms_pkey primary key,
+--     room_id uuid,
+--     address varchar(64) not null,
+--     -- status int2 default 0 not null,
+--     created_at timestamp with time zone default current_timestamp,
+--     updated_at timestamp with time zone default current_timestamp,
+--     constraint chk_status check (status in (0, 1, 2, 3, 4))
+-- );
+--
 create table if not exists txin (
     id uuid default uuid_generate_v1() not null constraint txins_pkey primary key,
     room_id uuid,
@@ -43,6 +54,8 @@ create table if not exists proof (
 	foreign key (room_id) references room (id)
 );
 
+-- STATE_COINS -----------------------------------
+
 create table if not exists statechain (
 	id uuid default uuid_generate_v1() not null constraint statechain_pkey primary key,
 	token_id varchar NULL,
@@ -63,6 +76,8 @@ create table if not exists tokens (
 	confirmed boolean DEFAULT false,
 	spent boolean DEFAULT false
 );
+
+-- Function --------------------------------------
 
 create or replace function
 add_new_peer(

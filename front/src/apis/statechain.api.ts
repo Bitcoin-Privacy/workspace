@@ -20,4 +20,11 @@ export const StatechainApi = Object.freeze({
       },
     );
   },
+
+  /* Accessors */
+  async getStatecoins(deriv: string): Promise<any[]> {
+    return await TauriConnection.callAPI<any[]>(this.name("get_statecoins"), {
+      deriv,
+    });
+  },
 });

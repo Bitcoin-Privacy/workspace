@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 
-#[cfg_attr(feature = "backend", derive(Serialize))]
+// #[cfg_attr(feature = "backend", derive(Serialize))]
 #[cfg_attr(feature = "frontend", derive(Deserialize))]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct StatecoinDto {
     pub id: String,
     pub token_id: String,

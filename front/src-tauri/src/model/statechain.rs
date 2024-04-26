@@ -1,9 +1,10 @@
 use serde::{Deserialize, Serialize};
-#[derive(sqlx::FromRow, Debug, Clone, Deserialize, Serialize)]
 
+#[derive(sqlx::FromRow, Debug, Clone, Deserialize, Serialize)]
 pub struct StateCoin {
-    pub statechain_id: String,
+    pub id: String,
     pub deriv: String,
+
     pub aggregated_address: String,
     pub amount: i64,
     pub funding_tx: String,

@@ -1,15 +1,25 @@
 use anyhow::Result;
-use bitcoin::script;
-use reqwest::{Client, Response};
 use shared::intf::statechain::{
-    self, CreateBkTxnReq, CreateBkTxnRes, GetNonceReq, GetNonceRes, GetPartialSignatureReq,
-    GetPartialSignatureRes, ListStatecoinsReq, StatecoinDto,
+    CreateBkTxnReq, CreateBkTxnRes, DepositReq, DepositRes, GetNonceReq, GetNonceRes,
+    GetPartialSignatureReq, GetPartialSignatureRes, ListStatecoinsReq, StatecoinDto,
 };
-use tauri::http::Uri;
 
 extern crate reqwest;
 
-use crate::{connector::NodeConnector, model::StateCoin};
+use crate::connector::NodeConnector;
+
+pub async fn deposit(conn: &NodeConnector, pk: String, amount: u32) -> Result<DepositRes> {
+    let req = DepositReq {
+        token_id: "abc".to_string(),
+        addr: pk,
+        amount,
+    };
+    let body = serde_json::to_value(req)?;
+    let res = conn.post("statechain/deposit", &body).await?;
+
+    let json: DepositRes = serde_json::from_value(res)?;
+    Ok(json)
+}
 
 pub async fn get_nonce(
     conn: &NodeConnector,

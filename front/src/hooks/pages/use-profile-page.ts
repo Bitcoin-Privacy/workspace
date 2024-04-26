@@ -4,7 +4,7 @@ import { useClipboard } from "@chakra-ui/react";
 import { useRouter } from "next/router";
 import { useQuery } from "react-query";
 
-import { AppApi, CoinJoinApi } from "@/apis";
+import { AppApi, CoinJoinApi, StatechainApi } from "@/apis";
 import { CachePrefixKeys } from "@/consts";
 import { b64EncodeUnicode } from "@/utils";
 import { useDeriv } from "@/hooks";
@@ -38,13 +38,16 @@ export const useProfilePage = () => {
     () => AppApi.getBalance(addr),
     { enabled: !!addr },
   );
-
   const listRoomsQuery = useQuery(
     [CachePrefixKeys.ListRooms, addr],
     () => CoinJoinApi.getRooms(deriv),
     { enabled: !!addr },
   );
-
+  const listStatecoinsQuery = useQuery(
+    [CachePrefixKeys.ListStatecoins, addr],
+    () => StatechainApi.getStatecoins(deriv),
+    { enabled: !!addr },
+  );
 
   const onSendBtnClick = useCallback(() => {
     router.push(`/profile/${b64EncodeUnicode(deriv)}/send`);
@@ -74,6 +77,7 @@ export const useProfilePage = () => {
       listUtxoQuery,
       balanceQuery,
       listRoomsQuery,
+      listStatecoinsQuery,
     },
     methods: {
       onCopy,

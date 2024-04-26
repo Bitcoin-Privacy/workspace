@@ -2,11 +2,11 @@ use actix_web::{
     web::{self, Data, Json},
     HttpResponse,
 };
-use bitcoin::{consensus, Transaction};
 use shared::intf::coinjoin::{
     GetRoomByIdRes, GetStatusRes, GetUnsignedTxnRes, RegisterReq, RegisterRes, RoomDto,
-    RoomListQuery, RoomQueryReq, SetOutputReq, SetOutputRes, SignTxnReq,
+    RoomListQuery, RoomQueryReq, SetOutputReq, SetOutputRes, SignTxnReq, SignTxnRes,
 };
+use shared::util;
 
 use crate::{
     repo::coinjoin::{CoinJoinRepo, TraitCoinJoinRepo},
@@ -68,7 +68,7 @@ pub async fn set_output(
     .await
     {
         Ok(status) => response::success(SetOutputRes { status }),
-        Err(message) => response::error(message),
+        Err(message) => response::error(util::to_string(message)),
     }
 }
 
@@ -78,47 +78,12 @@ pub async fn set_signature(
     coinjoin_repo: Data<CoinJoinRepo>,
     payload: Json<SignTxnReq>,
 ) -> HttpResponse {
-    // TODO: verify sig
-    let parsed_tx =
-        consensus::deserialize::<Transaction>(&hex::decode(payload.txn.clone()).unwrap()).unwrap();
-
-    for vin in payload.vins.iter() {
-        let signed_input = parsed_tx.input.get(*vin as usize);
-        if let Some(signed_input) = signed_input {
-            let witness = &signed_input.witness;
-            if witness.is_empty() {
-                return HttpResponse::BadRequest().into();
-            };
-            let result = coinjoin_repo
-                .add_script(
-                    &payload.room_id,
-                    *vin,
-                    &serde_json::to_string(signed_input).expect("Cannot encode input"),
-                )
-                .await;
-            return match result {
-                Ok(_) => continue,
-                Err(e) => {
-                    response::error("Cannot write your unlock script to database".to_string() + &e)
-                }
-            };
-        } else {
-            return response::error("Cannot get signed input".to_string());
-        }
+    match coinjoin::set_sig(coinjoin_repo, &payload.room_id, &payload.vins, &payload.txn).await {
+        Ok(status) => response::success(SignTxnRes {
+            status: if status { 0 } else { 1 },
+        }),
+        Err(message) => response::error(util::to_string(message)),
     }
-
-    let completed =
-        coinjoin::check_tx_completed(Data::clone(&coinjoin_repo), &payload.room_id).await;
-    match completed {
-        Ok(tx) => {
-            let tx_hex = consensus::encode::serialize_hex(&tx);
-            println!("TX: {:#?}", tx);
-            println!("TX completed: {}", tx_hex)
-        }
-        Err(e) => println!("Check completed got error: {}", e),
-    }
-
-    response::ok()
 }
 
 pub async fn get_room_list(
@@ -127,7 +92,7 @@ pub async fn get_room_list(
 ) -> HttpResponse {
     match coinjoin::get_room_by_addr(coinjoin_repo, &query.address).await {
         Ok(tx) => response::success(tx.iter().map(|dto| dto.into()).collect::<Vec<RoomDto>>()),
-        Err(e) => response::error(e),
+        Err(message) => response::error(util::to_string(message)),
     }
 }
 
@@ -150,7 +115,7 @@ pub async fn get_status(
         Ok(room) => response::success(GetStatusRes {
             status: room.status,
         }),
-        Err(e) => response::error(e),
+        Err(message) => response::error(util::to_string(message)),
     }
 }
 
@@ -160,6 +125,6 @@ pub async fn get_txn(
 ) -> HttpResponse {
     match coinjoin::get_txn_hex(coinjoin_repo, &path.id).await {
         Ok(tx) => response::success(GetUnsignedTxnRes { tx }),
-        Err(e) => response::error(e),
+        Err(message) => response::error(util::to_string(message)),
     }
 }

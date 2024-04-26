@@ -6,6 +6,7 @@ use shared::intf::statechain::{
     CreateBkTxnReq, CreateTokenReq, DepositReq, GetNonceReq, GetPartialSignatureReq,
     ListStatecoinsReq, StatecoinDto, TransferReq, UpdateKeyReq,
 };
+use statechain_core::deposit::DepositMsg1;
 
 use crate::{repo::statechain::StatechainRepo, svc::statechain, util::response};
 
@@ -15,20 +16,13 @@ pub async fn create_token(payload: Json<CreateTokenReq>) -> HttpResponse {
 
 pub async fn deposit(
     statechain_repo: Data<StatechainRepo>,
-    payload: Json<DepositReq>,
+    payload: Json<DepositMsg1>,
 ) -> HttpResponse {
-    match statechain::create_deposit(
-        &statechain_repo,
-        &payload.token_id,
-        &payload.addr,
-        payload.amount,
-    )
-    .await
-    {
+    match statechain::create_deposit(&statechain_repo, payload.0).await {
         Ok(status) => response::success(status),
         Err(message) => {
             println!("Deposit got error: {}", message);
-            response::error(message)
+            response::error(message.to_string())
         }
     }
 }

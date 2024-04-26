@@ -1,44 +1,48 @@
-use std::{fmt::Display, str::FromStr};
+use std::str::FromStr;
 
 use actix_web::web::Data;
-use anyhow::{bail, Error, Result};
+use anyhow::{anyhow, Result};
 use bitcoin::{
-    bip32::Xpub,
-    consensus::{self, serde::hex::Lower},
-    hashes::{sha256, Hash},
+    consensus,
+    hashes::sha256,
     hex::{Case, DisplayHex},
     key::{Keypair, TapTweak, TweakedKeypair},
-    secp256k1::{rand, PublicKey, Secp256k1, SecretKey},
+    secp256k1::{rand, schnorr::Signature, PublicKey, Secp256k1, SecretKey},
     sighash::{Prevouts, SighashCache},
-    Amount, ScriptBuf, TapSighash, TapSighashType, Transaction, TxOut, XOnlyPublicKey,
+    Amount, ScriptBuf, TapSighashType, Transaction, TxOut, XOnlyPublicKey,
 };
-use musig2::{
-    secp::MaybeScalar, AggNonce, BinaryEncoding, FirstRound, KeyAggContext, PartialSignature,
-    SecNonce, SecNonceSpices,
-};
-use secp256k1::{schnorr::Signature, Message};
+use musig2::{secp256k1::Message, AggNonce, KeyAggContext, PartialSignature, SecNonce};
+use statechain_core::deposit::{DepositMsg1, DepositMsg1Response};
 
 use crate::{
     model::entity::statechain::StateCoin,
     repo::statechain::{StatechainRepo, TraitStatechainRepo},
 };
-use shared::intf::statechain::{CreateBkTxnRes, DepositRes, GetNonceRes, GetPartialSignatureRes};
+use shared::intf::statechain::{CreateBkTxnRes, GetNonceRes, GetPartialSignatureRes};
 
 pub async fn create_deposit(
     repo: &Data<StatechainRepo>,
-    token_id: &str,
-    auth_pubkey: &str,
-    amount: u32,
-) -> Result<DepositRes, String> {
-    println!("Auth pubkey {}", auth_pubkey);
-    let auth_key = match XOnlyPublicKey::from_str(auth_pubkey) {
-        Ok(key) => key,
-        Err(err) => return Err(format!("Invalid auth public key: {}", err)),
-    };
+    payload: DepositMsg1,
+) -> Result<DepositMsg1Response> {
+    let auth_key = XOnlyPublicKey::from_str(&payload.auth_key)?;
+    let token_id = payload.token_id.clone();
+    let signed_token_id = Signature::from_str(&payload.signed_token_id.to_string())?;
+
+    let msg = Message::from_hashed_data::<sha256::Hash>(token_id.to_string().as_bytes());
+
+    let secp = Secp256k1::new();
+    if !secp
+        .verify_schnorr(&signed_token_id, &msg, &auth_key)
+        .is_ok()
+    {
+        return Err(anyhow!("Signature does not match authentication key."));
+    }
 
     let secp = Secp256k1::new();
     let secret_key = SecretKey::new(&mut rand::thread_rng());
     let pub_key = PublicKey::from_secret_key(&secp, &secret_key);
+    println!("KEYPAIR - PRIV: {:#?}", secret_key.display_secret());
+    println!("KEYPAIR - PUBL: {:#?}", pub_key.to_string());
 
     let nonce_seed = [0xACu8; 32];
     let secnonce = musig2::SecNonceBuilder::new(nonce_seed).build();
@@ -47,26 +51,25 @@ pub async fn create_deposit(
 
     let statecoin = repo
         .create_deposit_tx(
-            token_id,
+            &token_id,
             &auth_key,
             &pub_key,
             &secret_key,
-            amount,
+            0,
             &secnonce,
             &pubnonce,
         )
-        .await
-        .map_err(|e| format!("Failed to add deposit: {}", e))?;
+        .await?;
 
-    let res = DepositRes {
-        se_pubkey_1: pub_key.to_string(),
+    let res = DepositMsg1Response {
+        server_pubkey: pub_key.to_string(),
         statechain_id: statecoin.id.to_string(),
     };
 
     Ok(res)
 }
 
-pub async fn create_bk_txn(
+pub async fn sign_txn_bk(
     repo: &Data<StatechainRepo>,
     statechain_id: &str,
     scriptpubkey: &str,

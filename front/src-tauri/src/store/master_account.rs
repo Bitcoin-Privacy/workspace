@@ -1,13 +1,16 @@
 use std::sync::{Mutex, MutexGuard};
 
+use anyhow::Result;
 use bitcoin::Network;
 use lazy_static::lazy_static;
+use statechain_core::wallet::Wallet;
 use wallet::core::{Account, AddrType, MasterAccount, Mnemonic, Unlocker};
 
-use crate::cfg::PASSPHRASE;
+use crate::cfg::{CFG, PASSPHRASE};
 
 lazy_static! {
     pub static ref MASTER: Mutex<Option<MasterAccount>> = Mutex::new(None);
+    pub static ref WALLET: Mutex<Option<Wallet>> = Mutex::new(None);
 }
 
 pub fn initialize_master_account(
@@ -39,4 +42,35 @@ pub fn get_mut_master() -> MutexGuard<'static, Option<MasterAccount>> {
 
 pub fn get_master() -> Option<MasterAccount> {
     MASTER.lock().unwrap().clone()
+}
+
+pub fn get_mut_wallet() -> MutexGuard<'static, Option<Wallet>> {
+    WALLET.lock().unwrap()
+}
+
+pub fn get_wallet() -> Option<Wallet> {
+    WALLET.lock().unwrap().clone()
+}
+
+pub async fn create_wallet(mnemonic: &Mnemonic) -> Result<Wallet> {
+    let blockheight = 0;
+
+    let wallet = Wallet {
+        name: String::from("Master wallet"),
+        mnemonic: mnemonic.to_string(),
+        version: String::from("0.1.0"),
+        state_entity_endpoint: CFG.service_url.clone(),
+        electrum_endpoint: String::from(""),
+        network: String::from("testnet"),
+        blockheight,
+        initlock: 0,
+        interval: 0,
+        tokens: Vec::new(),
+        activities: Vec::new(),
+        coins: Vec::new(),
+    };
+
+    // save wallet to database
+
+    Ok(wallet)
 }

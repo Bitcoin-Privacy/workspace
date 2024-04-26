@@ -87,7 +87,7 @@ pub fn create_aggregated_address(coin: &Coin, network: String) -> Result<Aggrega
     let secp = Secp256k1::new();
 
     let user_pubkey_share = PublicKey::from_str(&coin.user_pubkey)?;
-    let server_pubkey_share = PublicKey::from_str(&coin.server_pubkey.as_ref().unwrap())?;
+    let server_pubkey_share = PublicKey::from_str(coin.server_pubkey.as_ref().unwrap())?;
 
     let aggregate_pubkey = user_pubkey_share.combine(&server_pubkey_share)?;
 
@@ -101,3 +101,26 @@ pub fn create_aggregated_address(coin: &Coin, network: String) -> Result<Aggrega
     })
 }
 
+pub fn create_aggregated_pubkey(
+    user_pubkey: &str,
+    server_pubkey: &str,
+    network: &str,
+) -> Result<AggregatedPublicKey> {
+    let network = get_network(network)?;
+
+    let secp = Secp256k1::new();
+
+    let user_pubkey_share = PublicKey::from_str(user_pubkey)?;
+    let server_pubkey_share = PublicKey::from_str(server_pubkey)?;
+
+    let aggregate_pubkey = user_pubkey_share.combine(&server_pubkey_share)?;
+
+    let aggregated_xonly_pubkey = aggregate_pubkey.x_only_public_key().0;
+
+    let aggregate_address = Address::p2tr(&secp, aggregated_xonly_pubkey, None, network);
+
+    Ok(AggregatedPublicKey {
+        aggregate_pubkey: aggregate_pubkey.to_string(),
+        aggregate_address: aggregate_address.to_string(),
+    })
+}

@@ -11,6 +11,6 @@ pub fn config(cfg: &mut web::ServiceConfig) {
     // cfg.route("/sign/second", web::post().to(statechain::sign_second));
     cfg.route("/create-bk-txn", web::post().to(statechain::create_bk_txn));
     cfg.route("/transfer-ownership", web::post().to(statechain::transfer));
-    cfg.route("/statecoins", web::get().to(statechain::list_statecoins));
+    cfg.route("/statecoins", web::post().to(statechain::list_statecoins));
     cfg.route("/update-key", web::post().to(statechain::update_key));
 }

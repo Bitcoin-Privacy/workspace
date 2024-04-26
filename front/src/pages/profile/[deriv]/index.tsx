@@ -36,6 +36,7 @@ export default function ProfilePage() {
       listUtxoQuery,
       balanceQuery,
       listRoomsQuery,
+      listStatecoinsQuery,
     },
     methods: {
       onCopy,
@@ -219,7 +220,7 @@ export default function ProfilePage() {
           <TabPanels>
             <TabPanel>
               <VStack h="100%" w="100%">
-                {mockStatechain.map((val, index) => (
+                {listStatecoinsQuery.data?.map((val, index) => (
                   <StateChainCard val={val} key={index} />
                 ))}
               </VStack>

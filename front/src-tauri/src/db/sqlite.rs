@@ -10,16 +10,16 @@ use crate::{cfg::CFG, model::StateCoin, model::StateCoinInfo};
 
 pub async fn init_db() -> sqlx::Result<SqlitePool> {
     let db_url = &CFG.database_url;
-    if !Sqlite::database_exists(&db_url).await.unwrap_or(false) {
-        println!("Creating sqlite database {}", &db_url);
-        match Sqlite::create_database(&db_url).await {
+    if !Sqlite::database_exists(db_url).await.unwrap_or(false) {
+        println!("Creating sqlite database {}", db_url);
+        match Sqlite::create_database(db_url).await {
             Ok(_) => println!("Create db success"),
             Err(error) => panic!("error: {}", error),
         }
     } else {
         println!("Database already exists");
     }
-    let pool = SqlitePool::connect(&db_url).await?;
+    let pool = SqlitePool::connect(db_url).await?;
 
     Ok(pool)
 }

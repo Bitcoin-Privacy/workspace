@@ -52,14 +52,12 @@ CREATE TABLE IF NOT EXISTS StateCoin (
     owner_pubkey TEXT,
     owner_seckey TEXT,
 
-
     --deposit tx info
     funding_txid TEXT,
     funding_vout INT,
     funding_tx TEXT,
 
     --backup tx info
-
     n_lock_time INT,
     tx_n INT,
     backup_tx  TEXT,

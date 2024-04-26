@@ -8,6 +8,7 @@ use sqlx::{sqlite::SqliteQueryResult, Executor, SqlitePool};
 use crate::model::{RoomEntity, StateCoin, StateCoinInfo};
 
 mod sqlite;
+mod statecoin;
 
 pub struct PoolWrapper {
     pool: SqlitePool,
@@ -42,7 +43,7 @@ impl PoolWrapper {
         sqlite::get_cfg(&self.pool, "seed").await
     }
     pub async fn get_statecoin_by_id(&self, statechain_id: &str) -> Result<StateCoin> {
-        sqlite::get_statecoin_by_id(&self.pool, &statechain_id).await
+        sqlite::get_statecoin_by_id(&self.pool, statechain_id).await
     }
 
     pub async fn get_seckey_by_id(&self, statechain_id: &str) -> Result<Option<String>> {

@@ -9,6 +9,7 @@ edition = "2021"
 # internal
 shared = { workspace = true, features = ["backend"] }
 wallet = { workspace = true }
+statechain_core = { workspace = true }
 
 # actix
 actix-web = { workspace = true }

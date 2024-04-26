@@ -1,6 +1,4 @@
-use bitcoin::consensus;
-
-use shared::intf::statechain::{DepositInfo, DepositRes, StatecoinDto};
+use shared::intf::statechain::{DepositInfo, StatecoinDto};
 use shared::util;
 
 use tauri::{
@@ -9,7 +7,12 @@ use tauri::{
     Runtime, State,
 };
 
-use crate::{connector::NodeConnector, db::PoolWrapper, svc::statechain, TResult};
+use crate::{
+    connector::NodeConnector,
+    db::PoolWrapper,
+    svc::{statechain, statecoin},
+    TResult,
+};
 
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
     Builder::new("statechain")
@@ -25,14 +28,22 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
 
 // Modifiers --------------------------------------
 
+/// # Deposit function will handle:
+/// - Create a new statecoin in local
+/// - Request to the server to get server's public key
+/// - Generate aggregated address
+/// -----------------------------------
+/// - Create deposit and backup transaction
+/// - Request to server to get signature for the backup transaction
+/// - Broadcast deposit transaction
 #[command]
 pub async fn deposit(
     pool: State<'_, PoolWrapper>,
     conn: State<'_, NodeConnector>,
     deriv: &str,
-    amount: u64,
-) -> TResult<DepositInfo> {
-    statechain::deposit(&pool, &conn, deriv, amount)
+    amount: u32,
+) -> TResult<String> {
+    statecoin::deposit(&pool, &conn, deriv, amount)
         .await
         .map_err(util::to_string)
 }

@@ -1,12 +1,12 @@
-pub mod key_derivation;
 pub mod cpfp_tx;
+pub mod key_derivation;
 
 use std::{fmt, str::FromStr};
 
-use bip39::{Mnemonic, Language};
-use secp256k1_zkp::rand::{self, Rng};
-use serde::{Serialize, Deserialize};
 use anyhow::Result;
+use bip39::{Language, Mnemonic};
+use secp256k1_zkp::rand::{self, Rng};
+use serde::{Deserialize, Serialize};
 
 use crate::utils::ServerConfig;
 
@@ -24,9 +24,8 @@ pub struct Wallet {
     pub tokens: Vec<Token>,
     pub activities: Vec<Activity>,
     pub coins: Vec<Coin>,
-    pub settings: Settings,
+    // pub settings: Settings,
 }
-
 
 #[allow(non_snake_case)]
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -44,7 +43,7 @@ pub struct Settings {
     pub electrumPort: String,
     pub electrumType: String,
     pub notifications: bool,
-    pub tutorials: bool
+    pub tutorials: bool,
 }
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Token {
@@ -63,12 +62,11 @@ pub struct Activity {
     pub utxo: String,
     pub amount: u32,
     pub action: String,
-    pub date: String
+    pub date: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Coin {
-    
     pub index: u32,
     pub user_privkey: String,
     pub user_pubkey: String,
@@ -106,28 +104,32 @@ pub struct Coin {
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub enum CoinStatus {
     INITIALISED, //  address generated but no Tx0 yet
-    IN_MEMPOOL, // Tx0 in mempool
+    IN_MEMPOOL,  // Tx0 in mempool
     UNCONFIRMED, // Tx0 is awaiting more confirmations before coin is available to be sent
-    CONFIRMED, // Tx0 confirmed and coin available to be sent
+    CONFIRMED,   // Tx0 confirmed and coin available to be sent
     IN_TRANSFER, // transfer-sender performed, but receiver hasn't completed transfer-receiver
     WITHDRAWING, // withdrawal tx signed and broadcast but not yet confirmed
     TRANSFERRED, // the coin was transferred
-    WITHDRAWN, // the coin was withdrawn
+    WITHDRAWN,   // the coin was withdrawn
 }
 
 impl fmt::Display for CoinStatus {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         // Match the enum variants
-        write!(f, "{}", match self {
-            Self::INITIALISED => "INITIALISED",
-            Self::IN_MEMPOOL => "IN_MEMPOOL",
-            Self::UNCONFIRMED => "UNCONFIRMED",
-            Self::CONFIRMED => "CONFIRMED",
-            Self::IN_TRANSFER => "IN_TRANSFER",
-            Self::WITHDRAWING => "WITHDRAWING",
-            Self::TRANSFERRED => "TRANSFERRED",
-            Self::WITHDRAWN => "WITHDRAWN",
-        })
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::INITIALISED => "INITIALISED",
+                Self::IN_MEMPOOL => "IN_MEMPOOL",
+                Self::UNCONFIRMED => "UNCONFIRMED",
+                Self::CONFIRMED => "CONFIRMED",
+                Self::IN_TRANSFER => "IN_TRANSFER",
+                Self::WITHDRAWING => "WITHDRAWING",
+                Self::TRANSFERRED => "TRANSFERRED",
+                Self::WITHDRAWN => "WITHDRAWN",
+            }
+        )
     }
 }
 
@@ -162,7 +164,7 @@ impl FromStr for CoinStatus {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct StatechainBackupTxs {
     pub statechain_id: String,
-    pub backup_txs: Vec<BackupTx>
+    pub backup_txs: Vec<BackupTx>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -174,7 +176,7 @@ pub struct BackupTx {
     pub client_public_key: String,
     pub server_public_key: String,
     pub blinding_factor: String,
-} 
+}
 
 pub fn set_config(wallet: &mut Wallet, config: &ServerConfig) {
     wallet.initlock = config.initlock;

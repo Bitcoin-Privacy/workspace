@@ -4,5 +4,6 @@ export enum CachePrefixKeys {
 
   Balance,
   ListRooms,
+  ListStatecoins,
   UTXO,
 }

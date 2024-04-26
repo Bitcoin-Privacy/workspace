@@ -14,7 +14,7 @@ use crate::{
     cfg::{BASE_TX_FEE, PASSPHRASE},
     db::PoolWrapper,
     model::{AccountActions, AccountDTO, InitState},
-    store::master_account::{get_master, initialize_master_account},
+    store::master_account::{create_wallet, get_master, initialize_master_account},
 };
 
 use super::account;
@@ -60,6 +60,7 @@ pub async fn create_master(pool: &PoolWrapper) -> Result<Vec<String>> {
     pool.set_seed(&seed.join(" ")).await?;
 
     initialize_master_account(&mnemonic, 0, Network::Testnet, PASSPHRASE, None);
+    create_wallet(&mnemonic);
 
     Ok(seed)
 }
