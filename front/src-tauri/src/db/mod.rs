@@ -1,8 +1,10 @@
 use anyhow::{anyhow, Result};
 use bitcoin::{
+    hex::DisplayHex,
     secp256k1::{PublicKey, SecretKey},
     XOnlyPublicKey,
 };
+use musig2::{BinaryEncoding, KeyAggContext};
 use sqlx::{
     sqlite::{SqliteLockingMode, SqliteQueryResult},
     Executor, SqlitePool,
@@ -52,7 +54,7 @@ impl PoolWrapper {
         sqlite::get_seckey_by_id(&self.pool, &statechain_id).await
     }
 
-    pub async fn get_statecoins_by_account(&self, account: &str) -> Result<Vec<StateCoinInfo>> {
+    pub async fn list_statecoins_by_account(&self, account: &str) -> Result<Vec<StateCoinInfo>> {
         sqlite::get_statecoins_by_account(&self.pool, &account).await
     }
 
@@ -86,9 +88,10 @@ impl PoolWrapper {
         Err(anyhow!("Cannot find room"))
         // }
     }
-    pub async fn insert_statecoin(
+    pub async fn create_statecoin(
         &self,
         statechain_id: &str,
+        signed_statechain_id: &str,
         deriv: &str,
         amount: u64,
         auth_seckey: &SecretKey,
@@ -97,18 +100,31 @@ impl PoolWrapper {
         aggregated_address: &str,
         owner_seckey: &SecretKey,
         owner_pubkey: &PublicKey,
+        key_agg_ctx: &KeyAggContext,
     ) -> Result<SqliteQueryResult, sqlx::Error> {
-        sqlite::insert_statecoin(
+        let amount_i64: i64 = amount as i64;
+        let owner_seckey_bytes = owner_seckey.secret_bytes().to_lower_hex_string();
+        let owner_pubkey_bytes = owner_pubkey.to_string();
+        let auth_seckey_bytes = auth_seckey.secret_bytes().to_lower_hex_string();
+        let auth_pubkey_bytes = auth_pubkey.to_string();
+
+        let serialized_key_agg_ctx = key_agg_ctx
+            .to_bytes()
+            .to_hex_string(bitcoin::hex::Case::Lower);
+
+        sqlite::create_statecoin(
             &self.pool,
             &statechain_id,
+            &signed_statechain_id,
             &deriv,
-            amount,
-            &auth_seckey,
-            &auth_pubkey,
+            amount_i64,
+            &auth_seckey_bytes,
+            &auth_pubkey_bytes,
             &aggregated_pubkey,
             &aggregated_address,
-            &owner_seckey,
-            &owner_pubkey,
+            &owner_seckey_bytes,
+            &owner_pubkey_bytes,
+            &serialized_key_agg_ctx,
         )
         .await
     }
@@ -118,7 +134,6 @@ impl PoolWrapper {
         statechain_id: &str,
         funding_txid: &str,
         funding_vout: u64,
-        status: &str,
         funding_tx: &str,
     ) -> Result<SqliteQueryResult, sqlx::Error> {
         sqlite::update_deposit_tx(
@@ -126,7 +141,6 @@ impl PoolWrapper {
             statechain_id,
             funding_txid,
             funding_vout,
-            status,
             funding_tx,
         )
         .await

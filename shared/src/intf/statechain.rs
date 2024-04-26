@@ -1,6 +1,18 @@
-use std::string;
+use std::{str::SplitTerminator, string};
 
 use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct KeyRegisterReq {
+    pub statechain_id: String,
+    pub signed_id: String,
+    pub auth_pubkey_2: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct KeyRegisterRes {
+    pub random_key: String,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DepositInfo {
@@ -120,21 +132,23 @@ pub struct TransferRes {
 #[cfg_attr(feature = "frontend", derive(Serialize))]
 #[derive(Debug, Clone)]
 pub struct ListStatecoinsReq {
-    pub addr: String,
+    pub authkey: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StatecoinInfo {
+    pub statechain_id: String,
+    pub amount: u64,
+    pub sequence: u64,
+    pub txid: String,
+    pub vout: String,
 }
 
 #[cfg_attr(feature = "backend", derive(Serialize))]
 #[cfg_attr(feature = "frontend", derive(Deserialize))]
 #[derive(Debug, Clone)]
 pub struct ListStatecoinsRes {
-    // pub id: String,
-    // pub base_amount: u32,
-    // pub no_peer: u8, // should limit number of peer for a room, <= 255
-    // pub status: u8, // WaitForNewParticipant=0, WaitForSignature=1, Submitting=2, Success=3, Failed=4
-    // pub due1: u32,  // 3h -> 3*24*60*1000
-    // pub due2: u32,  // 3h -> 3*24*60*1000 calc from due01 -> total time = due01 + due02
-    // pub created_at: u64,
-    // pub updated_at: u64,
+    pub statecoins: Vec<StatecoinInfo>,
 }
 
 // ---------------------------
@@ -205,3 +219,27 @@ pub struct GetPartialSignatureReq {
 pub struct GetPartialSignatureRes {
     pub partial_signature: String,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UpdateTransferMessageReq {
+    pub transfer_msg: String,
+    pub authkey: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TransferMessage {
+    pub total_owner: u64,
+    pub backup_txs: Vec<String>,
+    pub t1: String,
+    pub statechain_id: String,
+}
+
+// #[derive(Debug, Clone, Serialize, Deserialize)]
+// pub struct GetStatecoinsReq {
+//     pub authkey: String,
+// }
+
+// #[derive(Debug, Clone, Serialize, Deserialize)]
+// pub struct GetStatecoinsRes {
+//     pub statecoins: Vec<StatecoinInfo>,
+// }

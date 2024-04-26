@@ -1,15 +1,16 @@
+use bitcoin::Address;
 use serde::{Deserialize, Serialize};
 #[derive(sqlx::FromRow, Debug, Clone, Deserialize, Serialize)]
 
 pub struct StateCoin {
-    pub statechain_id: String,
-    pub deriv: String,
+    pub signed_statechain_id: String,
+    pub aggregated_pubkey: String,
     pub aggregated_address: String,
+    pub funding_txid: String,
+    pub funding_vout: i64,
+    pub key_agg_ctx: String,
     pub amount: i64,
-    pub funding_tx: String,
-    pub backup_tx: String,
-    pub tx_n: i64,
-    pub n_lock_time: i64,
+    pub deriv: String,
 }
 
 #[derive(sqlx::FromRow, Debug, Clone, Deserialize, Serialize)]

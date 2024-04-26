@@ -9,7 +9,7 @@ mod source;
 use musig2::{PubNonce, SecNonce};
 pub use source::StatechainRepo;
 
-use crate::model::entity::statechain::{AuthPubkey, Pubnonce, StateCoin};
+use crate::model::entity::statechain::{AuthPubkey, StateCoin};
 
 #[async_trait]
 pub trait TraitStatechainRepo: Send + Sync + 'static {
@@ -20,10 +20,15 @@ pub trait TraitStatechainRepo: Send + Sync + 'static {
         server_pubkey: &PublicKey,
         server_privkey: &SecretKey,
         amount: u32,
-        secnonce: &SecNonce,
-        pubnonce: &PubNonce,
     ) -> Result<StateCoin>;
 
-    async fn get_nonce(&self, statechain_id: &str) -> Result<Pubnonce>;
+    async fn update_nonce(&self, secnonce: &str, statechain_id: &str) -> Result<()>;
     async fn get_auth_key_by_statechain_id(&self, statechain_id: &str) -> Result<AuthPubkey>;
+    async fn update_auth_pubkey(
+        &self,
+        statechain_id: &str,
+        authkey: &str,
+        random_key: &str,
+    ) -> Result<()>;
+    async fn update_transfer_message(&self, authkey: &str, transfer_msg: &str) -> Result<()>;
 }

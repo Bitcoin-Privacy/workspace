@@ -43,6 +43,7 @@ create table if not exists proof (
 	foreign key (room_id) references room (id)
 );
 
+CREATE TYPE TransferStatus AS ENUM ('UNCONFIRM','CONFIRM');
 create table if not exists statechain (
 	id uuid default uuid_generate_v1() not null constraint statechain_pkey primary key,
 	token_id varchar NULL,
@@ -51,18 +52,47 @@ create table if not exists statechain (
     server_private_key varchar NULL UNIQUE,
     amount int8 not null,
 
+    sequence int8 DEFAULT 0,
     sec_nonce varchar null, 
-    pub_nonce varchar null,
     created_at timestamp with time zone default current_timestamp,
     updated_at timestamp with time zone default current_timestamp
 );
 
-create table if not exists tokens (
-	id uuid default uuid_generate_v1() NOT NULL CONSTRAINT tokens_pkey PRIMARY KEY,
-	token_id varchar NULL UNIQUE,
-	confirmed boolean DEFAULT false,
-	spent boolean DEFAULT false
+CREATE OR REPLACE FUNCTION update_sequence_on_auth_change()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.auth_xonly_public_key <> OLD.auth_xonly_public_key THEN  -- Check if name has actually changed
+    IF NEW.sequence IS NULL THEN  -- Set default value for count if null
+      NEW.sequence := 0;
+    END IF;
+    NEW.sequence := NEW.sequence + 1;  -- Increment count by 1
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_update_auth
+AFTER UPDATE ON statechain
+FOR EACH ROW
+EXECUTE PROCEDURE update_sequence_on_auth_change();
+
+create table if not exists statechain_transfer (
+    authkey varchar not null CONSTRAINT transfer_authkey primary key,
+    random_key varchar,
+    statechain_id uuid not null ,
+    transfer_msg varchar NULL, 
+    status TransferStatus,
+    created_at timestamp with time zone not null default current_timestamp,
+    foreign key (statechain_id) REFERENCES statechain(id)
 );
+
+
+-- create table if not exists tokens (
+-- 	id uuid default uuid_generate_v1() NOT NULL CONSTRAINT tokens_pkey PRIMARY KEY,
+-- 	token_id varchar NULL UNIQUE,
+-- 	confirmed boolean DEFAULT 'UNCONFIRM' false,
+-- 	spent boolean DEFAULT false
+-- );
 
 create or replace function
 add_new_peer(

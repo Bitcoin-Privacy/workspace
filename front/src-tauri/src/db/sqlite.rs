@@ -50,8 +50,7 @@ pub async fn get_cfg(pool: &SqlitePool, key: &str) -> Result<Option<String>> {
 }
 
 pub async fn get_statecoin_by_id(pool: &SqlitePool, statechain_id: &str) -> Result<StateCoin> {
-    let row = sqlx::query_as::<_,StateCoin>(r#"select statechain_id, deriv, aggregated_address, amount,funding_tx, backup_tx, tx_n, n_lock_time from StateCoin where statechain_id = $1 "#).bind(statechain_id).fetch_one(pool).await.unwrap();
-
+    let row = sqlx::query_as::<_,StateCoin>(r#"select signed_statechain_id, aggregated_pubkey, aggregated_address, funding_txid, funding_vout, key_agg_ctx, amount, deriv from StateCoin where statechain_id = $1"#).bind(statechain_id).fetch_one(pool).await.unwrap();
     Ok(row)
 }
 
@@ -76,36 +75,33 @@ pub async fn get_statecoins_by_account(
     Ok(statecoins)
 }
 
-pub async fn insert_statecoin(
+pub async fn create_statecoin(
     pool: &SqlitePool,
     statechain_id: &str,
+    signed_statechain_id: &str,
     deriv: &str,
-    amount: u64,
-    auth_seckey: &SecretKey,
-    auth_pubkey: &XOnlyPublicKey,
+    amount: i64,
+    auth_seckey: &str,
+    auth_pubkey: &str,
     aggregated_pubkey: &str,
     aggregated_address: &str,
-    owner_seckey: &SecretKey,
-    owner_pubkey: &PublicKey,
+    owner_seckey: &str,
+    owner_pubkey: &str,
+    key_agg_ctx: &str,
 ) -> Result<SqliteQueryResult, sqlx::Error> {
-    let amount_i64: i64 = amount as i64;
-    let owner_seckey_bytes = owner_seckey.secret_bytes().to_hex_string(Case::Lower);
-    let owner_pubkey_bytes = owner_pubkey.to_string();
-
-    let auth_seckey_bytes = auth_seckey.secret_bytes().to_hex_string(Case::Lower);
-    let auth_pubkey_bytes = auth_pubkey.to_string();
-
     let res = sqlx::query(
-        r#"INSERT INTO StateCoin (statechain_id, deriv, amount,aggregated_pubkey, aggregated_address, auth_pubkey, auth_seckey, owner_pubkey,owner_seckey) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)"#)
+        r#"INSERT INTO StateCoin (statechain_id, signed_statechain_id, deriv, amount,aggregated_pubkey, aggregated_address, auth_pubkey, auth_seckey, owner_pubkey,owner_seckey, key_agg_ctx) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)"#)
         .bind(statechain_id)
+        .bind(signed_statechain_id)
         .bind(deriv)
-        .bind(amount_i64)
+        .bind(amount)
         .bind(aggregated_pubkey)
         .bind(aggregated_address)
-        .bind(auth_seckey_bytes)
-        .bind(auth_pubkey_bytes)
-        .bind(owner_pubkey_bytes)
-        .bind(owner_seckey_bytes)
+        .bind(auth_seckey)
+        .bind(auth_pubkey)
+        .bind(owner_pubkey)
+        .bind(owner_seckey)
+        .bind(key_agg_ctx)
         .execute(pool)
         .await;
 
@@ -120,7 +116,6 @@ pub async fn update_deposit_tx(
     statechain_id: &str,
     funding_txid: &str,
     funding_vout: u64,
-    status: &str,
     funding_tx: &str,
 ) -> Result<SqliteQueryResult, sqlx::Error> {
     let vout_i64: i64 = funding_vout as i64;

@@ -3,7 +3,7 @@ use bitcoin::script;
 use reqwest::{Client, Response};
 use shared::intf::statechain::{
     self, CreateBkTxnReq, CreateBkTxnRes, GetNonceReq, GetNonceRes, GetPartialSignatureReq,
-    GetPartialSignatureRes,
+    GetPartialSignatureRes, ListStatecoinsReq,
 };
 use tauri::http::Uri;
 

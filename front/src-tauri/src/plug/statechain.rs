@@ -6,15 +6,17 @@ use tauri::{
     Runtime, State,
 };
 
-use crate::{connector::NodeConnector, db::PoolWrapper, svc::statechain, util, TResult};
+use crate::{
+    connector::NodeConnector, db::PoolWrapper, model::StateCoinInfo, svc::statechain, util, TResult,
+};
 
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
     Builder::new("statechain")
         .invoke_handler(tauri::generate_handler![
             // Modifier
             deposit,
-            //create_deposit_tx
-            // Accessors
+            list_statecoins //create_deposit_tx
+                            // Accessors
         ])
         .build()
 }
@@ -29,6 +31,16 @@ pub async fn deposit(
     amount: u64,
 ) -> TResult<DepositInfo> {
     statechain::deposit(&pool, &conn, &deriv, amount)
+        .await
+        .map_err(util::to_string)
+}
+
+#[command]
+pub async fn list_statecoins(
+    pool: State<'_, PoolWrapper>,
+    deriv: &str,
+) -> TResult<Vec<StateCoinInfo>> {
+    statechain::listStatecoins(&pool, &deriv)
         .await
         .map_err(util::to_string)
 }

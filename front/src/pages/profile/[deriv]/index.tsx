@@ -26,7 +26,6 @@ import { Layout, NavBar } from "@/components";
 import { CoinJoinRoomCard } from "@/components";
 import { useProfilePage } from "@/hooks";
 import { UTXOCard } from "@/components/utxo-card";
-import { StateChainDto } from "@/dtos/statechain.dto";
 import { StateChainCard } from "@/components/statechain-card";
 
 export default function ProfilePage() {
@@ -38,6 +37,7 @@ export default function ProfilePage() {
       listUtxoQuery,
       balanceQuery,
       listRoomsQuery,
+      listStatecoinsQuery,
     },
     methods: {
       onCopy,
@@ -48,28 +48,6 @@ export default function ProfilePage() {
       onReceiveStatecoinBtnClick,
     },
   } = useProfilePage();
-
-
-  const mockStatechain: StateChainDto[] = [
-    {
-      txid: "asoo4545o4o5ji4oj5oi4j54j54h;lkfs",
-      address: "4545taasdfasdfasdfsddsdddasdf",
-      n_locktime: 34234234234234,
-      value: 0.0001,
-    },
-    {
-      txid: "asoo4545o4o5jisj5oi4j54j54h;lkfs",
-      address: "4545taasdfasdasdsdsasdfasdfasdf",
-      n_locktime: 34234234234234,
-      value: 0.0001,
-    },
-    {
-      txid: "asoo4545o4o5ji4s5oi4j54j54h;lkfs",
-      address: "4545taasdfasdsdsdsasdfasdf",
-      n_locktime: 34234234234234,
-      value: 0.0001,
-    },
-  ];
 
   const featureButtons = [
     {
@@ -220,7 +198,7 @@ export default function ProfilePage() {
               <TabPanels>
                 <TabPanel>
                   <VStack h="100%" w="100%">
-                    {mockStatechain.map((val, index) => (
+                    {listStatecoinsQuery.data?.map((val, index) => (
                       <StateChainCard val={val} key={index} />
                     ))}
                   </VStack>

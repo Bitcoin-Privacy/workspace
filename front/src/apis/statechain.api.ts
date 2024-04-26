@@ -1,5 +1,5 @@
 import { TauriConnection } from "./core";
-import { StatechainDepositResDto } from "@/dtos";
+import { StatechainDepositResDto, StateCoinDto } from "@/dtos";
 
 export const StatechainApi = Object.freeze({
   /* Utils */
@@ -15,6 +15,14 @@ export const StatechainApi = Object.freeze({
     return await TauriConnection.callAPI<StatechainDepositResDto>(this.name("deposit"), {
       deriv,
       amount,
+    });
+  },
+
+  async listStatecoins(
+    deriv : string,
+  ): Promise<[StateCoinDto]> {
+    return await TauriConnection.callAPI<[StateCoinDto]>(this.name("list_statecoins"), {
+      deriv,
     });
   },
 });

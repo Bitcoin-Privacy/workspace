@@ -1,5 +1,5 @@
 import { UtxoDto } from "@/dtos";
-import { StateChainDto } from "@/dtos/statechain.dto";
+import { StateCoinDto } from "@/dtos/statechain.dto";
 import {
   Box,
   Text,
@@ -16,13 +16,13 @@ import { useState } from "react";
 import { FiCheck, FiCopy } from "react-icons/fi";
 
 interface StateChainCardProps {
-  val: StateChainDto;
+  val: StateCoinDto;
   key: number;
 }
 
 export function StateChainCard(props: StateChainCardProps) {
   const { val, key } = props;
-  const { onCopy, value, setValue, hasCopied } = useClipboard(val.txid);
+  const { onCopy, value, setValue, hasCopied } = useClipboard(val.funding_txid);
   const [timeValue, setTimeValue] = useState(50);
   return (
     <HStack
@@ -46,12 +46,12 @@ export function StateChainCard(props: StateChainCardProps) {
       <Flex w="full" alignItems={"center"}>
         <VStack alignItems={"flex-start"} spacing="8px">
           <Text isTruncated maxW={"160px"} fontSize={"16"} fontWeight={"800"}>
-            Address : {val.address}
+            Address : {val.aggregated_address}
           </Text>
           <Text isTruncated maxW={"160px"} fontSize={"16"} fontWeight={"400"}>
-            Txid : {val.txid}
+            Txid : {val.funding_txid}
           </Text>
-          <Text>{val.value} Sats</Text>
+          <Text>{val.amount} Sats</Text>
         </VStack>
 
         <Spacer />
@@ -59,7 +59,7 @@ export function StateChainCard(props: StateChainCardProps) {
         <VStack alignItems={"end"} spacing={"8px"} w="100%">
           <Progress value={timeValue} size="xs" colorScheme="pink" w="50%" />
 
-          <Text>Time to live: {val.n_locktime}</Text>
+          <Text>Time to live: {val.n_lock_time}</Text>
         </VStack>
       </Flex>
     </HStack>
