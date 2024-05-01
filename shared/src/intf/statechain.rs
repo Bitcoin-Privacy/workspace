@@ -2,14 +2,18 @@ use std::{str::SplitTerminator, string};
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "backend", derive(Deserialize))]
+#[cfg_attr(feature = "frontend", derive(Serialize))]
+#[derive(Debug, Clone,)]
 pub struct KeyRegisterReq {
     pub statechain_id: String,
     pub signed_id: String,
     pub auth_pubkey_2: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "backend", derive(Serialize))]
+#[cfg_attr(feature = "frontend", derive(Deserialize))]
+#[derive(Debug, Clone,)]
 pub struct KeyRegisterRes {
     pub random_key: String,
 }
@@ -221,17 +225,18 @@ pub struct GetPartialSignatureRes {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct UpdateTransferMessageReq {
+pub struct TransferMessageReq {
     pub transfer_msg: String,
     pub authkey: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransferMessage {
-    pub total_owner: u64,
+    pub total_owner: i64,
     pub backup_txs: Vec<String>,
     pub t1: String,
     pub statechain_id: String,
+    pub agg_pubkey: String,
 }
 
 // #[derive(Debug, Clone, Serialize, Deserialize)]

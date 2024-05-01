@@ -4,8 +4,7 @@ use actix_web::{
 };
 use shared::intf::statechain::{
     CreateBkTxnReq, CreateTokenReq, DepositReq, GetNonceReq, GetPartialSignatureReq,
-    GetPartialSignatureRes, KeyRegisterReq, ListStatecoinsReq, TransferReq, UpdateKeyReq,
-    UpdateTransferMessageReq,
+    KeyRegisterReq, ListStatecoinsReq, TransferMessageReq, TransferReq, UpdateKeyReq,
 };
 
 use crate::{repo::statechain::StatechainRepo, svc::statechain, util::response};
@@ -25,8 +24,8 @@ pub async fn register_key(
     {
         Ok(status) => response::success(status),
         Err(message) => {
-            println!("Deposit got error: {}", message);
-            response::error(message)
+            println!("register key got error: {}", message);
+            response::error(message.to_string())
         }
     }
 }
@@ -116,6 +115,8 @@ pub async fn get_sig(
     {
         return HttpResponse::Unauthorized().body("invalid signature for id");
     }
+
+    println!("signature is valid");
     match statechain::get_sig(
         &statechain_repo,
         &payload.serialized_key_agg_ctx,
@@ -135,7 +136,7 @@ pub async fn get_sig(
 
 pub async fn update_transfer_message(
     statechain_repo: Data<StatechainRepo>,
-    payload: Json<UpdateTransferMessageReq>,
+    payload: Json<TransferMessageReq>,
 ) -> HttpResponse {
     match statechain::update_tranfer_message(
         &statechain_repo,

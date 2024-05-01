@@ -6,7 +6,6 @@ use bitcoin::{
 };
 
 mod source;
-use musig2::{PubNonce, SecNonce};
 pub use source::StatechainRepo;
 
 use crate::model::entity::statechain::{AuthPubkey, StateCoin};
@@ -24,7 +23,7 @@ pub trait TraitStatechainRepo: Send + Sync + 'static {
 
     async fn update_nonce(&self, secnonce: &str, statechain_id: &str) -> Result<()>;
     async fn get_auth_key_by_statechain_id(&self, statechain_id: &str) -> Result<AuthPubkey>;
-    async fn update_auth_pubkey(
+    async fn create_statechain_transfer(
         &self,
         statechain_id: &str,
         authkey: &str,

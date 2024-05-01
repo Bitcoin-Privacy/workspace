@@ -16,6 +16,7 @@ use musig2::{
     secp::MaybeScalar, AggNonce, BinaryEncoding, FirstRound, KeyAggContext, PartialSignature,
     SecNonce, SecNonceSpices,
 };
+use rand::RngCore;
 use secp256k1::{schnorr::Signature, Message, Scalar};
 
 use crate::repo::statechain::{StatechainRepo, TraitStatechainRepo};
@@ -69,39 +70,41 @@ pub async fn create_bk_txn(
     let secp = Secp256k1::new();
     let keypair = Keypair::from_secret_key(&secp, &sk);
 
-    let parsed_tx = consensus::deserialize::<Transaction>(&hex::decode(txn)?)?;
+    // let parsed_tx = consensus::deserialize::<Transaction>(&hex::decode(txn)?)?;
 
-    let sighash_type = TapSighashType::Default;
+    let sighash = TapSighash::from_str(txn)?;
 
-    let mut unsigned_txn = parsed_tx.clone();
-    let mut sighasher = SighashCache::new(&mut unsigned_txn);
+    // let sighash_type = TapSighashType::Default;
 
-    let input_index = 0;
+    // let mut unsigned_txn = parsed_tx.clone();
+    // let mut sighasher = SighashCache::new(&mut unsigned_txn);
 
-    let secp = Secp256k1::new();
+    // let input_index = 0;
 
-    let prevouts = vec![TxOut {
-        value: Amount::from_sat(statecoin.amount as u64),
-        script_pubkey: ScriptBuf::from_hex(scriptpubkey)?,
-    }];
-    let prevouts = Prevouts::All(&prevouts);
+    // let secp = Secp256k1::new();
 
-    let sighash = sighasher
-        .taproot_key_spend_signature_hash(input_index, &prevouts, sighash_type)
-        .expect("failed to construct sighash");
+    // let prevouts = vec![TxOut {
+    //     value: Amount::from_sat(statecoin.amount as u64),
+    //     script_pubkey: ScriptBuf::from_hex(scriptpubkey)?,
+    // }];
+    // let prevouts = Prevouts::All(&prevouts);
+
+    // let sighash = sighasher
+    //     .taproot_key_spend_signature_hash(input_index, &prevouts, sighash_type)
+    //     .expect("failed to construct sighash");
 
     let tweaked: TweakedKeypair = keypair.tap_tweak(&secp, None);
     let msg = Message::from(sighash);
 
     let signature = secp.sign_schnorr(&msg, &tweaked.to_inner());
 
-    let signature = bitcoin::taproot::Signature {
-        sig: signature,
-        hash_ty: sighash_type,
-    };
+    // let signature = bitcoin::taproot::Signature {
+    //     sig: signature,
+    //     hash_ty: sighash_type,
+    // };
 
     let res = CreateBkTxnRes {
-        sig: hex::encode(signature.to_vec()),
+        sig: signature.to_string(),
         rand_key: "".to_string(),
     };
 
@@ -109,11 +112,8 @@ pub async fn create_bk_txn(
 }
 
 pub async fn get_nonce(repo: &Data<StatechainRepo>, statechain_id: &str) -> Result<GetNonceRes> {
-    // if !verify_signature(&repo, &signed_statechain_id, &statechain_id).await? {
-    //     bail!("Invalid signature")
-    // }
-
-    let nonce_seed = [0xACu8; 32];
+    let mut nonce_seed = [0u8; 32];
+    rand::rngs::OsRng.fill_bytes(&mut nonce_seed);
     let secnonce = musig2::SecNonceBuilder::new(nonce_seed).build();
     let pubnonce = secnonce.public_nonce();
     repo.update_nonce(&secnonce.to_bytes().to_lower_hex_string(), &statechain_id)
@@ -167,15 +167,14 @@ pub async fn register_key(
     repo: &Data<StatechainRepo>,
     statechain_id: &str,
     auth_pubkey_2: &str,
-) -> Result<KeyRegisterRes, String> {
+) -> Result<KeyRegisterRes> {
     let x1 = Scalar::random();
 
     let parsed_x1 = x1.to_le_bytes().to_lower_hex_string();
 
-    repo.update_auth_pubkey(statechain_id, auth_pubkey_2, &parsed_x1)
-        .await
-        .map_err(|e| format!("Failed to register key: {}", e))?;
-
+    repo.create_statechain_transfer(statechain_id, auth_pubkey_2, &parsed_x1)
+        .await?;
+    println!("register key, randowm :{}", parsed_x1);
     Ok(KeyRegisterRes {
         random_key: parsed_x1,
     })
@@ -188,7 +187,7 @@ pub async fn update_tranfer_message(
 ) -> Result<(), String> {
     repo.update_transfer_message(authkey, transfer_msg)
         .await
-        .map_err(|e| format!("Failed to register key: {}", e))?;
+        .map_err(|e| format!("Failed to update_tranfer_message: {}", e))?;
 
     Ok(())
 }

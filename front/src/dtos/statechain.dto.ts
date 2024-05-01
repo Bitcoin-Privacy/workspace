@@ -4,7 +4,7 @@ export type StateCoinDto = {
   amount : number, 
   funding_txid: string,
   funding_vout : number, 
-  n_lock_time : number
+  n_lock_time : number,
 };
 
 export type StatechainDepositResDto = {

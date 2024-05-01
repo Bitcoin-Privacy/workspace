@@ -52,7 +52,7 @@ create table if not exists statechain (
     server_private_key varchar NULL UNIQUE,
     amount int8 not null,
 
-    sequence int8 DEFAULT 0,
+    sequence int8 DEFAULT 1,
     sec_nonce varchar null, 
     created_at timestamp with time zone default current_timestamp,
     updated_at timestamp with time zone default current_timestamp

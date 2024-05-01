@@ -1,9 +1,11 @@
 use anyhow::Result;
 use bitcoin::script;
 use reqwest::{Client, Response};
+use serde::Serialize;
 use shared::intf::statechain::{
     self, CreateBkTxnReq, CreateBkTxnRes, GetNonceReq, GetNonceRes, GetPartialSignatureReq,
-    GetPartialSignatureRes, ListStatecoinsReq,
+    GetPartialSignatureRes, KeyRegisterReq, KeyRegisterRes, ListStatecoinsReq, TransferMessage,
+    TransferMessageReq,
 };
 use tauri::http::Uri;
 
@@ -67,7 +69,7 @@ pub async fn get_partial_signature(
 
     let body = serde_json::to_value(req)?;
     let res = conn
-        .post(&format!("statechain/{}/get-sig", statechain_id), &body)
+        .post(&format!("statechain/{}/sig", statechain_id),&body)
         .await?;
     let json: GetPartialSignatureRes = serde_json::from_value(res)?;
     println!("Sign partial signature {:#?}", json);
@@ -83,4 +85,41 @@ pub async fn broadcast_tx(tx_hex: String) -> Result<String, String> {
         Ok(res) => Ok(res.json().await.unwrap()),
         Err(err) => Err(err.to_string()),
     }
+}
+
+pub async fn register_new_owner(
+    conn: &NodeConnector,
+    statechain_id: &str,
+    signed_statechain_id: &str,
+    auth_pubkey_2: &str,
+) -> Result<KeyRegisterRes> {
+    let req = KeyRegisterReq {
+        statechain_id: statechain_id.to_string(),
+        signed_id: signed_statechain_id.to_string(),
+        auth_pubkey_2: auth_pubkey_2.to_string(),
+    };
+        
+    let body = serde_json::to_value(req)?;
+    let res = conn.post("statechain/transfer/key-register", &body).await?;
+    let json: KeyRegisterRes = serde_json::from_value(res)?;
+    println!("Register key response {:#?}", json);
+    Ok(json)
+}
+
+pub async fn create_transfer_msg(
+    conn: &NodeConnector,
+    transfer_msg: &TransferMessage,
+    auth_pubkey_2: &str,
+) -> Result<()> {
+    let transfer_msg = serde_json::to_value(transfer_msg).unwrap().to_string();
+    let req = TransferMessageReq {
+        transfer_msg: transfer_msg,
+        authkey: auth_pubkey_2.to_string(),
+    };
+
+    let body = serde_json::to_value(req)?;
+    let res = conn.post("statechain/transfer/transfer-message", &body).await?;
+    let json: KeyRegisterRes = serde_json::from_value(res)?;
+    println!("send transfer message {:#?}", json);
+    Ok(())
 }

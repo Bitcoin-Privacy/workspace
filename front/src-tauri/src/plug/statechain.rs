@@ -15,8 +15,9 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
         .invoke_handler(tauri::generate_handler![
             // Modifier
             deposit,
-            list_statecoins //create_deposit_tx
-                            // Accessors
+            list_statecoins,
+            send_statecoin //create_deposit_tx
+                           // Accessors
         ])
         .build()
 }
@@ -40,7 +41,20 @@ pub async fn list_statecoins(
     pool: State<'_, PoolWrapper>,
     deriv: &str,
 ) -> TResult<Vec<StateCoinInfo>> {
-    statechain::listStatecoins(&pool, &deriv)
+    statechain::list_statecoins(&pool, &deriv)
+        .await
+        .map_err(util::to_string)
+}
+
+#[command]
+pub async fn send_statecoin(
+    pool: State<'_, PoolWrapper>,
+    conn: State<'_, NodeConnector>,
+    pubkey: &str,
+    authkey: &str,
+    statechain_id: &str,
+) -> TResult<String> {
+    statechain::send_statecoin(&conn, &pool, pubkey, authkey, statechain_id)
         .await
         .map_err(util::to_string)
 }

@@ -50,7 +50,7 @@ pub async fn get_cfg(pool: &SqlitePool, key: &str) -> Result<Option<String>> {
 }
 
 pub async fn get_statecoin_by_id(pool: &SqlitePool, statechain_id: &str) -> Result<StateCoin> {
-    let row = sqlx::query_as::<_,StateCoin>(r#"select signed_statechain_id, aggregated_pubkey, aggregated_address, funding_txid, funding_vout, key_agg_ctx, amount, deriv from StateCoin where statechain_id = $1"#).bind(statechain_id).fetch_one(pool).await.unwrap();
+    let row = sqlx::query_as::<_,StateCoin>(r#"select tx_n, owner_seckey, signed_statechain_id, aggregated_pubkey, aggregated_address, funding_txid, funding_vout, key_agg_ctx, amount, deriv from StateCoin where statechain_id = $1"#).bind(statechain_id).fetch_one(pool).await.unwrap();
     Ok(row)
 }
 
@@ -88,9 +88,14 @@ pub async fn create_statecoin(
     owner_seckey: &str,
     owner_pubkey: &str,
     key_agg_ctx: &str,
+    funding_txid: &str,
+    funding_vout: i64,
+    funding_tx: &str,
+    txn: i64,
+    n_lock_time: i64
 ) -> Result<SqliteQueryResult, sqlx::Error> {
     let res = sqlx::query(
-        r#"INSERT INTO StateCoin (statechain_id, signed_statechain_id, deriv, amount,aggregated_pubkey, aggregated_address, auth_pubkey, auth_seckey, owner_pubkey,owner_seckey, key_agg_ctx) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)"#)
+        r#"INSERT INTO StateCoin (statechain_id, signed_statechain_id, deriv, amount,aggregated_pubkey, aggregated_address, auth_pubkey, auth_seckey, owner_pubkey,owner_seckey, key_agg_ctx, funding_txid, funding_vout, funding_tx, tx_n, n_lock_time) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)"#)
         .bind(statechain_id)
         .bind(signed_statechain_id)
         .bind(deriv)
@@ -102,6 +107,11 @@ pub async fn create_statecoin(
         .bind(owner_pubkey)
         .bind(owner_seckey)
         .bind(key_agg_ctx)
+        .bind(funding_txid)
+        .bind(funding_vout)
+        .bind(funding_tx)
+        .bind(txn)
+        .bind(n_lock_time)
         .execute(pool)
         .await;
 
@@ -135,25 +145,58 @@ pub async fn update_deposit_tx(
     }
 }
 
-pub async fn update_bk_tx(
+pub async fn create_bk_tx(
     pool: &SqlitePool,
     statechain_id: &str,
     backup_tx: &str,
-    agg_pubnonce: &str,
+    tx_n : u64,
+    n_lock_time: u64
 ) -> Result<SqliteQueryResult, sqlx::Error> {
-    match sqlx::query(
-        "update StateCoin set backup_tx = $1, agg_pubnonce = $2 where statechain_id = $3",
-    )
-    .bind(backup_tx)
-    .bind(agg_pubnonce)
-    .bind(statechain_id)
-    .execute(pool)
-    .await
+
+    match sqlx::query("insert into BackupTransaction (tx_n, n_lock_time, statechain_id, backup_tx) values ($1,$2,$3,$4)")
+        .bind( tx_n as i64) 
+        .bind( n_lock_time as i64)
+        .bind( statechain_id)
+        .bind( backup_tx)
+        .execute(pool)
+        .await
     {
         Ok(result) => Ok(result),
         Err(err) => {
-            println!("error when update database {}", err.to_string());
+            println!("error when insert database {}", err.to_string());
             Err(err)
         }
     }
 }
+
+pub async fn get_bk_tx_by_statechain_id(
+    pool: &SqlitePool,
+    statechain_id: &str,
+) -> Result<Vec<String>, sqlx::Error> {
+
+     let rows = sqlx::query(r#"select backup_tx from BackupTransaction where statechain_id =$1"#)
+        .bind(&statechain_id)
+        .fetch_all(pool)
+        .await?;
+
+    let mut txs = Vec::new();
+    for row in rows {
+        let tx: String = row.try_get("backup_tx")?;
+        txs.push(tx);
+    }
+
+    Ok(txs)
+}
+
+
+// pub async fn get_seckey_by_id(pool: &SqlitePool, statechain_id: &str) -> Result<Option<String>> {
+//     let row = sqlx::query("select owner_seckey from StateCoin where statechain_id = $1")
+//         .bind(&statechain_id)
+//         .fetch_optional(pool)
+//         .await?;
+
+//     let val = match row {
+//         Some(r) => Some(r.try_get::<String, _>("owner_seckey")?),
+//         None => None,
+//     };
+//     Ok(val)

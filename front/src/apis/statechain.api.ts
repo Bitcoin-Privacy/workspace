@@ -25,4 +25,16 @@ export const StatechainApi = Object.freeze({
       deriv,
     });
   },
+
+  async sendStatecoin(
+    pubkey: string,
+    authkey: string,
+    statechainId : string,
+  ): Promise<String> {
+    return await TauriConnection.callAPI<String>(this.name("send_statecoin"), {
+      pubkey,
+      authkey,
+      statechainId,
+    });
+  },
 });

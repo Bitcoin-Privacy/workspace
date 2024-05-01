@@ -1,6 +1,9 @@
 pub const PASSPHRASE: &str = "correct horse battery staple";
 
-pub const BASE_TX_FEE: u64 = 500;
+
+pub const INIT_NLOCKTIME : u64 = 60 * 60 * 24 * 60 ;// 60 days
+pub const INTERVAL: u64 = 60 * 60 * 24 * 3; // 3 days
+pub const BASE_TX_FEE: u64 = 10;
 // pub const COINJOIN_FEE: u64 = 150;
 
 use dotenv::dotenv;

@@ -101,6 +101,11 @@ impl PoolWrapper {
         owner_seckey: &SecretKey,
         owner_pubkey: &PublicKey,
         key_agg_ctx: &KeyAggContext,
+        funding_txid: &str,
+        funding_vout: u64,
+        funding_tx: &str,
+        txn: u64,
+        n_lock_time: u64,
     ) -> Result<SqliteQueryResult, sqlx::Error> {
         let amount_i64: i64 = amount as i64;
         let owner_seckey_bytes = owner_seckey.secret_bytes().to_lower_hex_string();
@@ -114,9 +119,9 @@ impl PoolWrapper {
 
         sqlite::create_statecoin(
             &self.pool,
-            &statechain_id,
-            &signed_statechain_id,
-            &deriv,
+            statechain_id,
+            signed_statechain_id,
+            deriv,
             amount_i64,
             &auth_seckey_bytes,
             &auth_pubkey_bytes,
@@ -125,6 +130,11 @@ impl PoolWrapper {
             &owner_seckey_bytes,
             &owner_pubkey_bytes,
             &serialized_key_agg_ctx,
+            funding_txid,
+            funding_vout as i64,
+            funding_tx,
+            txn as i64,
+            n_lock_time as i64,
         )
         .await
     }
@@ -146,12 +156,20 @@ impl PoolWrapper {
         .await
     }
 
-    pub async fn update_bk_tx(
+    pub async fn create_bk_tx(
         &self,
         statechain_id: &str,
         backup_tx: &str,
-        agg_pubnonce: &str,
+        tx_n: u64,
+        n_lock_time: u64,
     ) -> Result<SqliteQueryResult, sqlx::Error> {
-        sqlite::update_bk_tx(&self.pool, statechain_id, backup_tx, agg_pubnonce).await
+        sqlite::create_bk_tx(&self.pool, statechain_id, backup_tx, tx_n, n_lock_time).await
+    }
+
+    pub async fn get_bk_tx_by_statechain_id(
+        &self,
+        statechain_id: &str,
+    ) -> Result<Vec<String>, sqlx::Error> {
+        sqlite::get_bk_tx_by_statechain_id(&self.pool, statechain_id).await
     }
 }

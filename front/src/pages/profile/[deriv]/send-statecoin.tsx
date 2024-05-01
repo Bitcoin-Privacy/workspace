@@ -30,9 +30,6 @@ export default function SendStateCoin() {
     methods: { handleFormSubmit },
   } = useSendStateCoinPage();
 
-  
-
-
   return (
     <React.Fragment>
       <Head>
@@ -74,41 +71,75 @@ export default function SendStateCoin() {
                 <Text> Transaction Details</Text>
                 <HStack w="full" justify="space-between">
                   <Text w="20%" color="white">
-                    Statechain Address:
+                    New owner pubkey:
                   </Text>
                   <Input
-                    placeholder="tb1qtperkdhmm9hesga45wzzdzks6rrtejtp2uec40"
+                    placeholder="02ed7faa45188db914f659c8c0676f66b23ab70a650b14463002be496afdd2875f"
+                    defaultValue={
+                      "02ed7faa45188db914f659c8c0676f66b23ab70a650b14463002be496afdd2875f"
+                    }
                     w={INPUT_WIDTH}
                     color="white"
-                    {...form.register("o2_address", {
+                    {...form.register("o2_pubkey", {
                       required: "Receiver address is required",
-                      pattern: {
-                        value: /^(tb1)[a-z0-9]{39,59}$/,
-                        message:
-                          "Addess should follow P2WPKH format, other type is not supported yet.",
-                      },
+                      // pattern: {
+                      //   value: /^(tb1)[a-z0-9]{39,59}$/,
+                      //   message:
+                      //     "Addess should follow P2WPKH format, other type is not supported yet.",
+                      // },
                     })}
                   />
                 </HStack>
+
                 <HStack w="full" justify="space-between">
                   <Text w="20%" color="white">
-                    Authen Address:
+                    Statechain ID
                   </Text>
                   <Input
-                    placeholder="tb1qtperkdhmm9hesga45wzzdzks6rrtejtp2uec40"
+                    placeholder="e0e75e9a-07be-11ef-b8b5-a730e8877628"
+                    w={INPUT_WIDTH}
+                    color="white"
+                    defaultValue={"e0e75e9a-07be-11ef-b8b5-a730e8877628"}
+                    {...form.register("statechain_id", {
+                      required: "statechain_id is required",
+                      // pattern: {
+                      //   value: /^(tb1)[a-z0-9]{39,59}$/,
+                      //   message:
+                      //     "Addess should follow P2WPKH format, other type is not supported yet.",
+                      // },
+                    })}
+                  />
+                </HStack>
+
+                <HStack w="full" justify="space-between">
+                  <Text w="20%" color="white">
+                    New owner auth:
+                  </Text>
+                  <Input
+                    placeholder="5f57150ba6aea631024e02adf71738b69c76101959845ee5121e9f6fd0107e3a"
+                    defaultValue={
+                      "5f57150ba6aea631024e02adf71738b69c76101959845ee5121e9f6fd0107e3a"
+                    }
                     w={INPUT_WIDTH}
                     color="white"
                     {...form.register("o2_authkey", {
-                      required: "Authen address is required",
-                      pattern: {
-                        value: /^(tb1)[a-z0-9]{39,59}$/,
-                        message:
-                          "Addess should follow P2WPKH format, other type is not supported yet.",
-                      },
+                      required: "o2_authkey is required",
+                      // pattern: {
+                      //   value: /^(tb1)[a-z0-9]{39,59}$/,
+                      //   message:
+                      //     "Addess should follow P2WPKH format, other type is not supported yet.",
+                      // },
                     })}
                   />
                 </HStack>
-                <Button alignSelf={"center"}> Send Statecoin</Button>
+                <Button
+                  alignSelf={"center"}
+                  type="submit"
+                  isLoading={isLoading}
+                >
+                  {" "}
+                  Send Statecoin
+                </Button>
               </VStack>
             </HStack>
           </VStack>

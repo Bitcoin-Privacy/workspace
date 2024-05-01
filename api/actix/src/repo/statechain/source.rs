@@ -83,14 +83,14 @@ impl TraitStatechainRepo for StatechainRepo {
         Ok(row)
     }
 
-    async fn update_auth_pubkey(
+    async fn create_statechain_transfer(
         &self,
         statechain_id: &str,
         authkey: &str,
         random_key: &str,
     ) -> Result<()> {
         let query = sqlx::query(
-            "insert into statechain_transfer (authkey,random_key, statechain_id) values ($1,$2,$3)",
+            "insert into statechain_transfer (authkey,random_key, statechain_id) values ($1,$2,$3::uuid)",
         )
         .bind(authkey)
         .bind(random_key)
@@ -103,7 +103,7 @@ impl TraitStatechainRepo for StatechainRepo {
 
     async fn update_transfer_message(&self, authkey: &str, transfer_msg: &str) -> Result<()> {
         let query =
-            sqlx::query("update statechain_transfer set tranfer_msg= $1 where authkey = $2::uuid")
+            sqlx::query("update statechain_transfer set transfer_msg= $1 where authkey = $2")
                 .bind(transfer_msg)
                 .bind(authkey)
                 .execute(&self.pool.pool)

@@ -3,6 +3,8 @@ use serde::{Deserialize, Serialize};
 #[derive(sqlx::FromRow, Debug, Clone, Deserialize, Serialize)]
 
 pub struct StateCoin {
+    pub tx_n: i64,
+    pub owner_seckey: String,
     pub signed_statechain_id: String,
     pub aggregated_pubkey: String,
     pub aggregated_address: String,

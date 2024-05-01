@@ -44,6 +44,8 @@ CREATE TABLE IF NOT EXISTS StateCoin (
     signed_statechain_id TEXT,
     deriv TEXT NOT NULL,
     amount INT,
+    tx_n INT ,
+    n_lock_time INT,
 
     --key pairs
     key_agg_ctx TEXT,
@@ -53,33 +55,33 @@ CREATE TABLE IF NOT EXISTS StateCoin (
     auth_seckey INT, 
     owner_pubkey TEXT,
     owner_seckey TEXT,
-
-
     --deposit tx info
     funding_txid TEXT,
     funding_vout INT,
     funding_tx TEXT,
-
-    --backup tx info
-
-    n_lock_time INT,
-    tx_n INT,
-    backup_tx  TEXT,
-    agg_pubnonce TEXT,
-    blinding_factor  TEXT,
+  
 
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+create table if not exists TransferStatecoin (
+  account TEXT PRIMARY KEY,
+  auth_pubkey INT,
+  auth_seckey INT, 
+  owner_pubkey TEXT,
+  owner_seckey TEXT
+
+
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS BackupTransaction (
-    id TEXT NOT NULL PRIMARY KEY,
-    tx_n INT,
+    id INTEGER,
+    tx_n INT ,
+    n_lock_time INT,
     statechain_id TEXT,
-    agg_pubnonce TEXT,
-    server_pubkey  TEXT,
-    blinding_factor  TEXT,
     backup_tx  TEXT,
-    recipient_address TEXT,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY("id" AUTOINCREMENT),
     FOREIGN KEY (statechain_id) REFERENCES Statecoin(statechain_id)
 );
