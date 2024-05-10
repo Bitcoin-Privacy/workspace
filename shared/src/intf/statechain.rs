@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 #[cfg_attr(feature = "backend", derive(Deserialize))]
 #[cfg_attr(feature = "frontend", derive(Serialize))]
-#[derive(Debug, Clone,)]
+#[derive(Debug, Clone)]
 pub struct KeyRegisterReq {
     pub statechain_id: String,
     pub signed_id: String,
@@ -13,7 +13,7 @@ pub struct KeyRegisterReq {
 
 #[cfg_attr(feature = "backend", derive(Serialize))]
 #[cfg_attr(feature = "frontend", derive(Deserialize))]
-#[derive(Debug, Clone,)]
+#[derive(Debug, Clone)]
 pub struct KeyRegisterRes {
     pub random_key: String,
 }
@@ -162,7 +162,10 @@ pub struct ListStatecoinsRes {
 #[cfg_attr(feature = "frontend", derive(Serialize))]
 #[derive(Debug, Clone)]
 pub struct UpdateKeyReq {
-    pub t: String,
+    pub authkey: String,
+    pub t2: String,
+    pub statechain_id: String,
+    pub signed_msg: String,
 }
 
 #[cfg_attr(feature = "backend", derive(Serialize))]
@@ -232,11 +235,50 @@ pub struct TransferMessageReq {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransferMessage {
-    pub total_owner: i64,
-    pub backup_txs: Vec<String>,
+    pub txn: u64,
+    pub backup_txs: String,
     pub t1: String,
     pub statechain_id: String,
     pub agg_pubkey: String,
+    pub key_agg_ctx: String,
+    pub funding_txid: String,
+    pub funding_vout: u64,
+    pub amount: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StatechainAddress {
+    pub owner_pubkey: String,
+    pub authkey: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GetTransferMessageReq {
+    pub authkey: String,
+}
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "backend", derive(Serialize))]
+#[cfg_attr(feature = "frontend", derive(Deserialize))]
+pub struct GetTransferMessageRes {
+    pub transfer_message: String,
+}
+
+#[cfg_attr(feature = "backend", derive(Deserialize))]
+#[cfg_attr(feature = "frontend", derive(Serialize))]
+#[derive(Debug, Clone)]
+pub struct VerifyStatecoinReq {
+    pub statechain_id: String,
+    pub signed_msg: String,
+    pub authkey: String,
+}
+
+#[cfg_attr(feature = "backend", derive(Serialize))]
+#[cfg_attr(feature = "frontend", derive(Deserialize))]
+#[derive(Debug, Clone)]
+pub struct VerifyStatecoinRes {
+    pub txn: u32,
+    pub server_pubkey: String,
+    pub random_point: String,
 }
 
 // #[derive(Debug, Clone, Serialize, Deserialize)]

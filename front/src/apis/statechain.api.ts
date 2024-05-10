@@ -1,5 +1,5 @@
 import { TauriConnection } from "./core";
-import { StatechainDepositResDto, StateCoinDto } from "@/dtos";
+import { StatechainDepositResDto, StateCoinDto, StateCoinTransferDto } from "@/dtos";
 
 export const StatechainApi = Object.freeze({
   /* Utils */
@@ -27,14 +27,41 @@ export const StatechainApi = Object.freeze({
   },
 
   async sendStatecoin(
-    pubkey: string,
-    authkey: string,
+    address : string,
     statechainId : string,
   ): Promise<String> {
     return await TauriConnection.callAPI<String>(this.name("send_statecoin"), {
-      pubkey,
-      authkey,
+      address,
       statechainId,
     });
   },
+
+  async listTransferStatecoins(
+    deriv : string,
+  ): Promise<[StateCoinTransferDto]> {
+    return await TauriConnection.callAPI<[StateCoinTransferDto]>(this.name("list_transfer_statecoins"), {
+      deriv,
+    });
+  },
+
+  async genStatechainAddress(
+    deriv : string,
+  ): Promise<string> {
+    return await TauriConnection.callAPI<string>(this.name("generate_statechain_address"), {
+      deriv,
+    });
+  },
+
+
+  async verifyTransferStatecoin(
+    deriv : String, 
+    transferMessage : String, 
+    authkey: String,
+  ) : Promise <String>{
+    return await TauriConnection.callAPI<String>(this.name("verify_transfer_statecoin"), {
+      deriv,
+      transferMessage,
+      authkey
+    });
+  }
 });

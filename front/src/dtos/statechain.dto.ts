@@ -12,3 +12,7 @@ export type StatechainDepositResDto = {
   deposit_tx_hex : string,
 };
 
+export type StateCoinTransferDto = {
+  auth_key : String, 
+  transfer_message: String, 
+}

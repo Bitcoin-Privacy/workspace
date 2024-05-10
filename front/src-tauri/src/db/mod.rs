@@ -58,6 +58,67 @@ impl PoolWrapper {
         sqlite::get_statecoins_by_account(&self.pool, &account).await
     }
 
+    pub async fn list_authkeys_by_account(&self, account: &str) -> Result<Vec<String>> {
+        sqlite::get_authkeys_by_account(&self.pool, &account).await
+    }
+    pub async fn get_seckey_by_authkey(&self, authkey: &str) -> Result<Option<(String, String)>> {
+        sqlite::get_seckey_by_authkey(&self.pool, &authkey).await
+    }
+
+    pub async fn delete_statecoin_by_statechain_id(&self, statechain_id: &str) -> Result<()> {
+        sqlite::delete_statecoin_by_statechain_id(&self.pool, statechain_id).await
+    }
+
+    pub async fn create_unverified_statecoin(
+        &self,
+        account: &str,
+        auth_seckey: &str,
+        auth_pubkey: &str,
+        owner_seckey: &str,
+        owner_pubkey: &str,
+    ) -> Result<()> {
+        sqlite::create_unverified_statecoin(
+            &self.pool,
+            account,
+            auth_seckey,
+            auth_pubkey,
+            owner_seckey,
+            owner_pubkey,
+        )
+        .await
+    }
+
+    pub async fn update_unverifed_statecoin(
+        &self,
+        statechain_id: &str,
+        signed_statechain_id: &str,
+        tx_n: u64,
+        n_lock_time: u64,
+        key_agg_ctx: &str,
+        aggregated_pubkey: &str,
+        aggregated_address: &str,
+        funding_txid: &str,
+        funding_vout: u64,
+        funding_tx: &str,
+        amount: u64,
+    ) -> Result<()> {
+        sqlite::update_unverifed_statecoin(
+            &self.pool,
+            statechain_id,
+            signed_statechain_id,
+            tx_n,
+            n_lock_time,
+            key_agg_ctx,
+            aggregated_pubkey,
+            aggregated_address,
+            funding_txid,
+            funding_vout,
+            funding_tx,
+            amount,
+        )
+        .await
+    }
+
     pub fn add_or_update_room(&self, deriv: &str, room: &RoomEntity) -> Result<()> {
         // let rooms_tree = self.sled.open_tree("rooms-".to_owned() + derivation_path)?;
         // let room_key = room.id.as_bytes();
@@ -92,7 +153,7 @@ impl PoolWrapper {
         &self,
         statechain_id: &str,
         signed_statechain_id: &str,
-        deriv: &str,
+        account: &str,
         amount: u64,
         auth_seckey: &SecretKey,
         auth_pubkey: &XOnlyPublicKey,
@@ -106,6 +167,7 @@ impl PoolWrapper {
         funding_tx: &str,
         txn: u64,
         n_lock_time: u64,
+        backup_tx: &str,
     ) -> Result<SqliteQueryResult, sqlx::Error> {
         let amount_i64: i64 = amount as i64;
         let owner_seckey_bytes = owner_seckey.secret_bytes().to_lower_hex_string();
@@ -121,7 +183,7 @@ impl PoolWrapper {
             &self.pool,
             statechain_id,
             signed_statechain_id,
-            deriv,
+            account,
             amount_i64,
             &auth_seckey_bytes,
             &auth_pubkey_bytes,
@@ -135,6 +197,7 @@ impl PoolWrapper {
             funding_tx,
             txn as i64,
             n_lock_time as i64,
+            backup_tx,
         )
         .await
     }
@@ -155,21 +218,21 @@ impl PoolWrapper {
         )
         .await
     }
-
-    pub async fn create_bk_tx(
-        &self,
-        statechain_id: &str,
-        backup_tx: &str,
-        tx_n: u64,
-        n_lock_time: u64,
-    ) -> Result<SqliteQueryResult, sqlx::Error> {
-        sqlite::create_bk_tx(&self.pool, statechain_id, backup_tx, tx_n, n_lock_time).await
-    }
-
-    pub async fn get_bk_tx_by_statechain_id(
-        &self,
-        statechain_id: &str,
-    ) -> Result<Vec<String>, sqlx::Error> {
-        sqlite::get_bk_tx_by_statechain_id(&self.pool, statechain_id).await
-    }
 }
+//     pub async fn create_bk_tx(
+//         &self,
+//         statechain_id: &str,
+//         backup_tx: &str,
+//         tx_n: u64,
+//         n_lock_time: u64,
+//     ) -> Result<SqliteQueryResult, sqlx::Error> {
+//         sqlite::create_bk_tx(&self.pool, statechain_id, backup_tx, tx_n, n_lock_time).await
+//     }
+
+//     pub async fn get_bk_tx_by_statechain_id(
+//         &self,
+//         statechain_id: &str,
+//     ) -> Result<Vec<String>, sqlx::Error> {
+//         sqlite::get_bk_tx_by_statechain_id(&self.pool, statechain_id).await
+//     }
+// }

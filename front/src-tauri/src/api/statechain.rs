@@ -4,8 +4,9 @@ use reqwest::{Client, Response};
 use serde::Serialize;
 use shared::intf::statechain::{
     self, CreateBkTxnReq, CreateBkTxnRes, GetNonceReq, GetNonceRes, GetPartialSignatureReq,
-    GetPartialSignatureRes, KeyRegisterReq, KeyRegisterRes, ListStatecoinsReq, TransferMessage,
-    TransferMessageReq,
+    GetPartialSignatureRes, GetTransferMessageReq, GetTransferMessageRes, KeyRegisterReq,
+    KeyRegisterRes, ListStatecoinsReq, TransferMessage, TransferMessageReq, UpdateKeyReq,
+    UpdateKeyRes, VerifyStatecoinReq, VerifyStatecoinRes,
 };
 use tauri::http::Uri;
 
@@ -69,7 +70,7 @@ pub async fn get_partial_signature(
 
     let body = serde_json::to_value(req)?;
     let res = conn
-        .post(&format!("statechain/{}/sig", statechain_id),&body)
+        .post(&format!("statechain/{}/sig", statechain_id), &body)
         .await?;
     let json: GetPartialSignatureRes = serde_json::from_value(res)?;
     println!("Sign partial signature {:#?}", json);
@@ -98,7 +99,7 @@ pub async fn register_new_owner(
         signed_id: signed_statechain_id.to_string(),
         auth_pubkey_2: auth_pubkey_2.to_string(),
     };
-        
+
     let body = serde_json::to_value(req)?;
     let res = conn.post("statechain/transfer/key-register", &body).await?;
     let json: KeyRegisterRes = serde_json::from_value(res)?;
@@ -108,18 +109,97 @@ pub async fn register_new_owner(
 
 pub async fn create_transfer_msg(
     conn: &NodeConnector,
-    transfer_msg: &TransferMessage,
+    encrypted_msg: &str,
     auth_pubkey_2: &str,
 ) -> Result<()> {
-    let transfer_msg = serde_json::to_value(transfer_msg).unwrap().to_string();
     let req = TransferMessageReq {
-        transfer_msg: transfer_msg,
+        transfer_msg: encrypted_msg.to_string(),
         authkey: auth_pubkey_2.to_string(),
     };
 
     let body = serde_json::to_value(req)?;
-    let res = conn.post("statechain/transfer/transfer-message", &body).await?;
+    let res = conn
+        .post("statechain/transfer/transfer-message", &body)
+        .await?;
     let json: KeyRegisterRes = serde_json::from_value(res)?;
     println!("send transfer message {:#?}", json);
     Ok(())
+}
+
+pub async fn get_transfer_msg(
+    conn: &NodeConnector,
+    auth_pubkey: &str,
+) -> Result<Option<GetTransferMessageRes>> {
+    let res = conn
+        .get(
+            format!(
+                "statechain/transfer/transfer-message/{auth_key}",
+                auth_key = auth_pubkey
+            ),
+            None,
+        )
+        .await?;
+
+    if res.is_null() {
+        println!("Transfer message is null for authkey: {}", auth_pubkey);
+        return Ok(None);
+    }
+    let json: GetTransferMessageRes = serde_json::from_value(res)?;
+
+    println!("Received transfer message: {:#?}", json);
+    Ok(Some(json))
+}
+
+pub async fn get_verification_statecoin(
+    conn: &NodeConnector,
+    authkey: &str,
+    statechain_id: &str,
+    signed_msg: &str,
+) -> Result<Option<VerifyStatecoinRes>> {
+    let req = VerifyStatecoinReq {
+        statechain_id: statechain_id.to_string(),
+        signed_msg: signed_msg.to_string(),
+        authkey: authkey.to_string(),
+    };
+    let body = serde_json::to_value(req)?;
+    let res = conn
+        .post("statechain/transfer/transfer-message/verify", &body)
+        .await?;
+
+    if res.is_null() {
+        println!(
+            "Null value for statecoin transfer verification: {}",
+            authkey
+        );
+        return Ok(None);
+    }
+    let json: VerifyStatecoinRes = serde_json::from_value(res)?;
+
+    Ok(Some(json))
+}
+
+pub async fn update_new_key(
+    conn: &NodeConnector,
+    t2: &str,
+    signed_msg: &str,
+    statechain_id: &str,
+    authkey: &str,
+) -> Result<Option<UpdateKeyRes>> {
+    let req = UpdateKeyReq {
+        authkey: authkey.to_string(),
+        t2: t2.to_string(),
+        statechain_id: statechain_id.to_string(),
+        signed_msg: signed_msg.to_string(),
+    };
+    let body = serde_json::to_value(req)?;
+    let res = conn
+        .post("statechain/transfer/transfer-message/update-key", &body)
+        .await?;
+
+    if res.is_null() {
+        return Ok(None);
+    }
+    let json: UpdateKeyRes = serde_json::from_value(res)?;
+
+    Ok(Some(json))
 }

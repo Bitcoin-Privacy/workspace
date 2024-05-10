@@ -43,45 +43,42 @@ create table if not exists proof (
 	foreign key (room_id) references room (id)
 );
 
-CREATE TYPE TransferStatus AS ENUM ('UNCONFIRM','CONFIRM');
+
 create table if not exists statechain (
 	id uuid default uuid_generate_v1() not null constraint statechain_pkey primary key,
 	token_id varchar NULL,
-    auth_xonly_public_key varchar NULL UNIQUE,
+    authkey varchar NULL UNIQUE,
 	server_public_key varchar NULL CONSTRAINT statechain_server_public_key_ukey UNIQUE ,
     server_private_key varchar NULL UNIQUE,
     amount int8 not null,
 
-    sequence int8 DEFAULT 1,
+    txn int8 DEFAULT 1,
     sec_nonce varchar null, 
     created_at timestamp with time zone default current_timestamp,
     updated_at timestamp with time zone default current_timestamp
 );
 
-CREATE OR REPLACE FUNCTION update_sequence_on_auth_change()
-RETURNS TRIGGER AS $$
-BEGIN
-  IF NEW.auth_xonly_public_key <> OLD.auth_xonly_public_key THEN  -- Check if name has actually changed
-    IF NEW.sequence IS NULL THEN  -- Set default value for count if null
-      NEW.sequence := 0;
-    END IF;
-    NEW.sequence := NEW.sequence + 1;  -- Increment count by 1
-  END IF;
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+-- CREATE OR REPLACE FUNCTION update_txn_on_auth_change()
+-- RETURNS TRIGGER AS $$
+-- BEGIN
+--   IF NEW.authkey <> OLD.authkey THEN  -- Check if name has actually changed
+--     NEW.txn := OLD.txn + 1;  -- Increment count by 1
+--   END IF;
+--   RETURN NEW;
+-- END;
+-- $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trigger_update_auth
-AFTER UPDATE ON statechain
-FOR EACH ROW
-EXECUTE PROCEDURE update_sequence_on_auth_change();
+-- CREATE OR REPLACE TRIGGER trigger_update_auth
+-- AFTER UPDATE ON statechain
+-- FOR EACH ROW
+-- EXECUTE PROCEDURE update_txn_on_auth_change();
 
 create table if not exists statechain_transfer (
     authkey varchar not null CONSTRAINT transfer_authkey primary key,
     random_key varchar,
-    statechain_id uuid not null ,
+    random_point varchar,
+    statechain_id uuid UNIQUE not null ,
     transfer_msg varchar NULL, 
-    status TransferStatus,
     created_at timestamp with time zone not null default current_timestamp,
     foreign key (statechain_id) REFERENCES statechain(id)
 );

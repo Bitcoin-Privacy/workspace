@@ -37,6 +37,7 @@ export default function ProfilePage() {
       listUtxoQuery,
       balanceQuery,
       listRoomsQuery,
+      listTransferStatecoinsQuery,
       listStatecoinsQuery,
     },
     methods: {
@@ -46,6 +47,7 @@ export default function ProfilePage() {
       onSendStatecoinBtnClick,
       onWithdrawBtnClick,
       onReceiveStatecoinBtnClick,
+      onVerifyTransferStatecoinClick,
     },
   } = useProfilePage();
 
@@ -183,6 +185,9 @@ export default function ProfilePage() {
                   Statechain
                 </Tab>
                 <Tab fontSize="18px" fontWeight="200" color="#aaa">
+                  Statechain transfer
+                </Tab>
+                <Tab fontSize="18px" fontWeight="200" color="#aaa">
                   UTXO
                 </Tab>
                 <Tab fontSize="18px" fontWeight="200" color="#aaa">
@@ -204,6 +209,67 @@ export default function ProfilePage() {
                   </VStack>
                 </TabPanel>
                 <TabPanel>
+                  <VStack h="100%" w="100%">
+                    {listTransferStatecoinsQuery.data?.map((val, index) => (
+                      <HStack
+                        color="white"
+                        textAlign="start"
+                        w="90%"
+                        maxW="90%"
+                        bg="#3a3a3a"
+                        p="8px 16px"
+                        borderRadius="8px"
+                        dir="row"
+                        alignItems={"center"}
+                        spacing="8px"
+                      >
+                        <Image
+                          borderRadius="full"
+                          boxSize="50px"
+                          src="https://i.ibb.co/R91rN3Q/statechain.png"
+                        />
+                        <Flex w="full" alignItems={"center"}>
+                          <VStack alignItems={"flex-start"} spacing="8px">
+                            {/* <Text
+                              isTruncated
+                              maxW={"120px"}
+                              fontSize={"16"}
+                              fontWeight={"400"}
+                            >
+                              Id : {val.statechain_id}
+                            </Text> */}
+                            <Text
+                              isTruncated
+                              maxW={"160px"}
+                              fontSize={"16"}
+                              fontWeight={"400"}
+                            >
+                              Authkey : {val.auth_key}
+                            </Text>
+                          </VStack>
+
+                          <Spacer />
+
+                          <VStack alignItems={"end"} spacing={"8px"} w="100%">
+                            <Button
+                              onClick={() =>
+                                onVerifyTransferStatecoinClick(
+                                  deriv,
+                                  val.transfer_message,
+                                  val.auth_key
+                                )
+                              }
+                            >
+                              {" "}
+                              Verify
+                            </Button>
+                          </VStack>
+                        </Flex>
+                      </HStack>
+                    ))}
+                  </VStack>
+                </TabPanel>
+                <TabPanel>
                   <VStack overflowY="scroll" h="100%">
                     {listUtxoQuery.data?.map((val, index) => (
                       <UTXOCard key={index} val={val} />
@@ -211,13 +277,9 @@ export default function ProfilePage() {
                   </VStack>
                 </TabPanel>
                 <TabPanel>
-                  <Text fontSize="12px" fontWeight="200" color="#aaa">
-                    <VStack h="100%" w="100%" spacing="8px">
-                      {listRoomsQuery.data?.map((val, id) => (
-                        <CoinJoinRoomCard key={id} data={val} deriv={deriv} />
-                      ))}
-                    </VStack>
-                  </Text>
+                  {listRoomsQuery.data?.map((val, id) => (
+                    <CoinJoinRoomCard key={id} data={val} deriv={deriv} />
+                  ))}
                 </TabPanel>
               </TabPanels>
             </Tabs>

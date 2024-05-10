@@ -5,6 +5,7 @@ use actix_web::{
 use shared::intf::statechain::{
     CreateBkTxnReq, CreateTokenReq, DepositReq, GetNonceReq, GetPartialSignatureReq,
     KeyRegisterReq, ListStatecoinsReq, TransferMessageReq, TransferReq, UpdateKeyReq,
+    VerifyStatecoinReq,
 };
 
 use crate::{repo::statechain::StatechainRepo, svc::statechain, util::response};
@@ -153,14 +154,57 @@ pub async fn update_transfer_message(
     }
 }
 
+pub async fn get_transfer_message(
+    statechain_repo: Data<StatechainRepo>,
+    id: web::Path<String>,
+) -> HttpResponse {
+    let authkey = id.into_inner();
+    match statechain::get_tranfer_message(&statechain_repo, &authkey).await {
+        Ok(status) => response::success(status),
+        Err(message) => {
+            println!("get transfer message error: {}", message);
+            response::error(message.to_string())
+        }
+    }
+}
+
+pub async fn verify_statecoin(
+    statechain_repo: Data<StatechainRepo>,
+    payload: Json<VerifyStatecoinReq>,
+) -> HttpResponse {
+    match statechain::verify_statecoin(&statechain_repo, &payload.statechain_id).await {
+        Ok(status) => response::success(status),
+        Err(message) => {
+            println!("verify_statecoin error: {}", message);
+            response::error(message.to_string())
+        }
+    }
+}
+
+pub async fn update_key(
+    statechain_repo: Data<StatechainRepo>,
+    payload: Json<UpdateKeyReq>,
+) -> HttpResponse {
+    match statechain::update_key(
+        &statechain_repo,
+        &payload.authkey,
+        &payload.statechain_id,
+        &payload.t2,
+    )
+    .await
+    {
+        Ok(status) => response::success(status),
+        Err(message) => {
+            println!("update_key error: {}", message);
+            response::error(message.to_string())
+        }
+    }
+}
+
 pub async fn transfer(payload: Json<TransferReq>) -> HttpResponse {
     response::success("hello from statechain endpoint")
 }
 
 pub async fn list_statecoins(payload: Json<ListStatecoinsReq>) -> HttpResponse {
-    response::success("hello from statechain endpoint")
-}
-
-pub async fn update_key(payload: Json<UpdateKeyReq>) -> HttpResponse {
     response::success("hello from statechain endpoint")
 }

@@ -20,13 +20,14 @@ import { ChakraStylesConfig, Select } from "chakra-react-select";
 import { Layout, NavBar } from "@/components";
 import { TxStrategyEnum } from "@/dtos";
 import { useSendStateCoinPage } from "@/hooks/pages/use-send-statecoin-page";
+import { StateChainCard } from "@/components/statechain-card";
 
 const INPUT_WIDTH = "90%";
 
 export default function SendStateCoin() {
   const router = useRouter();
   const {
-    states: { deriv, form, isLoading, balanceQuery },
+    states: { deriv, form, isLoading, listStatecoinsQuery },
     methods: { handleFormSubmit },
   } = useSendStateCoinPage();
 
@@ -50,37 +51,31 @@ export default function SendStateCoin() {
               color={"white"}
               p="0px 8px"
               w="full"
+              spacing={"16px"}
+              justifyContent={"space-between"}
             >
-              <VStack
-                bg={"gray.800"}
-                borderRadius={"8px"}
-                p="16px 24px"
-                w="full"
-              >
-                <Text> Select statecoin to send</Text>
+              <VStack h="100%" w="50%" px={"16px"}>
+                {listStatecoinsQuery.data?.map((val, index) => (
+                  <StateChainCard val={val} key={index} />
+                ))}
               </VStack>
-
               <VStack
-                w="full"
                 alignItems={"start"}
                 bg={"gray.800"}
                 borderRadius={"8px"}
                 p="16px 24px"
                 spacing="16px"
+                w="50%"
               >
                 <Text> Transaction Details</Text>
                 <HStack w="full" justify="space-between">
                   <Text w="20%" color="white">
-                    New owner pubkey:
+                    Statechain address
                   </Text>
                   <Input
-                    placeholder="02ed7faa45188db914f659c8c0676f66b23ab70a650b14463002be496afdd2875f"
-                    defaultValue={
-                      "02ed7faa45188db914f659c8c0676f66b23ab70a650b14463002be496afdd2875f"
-                    }
                     w={INPUT_WIDTH}
                     color="white"
-                    {...form.register("o2_pubkey", {
+                    {...form.register("address", {
                       required: "Receiver address is required",
                       // pattern: {
                       //   value: /^(tb1)[a-z0-9]{39,59}$/,
@@ -96,10 +91,8 @@ export default function SendStateCoin() {
                     Statechain ID
                   </Text>
                   <Input
-                    placeholder="e0e75e9a-07be-11ef-b8b5-a730e8877628"
                     w={INPUT_WIDTH}
                     color="white"
-                    defaultValue={"e0e75e9a-07be-11ef-b8b5-a730e8877628"}
                     {...form.register("statechain_id", {
                       required: "statechain_id is required",
                       // pattern: {
@@ -111,27 +104,6 @@ export default function SendStateCoin() {
                   />
                 </HStack>
 
-                <HStack w="full" justify="space-between">
-                  <Text w="20%" color="white">
-                    New owner auth:
-                  </Text>
-                  <Input
-                    placeholder="5f57150ba6aea631024e02adf71738b69c76101959845ee5121e9f6fd0107e3a"
-                    defaultValue={
-                      "5f57150ba6aea631024e02adf71738b69c76101959845ee5121e9f6fd0107e3a"
-                    }
-                    w={INPUT_WIDTH}
-                    color="white"
-                    {...form.register("o2_authkey", {
-                      required: "o2_authkey is required",
-                      // pattern: {
-                      //   value: /^(tb1)[a-z0-9]{39,59}$/,
-                      //   message:
-                      //     "Addess should follow P2WPKH format, other type is not supported yet.",
-                      // },
-                    })}
-                  />
-                </HStack>
                 <Button
                   alignSelf={"center"}
                   type="submit"

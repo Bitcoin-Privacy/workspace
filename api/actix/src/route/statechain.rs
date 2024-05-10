@@ -13,6 +13,19 @@ pub fn config(cfg: &mut web::ServiceConfig) {
         "/transfer/transfer-message",
         web::post().to(statechain::update_transfer_message),
     );
+    cfg.route(
+        "/transfer/transfer-message/{authkey}",
+        web::get().to(statechain::get_transfer_message),
+    );
+    cfg.route(
+        "/transfer/transfer-message/verify",
+        web::post().to(statechain::verify_statecoin),
+    );
+    cfg.route(
+        "/transfer/transfer-message/update-key",
+        web::post().to(statechain::update_key),
+    );
+
     cfg.route("/{id}/nonce", web::post().to(statechain::get_nonce));
     cfg.route("/{id}/sig", web::post().to(statechain::get_sig));
     // cfg.route("/sign/first", web::post().to(statechain::sign_first));

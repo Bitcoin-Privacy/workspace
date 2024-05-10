@@ -1,5 +1,5 @@
-use bitcoin::consensus;
-use shared::intf::statechain::{DepositInfo, DepositRes};
+use bitcoin::hex::parse;
+use shared::intf::statechain::{DepositInfo, StatechainAddress};
 use tauri::{
     command,
     plugin::{Builder, TauriPlugin},
@@ -7,7 +7,11 @@ use tauri::{
 };
 
 use crate::{
-    connector::NodeConnector, db::PoolWrapper, model::StateCoinInfo, svc::statechain, util, TResult,
+    connector::NodeConnector,
+    db::PoolWrapper,
+    model::{StateCoinInfo, TransferStateCoinInfo},
+    svc::{statechain, statechain_deposit, statechain_receiver, statechain_sender},
+    util, TResult,
 };
 
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
@@ -16,8 +20,11 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             // Modifier
             deposit,
             list_statecoins,
-            send_statecoin //create_deposit_tx
-                           // Accessors
+            send_statecoin,
+            list_transfer_statecoins,
+            verify_transfer_statecoin,
+            generate_statechain_address //create_deposit_tx
+                                        // Accessors
         ])
         .build()
 }
@@ -31,7 +38,7 @@ pub async fn deposit(
     deriv: &str,
     amount: u64,
 ) -> TResult<DepositInfo> {
-    statechain::deposit(&pool, &conn, &deriv, amount)
+    statechain_deposit::execute(&pool, &conn, &deriv, amount)
         .await
         .map_err(util::to_string)
 }
@@ -50,16 +57,61 @@ pub async fn list_statecoins(
 pub async fn send_statecoin(
     pool: State<'_, PoolWrapper>,
     conn: State<'_, NodeConnector>,
-    pubkey: &str,
-    authkey: &str,
+    address: &str,
     statechain_id: &str,
 ) -> TResult<String> {
-    statechain::send_statecoin(&conn, &pool, pubkey, authkey, statechain_id)
+    let address = hex::decode(address).unwrap();
+    let json_address = match std::str::from_utf8(&address) {
+        Ok(v) => v,
+        Err(e) => panic!("Invalid UTF-8 sequence: {}", e),
+    };
+    let parsed_address: StatechainAddress = serde_json::from_str(json_address).unwrap();
+    println!("transfer_message {:#?}", parsed_address);
+
+    statechain_sender::execute(
+        &conn,
+        &pool,
+        &parsed_address.owner_pubkey,
+        &parsed_address.authkey,
+        statechain_id,
+    )
+    .await
+    .map_err(util::to_string)
+}
+
+#[command]
+pub async fn list_transfer_statecoins(
+    pool: State<'_, PoolWrapper>,
+    conn: State<'_, NodeConnector>,
+    deriv: &str,
+) -> TResult<Vec<TransferStateCoinInfo>> {
+    statechain::list_transfer_statecoins(&conn, &pool, &deriv)
         .await
         .map_err(util::to_string)
 }
 
-// #[command]
+#[command]
+pub async fn verify_transfer_statecoin(
+    pool: State<'_, PoolWrapper>,
+    conn: State<'_, NodeConnector>,
+    deriv: &str,
+    transfer_message: &str,
+    authkey: &str,
+) -> TResult<String> {
+    statechain_receiver::execute(&conn, &pool, deriv, transfer_message, authkey)
+        .await
+        .map_err(util::to_string)
+}
+
+#[command]
+pub async fn generate_statechain_address(
+    pool: State<'_, PoolWrapper>,
+    deriv: &str,
+) -> TResult<String> {
+    statechain_receiver::generate_statechain_address(&pool, deriv)
+        .await
+        .map_err(util::to_string)
+}
 // pub async fn create_bk_tx(
 //     pool: State<'_, PoolWrapper>,
 //     conn: State<'_, NodeConnector>,

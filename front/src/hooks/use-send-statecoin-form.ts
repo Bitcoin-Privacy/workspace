@@ -6,8 +6,7 @@ import { useForm } from "react-hook-form";
 
 
 type SendStatecoinFromInput = {
-    o2_pubkey : string;
-    o2_authkey : string;
+    address : string;
     statechain_id : string;
 }
 
@@ -22,8 +21,7 @@ export const useSendStateCoinForm = (derivationPath: string) => {
         try {
          
           const res = await StatechainApi.sendStatecoin(
-            data.o2_pubkey,
-            data.o2_authkey,
+            data.address,
             data.statechain_id
           );
           console.log("send statecoin ", res);

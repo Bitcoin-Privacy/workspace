@@ -45,6 +45,12 @@ export const useProfilePage = () => {
     { enabled: !!addr },
   );
 
+  const listTransferStatecoinsQuery = useQuery(
+    [CachePrefixKeys.ListTrasferStatecoins, addr],
+    () => StatechainApi.listTransferStatecoins(deriv),
+    { enabled: !!addr },
+  );
+
   const listRoomsQuery = useQuery(
     [CachePrefixKeys.ListRooms, addr],
     () => CoinJoinApi.getRooms(deriv),
@@ -72,6 +78,10 @@ export const useProfilePage = () => {
     router.push(`/profile/${b64EncodeUnicode(deriv)}/receive-statecoin`);
   }, [deriv]);
 
+  const onVerifyTransferStatecoinClick = ( deriv: String,transfer_msg : String,authkey: String) => {
+    StatechainApi.verifyTransferStatecoin( deriv, transfer_msg, authkey)
+  }
+
   return {
     states: {
       deriv,
@@ -80,7 +90,8 @@ export const useProfilePage = () => {
       listUtxoQuery,
       balanceQuery,
       listRoomsQuery,
-      listStatecoinsQuery
+      listStatecoinsQuery,
+      listTransferStatecoinsQuery
     },
     methods: {
       onCopy,
@@ -89,6 +100,7 @@ export const useProfilePage = () => {
       onSendStatecoinBtnClick,
       onWithdrawBtnClick,
       onReceiveStatecoinBtnClick,
+      onVerifyTransferStatecoinClick,
     },
   };
 };
