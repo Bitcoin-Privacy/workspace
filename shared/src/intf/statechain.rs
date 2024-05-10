@@ -220,11 +220,14 @@ pub struct GetPartialSignatureReq {
     pub signed_statechain_id: String,
     pub parsed_tx: String,
     pub agg_pubnonce: String,
+    pub script_pubkey: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GetPartialSignatureRes {
-    pub partial_signature: String,
+    pub sighash: String,
+    pub partial_sig: String,
+    pub n_lock_time: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -265,13 +265,17 @@ pub async fn update_unverifed_statecoin(
     funding_vout: u64,
     funding_tx: &str,
     amount: u64,
+    bk_tx: &str,
+    authkey: &str,
 ) -> Result<()> {
+    println!("Authkey in the database: {}", authkey);
     let _ = sqlx::query(
         r#"UPDATE Statecoin
                 SET statechain_id = $1, signed_statechain_id = $2, tx_n = $3,
-                    n_lock_time = $4, amount = $5, key_agg_ctx = $6, 
-                    aggregated_pubkey = $7, aggregated_address = $8, funding_txid =$9, 
-                    funding_vout = $10, funding_tx = $11, isVerified = true
+                n_lock_time = $4, amount = $5, key_agg_ctx = $6, 
+                aggregated_pubkey = $7, aggregated_address = $8, funding_txid =$9, 
+                funding_vout = $10, funding_tx = $11, isVerified = true
+                WHERE auth_pubkey = $12;
                       "#,
     )
     .bind(statechain_id)
@@ -285,7 +289,9 @@ pub async fn update_unverifed_statecoin(
     .bind(funding_txid)
     .bind(funding_vout as i64)
     .bind(funding_tx)
-    .execute(pool);
+    .bind(authkey)
+    .execute(pool)
+    .await?;
     Ok(())
 }
 

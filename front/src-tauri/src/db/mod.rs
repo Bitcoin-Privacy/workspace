@@ -101,6 +101,8 @@ impl PoolWrapper {
         funding_vout: u64,
         funding_tx: &str,
         amount: u64,
+        bk_tx: &str,
+        authkey: &str,
     ) -> Result<()> {
         sqlite::update_unverifed_statecoin(
             &self.pool,
@@ -115,6 +117,8 @@ impl PoolWrapper {
             funding_vout,
             funding_tx,
             amount,
+            bk_tx,
+            authkey,
         )
         .await
     }

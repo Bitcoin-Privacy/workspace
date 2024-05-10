@@ -3,11 +3,17 @@ use std::str::FromStr;
 use actix_web::web::Data;
 use anyhow::Result;
 use bitcoin::{
-    hashes::sha256, hex::{Case, DisplayHex}, key::{Keypair, TapTweak, TweakedKeypair}, secp256k1::{rand, PublicKey, Secp256k1, SecretKey}, TapSighash, XOnlyPublicKey
+    consensus,
+    hashes::sha256,
+    hex::{Case, DisplayHex},
+    key::{Keypair, TapTweak, TweakedKeypair},
+    secp256k1::{rand, PublicKey, Secp256k1, SecretKey},
+    sighash::{Prevouts, SighashCache},
+    Amount, ScriptBuf, TapSighash, TapSighashType, Transaction, TxOut, XOnlyPublicKey,
 };
 use musig2::{AggNonce, BinaryEncoding, KeyAggContext, PartialSignature, SecNonce};
 use rand::RngCore;
-use secp256k1::{schnorr::Signature, Message, Scalar};
+use secp256k1::{schnorr::Signature, Message, Parity, Scalar};
 
 use crate::repo::statechain::{StatechainRepo, TraitStatechainRepo};
 use shared::intf::statechain::{
@@ -28,26 +34,22 @@ pub async fn create_deposit(
     };
 
     let secp = Secp256k1::new();
-    let keypair = Keypair::new(&secp, &mut rand::thread_rng());
-    let tweaked_keypair = keypair.tap_tweak(&secp, None);
-    let seckey = SecretKey::from_keypair(&tweaked_keypair.to_inner());
-    let pubkey = PublicKey::from_keypair(&tweaked_keypair.to_inner());
+    let mut seckey = SecretKey::new(&mut rand::thread_rng());
+    let (_, parity) = PublicKey::from_secret_key(&secp, &seckey).x_only_public_key();
 
-    // let nonce_seed = [0xACu8; 32];
-    // let secnonce = musig2::SecNonceBuilder::new(nonce_seed).build();
+    if parity == Parity::Odd {
+        seckey = seckey.negate();
+    }
 
-    // let pubnonce = secnonce.public_nonce();
-
+    let pubkey = PublicKey::from_secret_key(&secp, &seckey);
     let statecoin = repo
         .create_deposit_tx(token_id, &auth_key, &pubkey, &seckey, amount)
         .await
         .map_err(|e| format!("Failed to add deposit: {}", e))?;
-
     let res = DepositRes {
         se_pubkey_1: pubkey.to_string(),
         statechain_id: statecoin.id.to_string(),
     };
-
     Ok(res)
 }
 
@@ -124,6 +126,7 @@ pub async fn get_sig(
     statechain_id: &str,
     parsed_tx: &str,
     agg_pubnonce: &str,
+    script_pubkey: &str,
 ) -> Result<GetPartialSignatureRes> {
     // if !verify_signature(&repo, &signed_statechain_id, &statechain_id).await? {
     //     bail!("Invalid signature")
@@ -131,29 +134,39 @@ pub async fn get_sig(
 
     let statecoin = repo.get_by_id(statechain_id).await?;
 
-    println!("messsagee : {}", parsed_tx);
-
     let secnonce = statecoin.sec_nonce.unwrap();
-    println!("nonce 2 : {}", secnonce);
     let seckey = SecretKey::from_str(&statecoin.server_private_key)?;
     let secnonce = SecNonce::from_hex(&secnonce).unwrap();
-
     let key_agg_ctx = KeyAggContext::from_hex(serialized_key_agg_ctx).unwrap();
-
-    println!(
-        "agg-ctx and pubnonce {},{}",
-        serialized_key_agg_ctx, agg_pubnonce
-    );
-
     let agg_nonce = AggNonce::from_str(agg_pubnonce).unwrap();
+    let sighash_type = TapSighashType::Default;
+
+    let tx = consensus::deserialize::<Transaction>(&hex::decode(parsed_tx)?)?;
+    let mut unsigned_txn = tx.clone();
+    let mut sighasher = SighashCache::new(&mut unsigned_txn);
+    let input_index = 0;
+    let secp = Secp256k1::new();
+    let prevouts = vec![TxOut {
+        value: Amount::from_sat(statecoin.amount as u64),
+        script_pubkey: ScriptBuf::from_hex(script_pubkey)?,
+    }];
+    let prevouts = Prevouts::All(&prevouts);
+
+    let sighash = sighasher
+        .taproot_key_spend_signature_hash(input_index, &prevouts, sighash_type)
+        .expect("failed to construct sighash");
+
+    let sighash = sighash.to_string();
 
     let our_partial_signature: PartialSignature =
-        musig2::sign_partial(&key_agg_ctx, seckey, secnonce, &agg_nonce, parsed_tx)?;
+        musig2::sign_partial(&key_agg_ctx, seckey, secnonce, &agg_nonce, &sighash)?;
 
     let final_sig = our_partial_signature.serialize().to_hex_string(Case::Lower);
 
     Ok(GetPartialSignatureRes {
-        partial_signature: final_sig,
+        sighash: sighash,
+        partial_sig: final_sig,
+        n_lock_time: 0 as u64,
     })
 }
 

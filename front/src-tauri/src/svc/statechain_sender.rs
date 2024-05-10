@@ -119,6 +119,7 @@ pub async fn create_bk_tx_for_receiver(
     let seckey = SecretKey::from_str(&seckey).unwrap();
 
     let agg_scriptpubkey = ScriptBuf::new_p2tr(&secp, agg_pubkey.x_only_public_key().0, None);
+    let scriptpubkey = agg_scriptpubkey.to_hex_string();
 
     println!(
         "Public key agg: {}",
@@ -148,30 +149,32 @@ pub async fn create_bk_tx_for_receiver(
         output: vec![spend],                // Outputs, order does not matter.
     };
 
-    let utxo = TxOut {
-        value: Amount::from_sat(amount),
-        script_pubkey: agg_scriptpubkey,
-    };
+    let unsigned_tx_hex = consensus::encode::serialize_hex(&unsigned_tx);
 
-    println!("utxo that bk sign:{:#?}", utxo);
+    // let utxo = TxOut {
+    //     value: Amount::from_sat(amount),
+    //     script_pubkey: agg_scriptpubkey,
+    // };
 
-    let prevouts = vec![utxo];
-    let prevouts = Prevouts::All(&prevouts);
-    let mut sighasher = SighashCache::new(&mut unsigned_tx);
+    // println!("utxo that bk sign:{:#?}", utxo);
+
+    // let prevouts = vec![utxo];
+    // let prevouts = Prevouts::All(&prevouts);
+    // let mut sighasher = SighashCache::new(&mut unsigned_tx);
 
     let sighash_type = TapSighashType::All;
-    let sighash = sighasher
-        .taproot_key_spend_signature_hash(0, &prevouts, sighash_type)
-        .expect("failed to construct sighash");
+    // let sighash = sighasher
+    //     .taproot_key_spend_signature_hash(0, &prevouts, sighash_type)
+    //     .expect("failed to construct sighash");
 
-    println!("sighash : {}", sighash.to_string());
+    // println!("sighash : {}", sighash.to_string());
 
-    let message = sighash.to_string();
-    let parsed_msg = message.clone();
-    let msg_clone = parsed_msg.clone();
-    let msg = parsed_msg.clone();
+    // let message = sighash.to_string();
+    // let parsed_msg = message.clone();
+    // let msg_clone = parsed_msg.clone();
+    // let msg = parsed_msg.clone();
 
-    println!("messsageee : {}", msg);
+    // println!("messsageee : {}", msg);
 
     let get_nonce_res =
         statechain::get_nonce(&conn, statechain_id, &statecoin.signed_statechain_id).await?;
@@ -193,10 +196,6 @@ pub async fn create_bk_tx_for_receiver(
 
     let agg_pubnonce_str = agg_pubnonce.to_string();
 
-    let our_partial_signature: PartialSignature =
-        musig2::sign_partial(&key_agg_ctx, seckey, secnonce, &agg_pubnonce, message)
-            .expect("error creating partial signature");
-
     let serialized_key_agg_ctx = key_agg_ctx
         .to_bytes()
         .to_hex_string(bitcoin::hex::Case::Lower);
@@ -206,13 +205,20 @@ pub async fn create_bk_tx_for_receiver(
         &serialized_key_agg_ctx,
         &statechain_id,
         &statecoin.signed_statechain_id,
-        &msg_clone,
+        &unsigned_tx_hex,
         &agg_pubnonce_str,
+        &scriptpubkey,
     )
     .await?;
 
-    let server_signature = get_sign_res.partial_signature;
+    let sighash = &get_sign_res.sighash;
+    let sighash_clone = sighash.clone();
 
+    let our_partial_signature: PartialSignature =
+        musig2::sign_partial(&key_agg_ctx, seckey, secnonce, &agg_pubnonce, sighash_clone)
+            .expect("error creating partial signature");
+
+    let server_signature = get_sign_res.partial_sig;
     let partial_signatures = [
         our_partial_signature,
         PartialSignature::from_hex(&server_signature).unwrap(),
@@ -222,14 +228,14 @@ pub async fn create_bk_tx_for_receiver(
         &key_agg_ctx,
         &agg_pubnonce,
         partial_signatures,
-        msg_clone,
+        sighash,
     )
     .expect("error aggregating signatures");
 
     let agg_pubkey_tw: PublicKey = key_agg_ctx.aggregated_pubkey();
     println!("tx public key : {}", agg_pubkey_tw.to_string());
 
-    musig2::verify_single(agg_pubkey_tw, final_signature, msg)
+    musig2::verify_single(agg_pubkey_tw, final_signature, sighash)
         .expect("aggregated signature must be valid");
 
     let signature = bitcoin::taproot::Signature {
@@ -244,13 +250,14 @@ pub async fn create_bk_tx_for_receiver(
 
     let mut wit = Witness::new();
     wit.push(signature.to_vec());
-    *sighasher.witness_mut(0).unwrap() = wit;
+    // *sighasher.witness_mut(0).unwrap() = wit;
 
-    let tx = sighasher.into_transaction();
+    // let tx = sighasher.into_transaction();
+    unsigned_tx.input[0].witness = wit;
 
-    println!("Bk tx raw: {:#?}", tx);
+    println!("Bk tx raw: {:#?}", unsigned_tx);
 
-    let tx_hex = consensus::encode::serialize_hex(&tx);
+    let tx_hex = consensus::encode::serialize_hex(&unsigned_tx);
 
     println!("Bk tx hex: {}", tx_hex);
 

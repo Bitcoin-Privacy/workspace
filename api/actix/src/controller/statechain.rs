@@ -124,6 +124,7 @@ pub async fn get_sig(
         &statechain_id,
         &payload.parsed_tx,
         &payload.agg_pubnonce,
+        &payload.script_pubkey,
     )
     .await
     {

@@ -2,35 +2,24 @@ use anyhow::anyhow;
 use anyhow::Result;
 use bitcoin::key::TapTweak;
 use bitcoin::{
-    absolute::{self, LockTime},
-    consensus,
     hashes::sha256,
-    hex::DisplayHex,
     secp256k1::{rand, Keypair, PublicKey, Secp256k1, SecretKey},
-    sighash::{Prevouts, SighashCache},
-    transaction::{self, Version},
-    Address, Amount, EcdsaSighashType, Network, OutPoint, ScriptBuf, Sequence, TapSighashType,
-    Transaction, TxIn, TxOut, Txid, Witness, XOnlyPublicKey,
+    Address, Network,
 };
-use musig2::{AggNonce, BinaryEncoding, KeyAggContext, PartialSignature, PubNonce, SecNonce};
+use musig2::KeyAggContext;
 
-use rand::RngCore;
+use secp256k1::Parity;
 use secp256k1::{schnorr::Signature, Message, Scalar};
 
-use std::{
-    ops::ControlFlow,
-    str::FromStr,
-    time::{SystemTime, UNIX_EPOCH},
-};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::model::StatechainKeypairs;
 use crate::{
     api::statechain,
-    cfg::{BASE_TX_FEE, INTERVAL},
+    cfg::INTERVAL,
     db::PoolWrapper,
-    model::{AccountActions, StateCoin, StateCoinInfo, TransferStateCoinInfo},
+    model::{AccountActions, StateCoinInfo, TransferStateCoinInfo},
 };
-use shared::intf::statechain::{DepositInfo, DepositReq, DepositRes, TransferMessage};
 
 use crate::connector::NodeConnector;
 
@@ -152,10 +141,19 @@ pub fn generate_auth_owner_keypairs() -> Result<StatechainKeypairs> {
     let auth_keypair = Keypair::new(&secp, &mut rand::thread_rng());
     let auth_pubkey = PublicKey::from_keypair(&auth_keypair);
     let auth_seckey = SecretKey::from_keypair(&auth_keypair);
-    let owner_keypair = Keypair::new(&secp, &mut rand::thread_rng());
-    let tweaked_owner_keypair = owner_keypair.tap_tweak(&secp, None);
-    let owner_seckey = SecretKey::from_keypair(&tweaked_owner_keypair.to_inner());
-    let owner_pubkey = PublicKey::from_keypair(&tweaked_owner_keypair.to_inner());
+    // let owner_keypair = Keypair::new(&secp, &mut rand::thread_rng());
+    // let tweaked_owner_keypair = owner_keypair.tap_tweak(&secp, None);
+    // let owner_seckey = SecretKey::from_keypair(&tweaked_owner_keypair.to_inner());
+    // let owner_pubkey = PublicKey::from_keypair(&tweaked_owner_keypair.to_inner());
+
+    let mut owner_seckey = SecretKey::new(&mut rand::thread_rng());
+    let (_, parity) = PublicKey::from_secret_key(&secp, &owner_seckey).x_only_public_key();
+
+    if parity == Parity::Odd {
+        owner_seckey = owner_seckey.negate();
+    }
+
+    let owner_pubkey = PublicKey::from_secret_key(&secp, &owner_seckey);
 
     Ok(StatechainKeypairs {
         owner_seckey,

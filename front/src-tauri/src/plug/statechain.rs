@@ -60,7 +60,7 @@ pub async fn send_statecoin(
     address: &str,
     statechain_id: &str,
 ) -> TResult<String> {
-    let address = hex::decode(address).unwrap();
+    let address = hex::decode(address).map_err(util::to_string)?;
     let json_address = match std::str::from_utf8(&address) {
         Ok(v) => v,
         Err(e) => panic!("Invalid UTF-8 sequence: {}", e),

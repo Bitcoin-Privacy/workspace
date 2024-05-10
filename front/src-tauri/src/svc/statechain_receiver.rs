@@ -89,6 +89,8 @@ pub async fn execute(
         parsed_transfer_msg.funding_vout,
         "test",
         parsed_transfer_msg.amount,
+        &parsed_transfer_msg.backup_txs,
+        &authkey,
     )
     .await?;
 
