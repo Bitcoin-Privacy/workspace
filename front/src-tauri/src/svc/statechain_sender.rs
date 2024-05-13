@@ -5,13 +5,13 @@ use bitcoin::{
     hex::DisplayHex,
     secp256k1::{rand, PublicKey, Secp256k1, SecretKey},
     sighash::{Prevouts, SighashCache},
-    transaction, Address, Amount, Network, OutPoint, ScriptBuf, Sequence, TapSighashType,
-    Transaction, TxIn, TxOut, Txid, Witness, XOnlyPublicKey,
+    transaction, Address, Amount, Network, OutPoint, ScriptBuf, Sequence, TapSighash,
+    TapSighashType, Transaction, TxIn, TxOut, Txid, Witness, XOnlyPublicKey,
 };
 use ecies;
 use musig2::{AggNonce, BinaryEncoding, KeyAggContext, PartialSignature, PubNonce, SecNonce};
 use rand::RngCore;
-use secp256k1::Scalar;
+use secp256k1::{Message, Scalar};
 use serde_json::{json, to_string};
 
 use std::str::FromStr;
@@ -151,30 +151,7 @@ pub async fn create_bk_tx_for_receiver(
 
     let unsigned_tx_hex = consensus::encode::serialize_hex(&unsigned_tx);
 
-    // let utxo = TxOut {
-    //     value: Amount::from_sat(amount),
-    //     script_pubkey: agg_scriptpubkey,
-    // };
-
-    // println!("utxo that bk sign:{:#?}", utxo);
-
-    // let prevouts = vec![utxo];
-    // let prevouts = Prevouts::All(&prevouts);
-    // let mut sighasher = SighashCache::new(&mut unsigned_tx);
-
     let sighash_type = TapSighashType::All;
-    // let sighash = sighasher
-    //     .taproot_key_spend_signature_hash(0, &prevouts, sighash_type)
-    //     .expect("failed to construct sighash");
-
-    // println!("sighash : {}", sighash.to_string());
-
-    // let message = sighash.to_string();
-    // let parsed_msg = message.clone();
-    // let msg_clone = parsed_msg.clone();
-    // let msg = parsed_msg.clone();
-
-    // println!("messsageee : {}", msg);
 
     let get_nonce_res =
         statechain::get_nonce(&conn, statechain_id, &statecoin.signed_statechain_id).await?;
@@ -212,10 +189,13 @@ pub async fn create_bk_tx_for_receiver(
     .await?;
 
     let sighash = &get_sign_res.sighash;
-    let sighash_clone = sighash.clone();
+    let sighash = TapSighash::from_str(sighash)?;
+    let msg = Message::from(sighash);
+    let msg = msg.as_ref();
+    let msg_clone = msg.clone();
 
     let our_partial_signature: PartialSignature =
-        musig2::sign_partial(&key_agg_ctx, seckey, secnonce, &agg_pubnonce, sighash_clone)
+        musig2::sign_partial(&key_agg_ctx, seckey, secnonce, &agg_pubnonce, msg)
             .expect("error creating partial signature");
 
     let server_signature = get_sign_res.partial_sig;
@@ -224,18 +204,14 @@ pub async fn create_bk_tx_for_receiver(
         PartialSignature::from_hex(&server_signature).unwrap(),
     ];
 
-    let final_signature: secp256k1::schnorr::Signature = musig2::aggregate_partial_signatures(
-        &key_agg_ctx,
-        &agg_pubnonce,
-        partial_signatures,
-        sighash,
-    )
-    .expect("error aggregating signatures");
+    let final_signature: secp256k1::schnorr::Signature =
+        musig2::aggregate_partial_signatures(&key_agg_ctx, &agg_pubnonce, partial_signatures, msg)
+            .expect("error aggregating signatures");
 
     let agg_pubkey_tw: PublicKey = key_agg_ctx.aggregated_pubkey();
     println!("tx public key : {}", agg_pubkey_tw.to_string());
 
-    musig2::verify_single(agg_pubkey_tw, final_signature, sighash)
+    musig2::verify_single(agg_pubkey_tw, final_signature, msg)
         .expect("aggregated signature must be valid");
 
     let signature = bitcoin::taproot::Signature {

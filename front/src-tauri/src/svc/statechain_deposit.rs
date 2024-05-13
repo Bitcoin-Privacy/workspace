@@ -1,5 +1,6 @@
 use anyhow::anyhow;
 use anyhow::Result;
+use bitcoin::TapSighash;
 use bitcoin::{
     absolute::{self, LockTime},
     consensus,
@@ -13,6 +14,7 @@ use bitcoin::{
 use musig2::{AggNonce, BinaryEncoding, KeyAggContext, PartialSignature, PubNonce, SecNonce};
 
 use rand::RngCore;
+use secp256k1::Message;
 
 use std::{ops::ControlFlow, str::FromStr};
 
@@ -242,11 +244,7 @@ pub async fn create_bk_tx(
         txid: Txid::from_str(&txid)?,
         vout: vout as u32,
     };
-    let sq = if n_lock_time == 0 {
-        Sequence::ENABLE_RBF_NO_LOCKTIME
-    } else {
-        Sequence::ENABLE_LOCKTIME_NO_RBF
-    };
+
     let input = TxIn {
         previous_output: prev_outpoint,
         script_sig: ScriptBuf::default(),
@@ -266,30 +264,7 @@ pub async fn create_bk_tx(
         output: vec![spend],                // Outputs, order does not matter.
     };
 
-    // let utxo = TxOut {
-    //     value: Amount::from_sat(amount),
-    //     script_pubkey: agg_scriptpubkey,
-    // };
-
-    // println!("utxo that bk sign:{:#?}", utxo);
-
-    // let prevouts = vec![utxo];
-    // let prevouts = Prevouts::All(&prevouts);
-    // let mut sighasher = SighashCache::new(&mut unsigned_tx);
-
-    let sighash_type = TapSighashType::All;
-    // let sighash = sighasher
-    //     .taproot_key_spend_signature_hash(0, &prevouts, sighash_type)
-    //     .expect("failed to construct sighash");
-
-    // println!("sighash : {}", sighash.to_string());
-
-    // let message = sighash.to_string();
-    // let parsed_msg = message.clone();
-    // let msg_clone = parsed_msg.clone();
-    // let msg = parsed_msg.clone();
-
-    // println!("messsageee : {}", msg);
+    let sighash_type = TapSighashType::Default;
 
     let get_nonce_res = statechain::get_nonce(&conn, statechain_id, &signed_statechain_id).await?;
     let server_pubnonce = get_nonce_res.server_nonce;
@@ -328,10 +303,13 @@ pub async fn create_bk_tx(
     .await?;
 
     let sighash = &get_sign_res.sighash;
-    let sighash_clone = sighash.clone();
+    let sighash = TapSighash::from_str(sighash)?;
+    let msg = Message::from(sighash);
+    let msg = msg.as_ref();
+    let msg_clone = msg.clone();
 
     let our_partial_signature: PartialSignature =
-        musig2::sign_partial(&key_agg_ctx, *seckey, secnonce, &agg_pubnonce, sighash)
+        musig2::sign_partial(&key_agg_ctx, *seckey, secnonce, &agg_pubnonce, msg)
             .expect("error creating partial signature");
 
     let server_signature = get_sign_res.partial_sig;
@@ -341,18 +319,34 @@ pub async fn create_bk_tx(
         PartialSignature::from_hex(&server_signature).unwrap(),
     ];
 
-    let final_signature: secp256k1::schnorr::Signature = musig2::aggregate_partial_signatures(
-        &key_agg_ctx,
-        &agg_pubnonce,
-        partial_signatures,
-        sighash_clone,
-    )
-    .expect("error aggregating signatures");
-
     let agg_pubkey_tw: PublicKey = key_agg_ctx.aggregated_pubkey();
     println!("tx tweaked public key : {}", agg_pubkey_tw.to_string());
 
-    musig2::verify_single(agg_pubkey_tw, final_signature, sighash)
+    for (i, partial_signature) in partial_signatures.into_iter().enumerate() {
+        if i == 0 {
+            // Don't bother verifying our own signature
+            continue;
+        }
+
+        let their_pubkey: PublicKey = key_agg_ctx.get_pubkey(i).unwrap();
+        let their_pubnonce = &public_nonces[i];
+
+        musig2::verify_partial(
+            &key_agg_ctx,
+            partial_signature,
+            &agg_pubnonce,
+            their_pubkey,
+            their_pubnonce,
+            msg,
+        )
+        .expect("received invalid signature from a peer");
+    }
+
+    let final_signature: secp256k1::schnorr::Signature =
+        musig2::aggregate_partial_signatures(&key_agg_ctx, &agg_pubnonce, partial_signatures, msg)
+            .expect("error aggregating signatures");
+
+    musig2::verify_single(agg_pubkey_tw, final_signature, msg)
         .expect("aggregated signature must be valid");
 
     let signature = bitcoin::taproot::Signature {
@@ -374,6 +368,24 @@ pub async fn create_bk_tx(
     unsigned_tx.input[0].witness = wit;
 
     println!("Bk tx raw: {:#?}", unsigned_tx);
+
+    let tx = unsigned_tx.clone();
+
+    // let prevout = TxOut{
+    //     value: Amount::from_sat(amount as u64),
+    //     script_pubkey: ScriptBuf::from_hex(&scriptpubkey)?,
+    // };
+    let spent = |outpoint: &OutPoint| -> Option<TxOut> {
+        Some(TxOut {
+            value: Amount::from_sat(amount - 1 as u64),
+            script_pubkey: ScriptBuf::from_hex(&scriptpubkey).unwrap(),
+        })
+    };
+
+    match tx.verify(spent) {
+        Ok(()) => (),
+        Err(e) => println!("transaction got error {}", e),
+    };
 
     let tx_hex = consensus::encode::serialize_hex(&unsigned_tx);
 

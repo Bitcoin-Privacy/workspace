@@ -156,15 +156,17 @@ pub async fn get_sig(
         .taproot_key_spend_signature_hash(input_index, &prevouts, sighash_type)
         .expect("failed to construct sighash");
 
-    let sighash = sighash.to_string();
+    let sighash_str = sighash.to_string();
+    let msg = Message::from(sighash);
+    let msg = msg.as_ref();
 
     let our_partial_signature: PartialSignature =
-        musig2::sign_partial(&key_agg_ctx, seckey, secnonce, &agg_nonce, &sighash)?;
+        musig2::sign_partial(&key_agg_ctx, seckey, secnonce, &agg_nonce, msg)?;
 
     let final_sig = our_partial_signature.serialize().to_hex_string(Case::Lower);
 
     Ok(GetPartialSignatureRes {
-        sighash: sighash,
+        sighash: sighash_str,
         partial_sig: final_sig,
         n_lock_time: 0 as u64,
     })
