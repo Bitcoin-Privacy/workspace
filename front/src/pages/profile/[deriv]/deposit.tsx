@@ -119,7 +119,10 @@ export default function Deposit() {
                 color={"white"}
               >
                 <HStack w="full" alignItems={"end"}>
-                  <QRCodeGenerator text={depositInfo.aggregated_address} />
+                  <QRCodeGenerator
+                    text={depositInfo.aggregated_address}
+                    size="100px"
+                  />
 
                   <VStack
                     w="full"
@@ -164,7 +167,13 @@ export default function Deposit() {
                     </HStack>
                   </VStack>
                 </HStack>
-                <Button>Send</Button>
+                <Button
+                  onClick={() => {
+                    router.back();
+                  }}
+                >
+                  Close
+                </Button>
               </VStack>
             )}
           </VStack>

@@ -33,6 +33,7 @@ export const Layout: React.FC<ILayout> = ({ title, children }) => {
       overflowY="auto"
       alignItems="start"
       position="relative"
+      textColor={"white"}
     >
       <Box
         top="-50px"

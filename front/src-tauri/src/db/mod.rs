@@ -10,7 +10,7 @@ use sqlx::{
     Executor, SqlitePool,
 };
 
-use crate::model::{RoomEntity, StateCoin, StateCoinInfo};
+use crate::model::{RoomEntity, Statecoin, StatecoinCard, StatecoinDetail};
 
 mod sqlite;
 
@@ -46,7 +46,7 @@ impl PoolWrapper {
     pub async fn get_seed(&self) -> Result<Option<String>> {
         sqlite::get_cfg(&self.pool, "seed").await
     }
-    pub async fn get_statecoin_by_id(&self, statechain_id: &str) -> Result<StateCoin> {
+    pub async fn get_statecoin_by_id(&self, statechain_id: &str) -> Result<Statecoin> {
         sqlite::get_statecoin_by_id(&self.pool, &statechain_id).await
     }
 
@@ -54,7 +54,7 @@ impl PoolWrapper {
         sqlite::get_seckey_by_id(&self.pool, &statechain_id).await
     }
 
-    pub async fn list_statecoins_by_account(&self, account: &str) -> Result<Vec<StateCoinInfo>> {
+    pub async fn list_statecoins_by_account(&self, account: &str) -> Result<Vec<StatecoinCard>> {
         sqlite::get_statecoins_by_account(&self.pool, &account).await
     }
 
@@ -66,6 +66,7 @@ impl PoolWrapper {
     }
 
     pub async fn delete_statecoin_by_statechain_id(&self, statechain_id: &str) -> Result<()> {
+        println!("delete id : {}",statechain_id);
         sqlite::delete_statecoin_by_statechain_id(&self.pool, statechain_id).await
     }
 
@@ -221,6 +222,13 @@ impl PoolWrapper {
             funding_tx,
         )
         .await
+    }
+
+    pub async fn get_statecoin_detail_by_id(
+        &self,
+        statechain_id: &str,
+    ) -> Result<StatecoinDetail> {
+        sqlite::get_statecoin_detail_by_id(&self.pool, statechain_id).await
     }
 }
 //     pub async fn create_bk_tx(

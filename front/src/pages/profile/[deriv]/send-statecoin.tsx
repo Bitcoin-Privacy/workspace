@@ -56,7 +56,7 @@ export default function SendStateCoin() {
             >
               <VStack h="100%" w="50%" px={"16px"}>
                 {listStatecoinsQuery.data?.map((val, index) => (
-                  <StateChainCard val={val} key={index} />
+                  <StateChainCard val={val} key={index} deriv={deriv} />
                 ))}
               </VStack>
               <VStack

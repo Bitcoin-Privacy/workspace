@@ -23,7 +23,7 @@ impl StatechainRepo {
 
     pub async fn get_by_id(&self, id: &str) -> Result<StateCoin> {
         let statecoin =
-            sqlx::query_as::<_, StateCoin>("select * from statechain where id = $1::uuid")
+            sqlx::query_as::<_, StateCoin>("select id, server_public_key, server_private_key, amount,txn,n_lock_time,sec_nonce from statechain where id = $1::uuid")
                 .bind(id)
                 .fetch_one(&self.pool.pool)
                 .await?;
@@ -40,6 +40,7 @@ impl TraitStatechainRepo for StatechainRepo {
         server_pubkey: &PublicKey,
         server_privkey: &SecretKey,
         amount: u32,
+        init_nlock_time: u64,
     ) -> Result<StateCoin> {
         let server_privkey_bytes = server_privkey.display_secret().to_string();
         let server_pubkey_bytes = server_pubkey.to_string();
@@ -47,8 +48,8 @@ impl TraitStatechainRepo for StatechainRepo {
         let statecoin = sqlx::query_as::<_, StateCoin>(
             r#"
             insert into statechain 
-            (token_id, authkey, server_public_key, server_private_key, amount) 
-            values ($1, $2, $3, $4, $5)
+            (token_id, authkey, server_public_key, server_private_key, amount, n_lock_time) 
+            values ($1, $2, $3, $4, $5, $6)
             returning *
             "#,
         )
@@ -57,6 +58,7 @@ impl TraitStatechainRepo for StatechainRepo {
         .bind(server_pubkey_bytes)
         .bind(server_privkey_bytes)
         .bind(amount as i64)
+        .bind(init_nlock_time as i64)
         .fetch_one(&self.pool.pool)
         .await?;
         Ok(statecoin)
@@ -100,13 +102,15 @@ impl TraitStatechainRepo for StatechainRepo {
         statechain_id: &str,
         authkey: &str,
         random_key: &str,
+        random_point: &str,
     ) -> Result<()> {
         let query = sqlx::query(
-            "insert into statechain_transfer (authkey,random_key, statechain_id) values ($1,$2,$3::uuid)",
+            "insert into statechain_transfer (authkey,statechain_id,random_key, random_point) values ($1,$2::uuid,$3,$4)",
         )
         .bind(authkey)
-        .bind(random_key)
         .bind(statechain_id)
+        .bind(random_key)
+        .bind(random_point)
         .execute(&self.pool.pool)
         .await?;
 
@@ -219,6 +223,16 @@ impl TraitStatechainRepo for StatechainRepo {
                 where authkey = $1"#,
         )
         .bind(authkey)
+        .execute(&self.pool.pool)
+        .await?;
+        Ok(())
+    }
+    async fn delete_statecoin_by_id(&self, statechain_id: &str) -> Result<()> {
+        let res = sqlx::query(
+            r#"delete from statechain
+                where id = $1::uuid"#,
+        )
+        .bind(statechain_id)
         .execute(&self.pool.pool)
         .await?;
         Ok(())

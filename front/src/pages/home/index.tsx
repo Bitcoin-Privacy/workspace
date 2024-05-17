@@ -14,7 +14,7 @@ export default function Home() {
   const router = useRouter();
 
   const listProfilesQuery = useQuery([CachePrefixKeys.Profiles], () =>
-    AppApi.getAccounts(),
+    AppApi.getAccounts()
   );
 
   const listProfiles = useMemo(() => {

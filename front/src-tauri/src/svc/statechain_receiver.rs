@@ -51,19 +51,12 @@ pub async fn execute(
 
     let t2 = negated_o2.add_tweak(&t1_scalar)?;
     let t2_str = t2.secret_bytes().to_lower_hex_string();
+
+    println!("t2 : {}", t2_str);                
     let signed_msg = sign_message(&t2_str, &o2).to_string();
 
-    statechain::update_new_key(&conn, &t2_str, &signed_msg, &statechain_id, &authkey).await?;
-    // pub struct TransferMessage {
-    //     pub total_owner: u64,
-    //     pub backup_txs: Vec<String>,
-    //     pub t1: String,
-    //     pub statechain_id: String,
-    //     pub agg_pubkey: String,
-    //     pub key_agg_ctx : String,
-    //     pub funding_txid: String,
-    //     pub funding_vout: u64,
-    // }
+    let updatekey_res =
+        statechain::update_new_key(&conn, &t2_str, &signed_msg, &statechain_id, &authkey).await?;
     let auth_secret_key = SecretKey::from_str(&auth_seckey)?;
 
     let signed_statechain_id = sign_message(&statechain_id, &auth_secret_key);

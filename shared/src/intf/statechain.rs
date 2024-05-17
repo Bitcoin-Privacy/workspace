@@ -21,7 +21,6 @@ pub struct KeyRegisterRes {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DepositInfo {
     pub aggregated_address: String,
-    pub deposit_tx_hex: String,
 }
 
 // ---------------------------

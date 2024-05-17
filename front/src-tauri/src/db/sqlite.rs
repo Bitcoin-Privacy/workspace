@@ -8,7 +8,7 @@ use sqlx::{migrate::MigrateDatabase, sqlite::SqliteQueryResult, Row, Sqlite, Sql
 
 use crate::{
     cfg::CFG,
-    model::{StateCoin, StateCoinInfo, TransferStateCoinInfo},
+    model::{Statecoin, StatecoinCard, StatecoinDetail, TransferStateCoinInfo},
 };
 
 pub async fn init_db() -> sqlx::Result<SqlitePool> {
@@ -100,32 +100,8 @@ pub async fn create_statecoin(
     }
 }
 
-// pub async fn create_bk_tx(
-//     pool: &SqlitePool,
-//     statechain_id: &str,
-//     backup_tx: &str,
-//     tx_n : u64,
-//     n_lock_time: u64
-// ) -> Result<SqliteQueryResult, sqlx::Error> {
-
-//     match sqlx::query("insert into BackupTransaction (tx_n, n_lock_time, statechain_id, backup_tx) values ($1,$2,$3,$4)")
-//         .bind( tx_n as i64)
-//         .bind( n_lock_time as i64)
-//         .bind( statechain_id)
-//         .bind( backup_tx)
-//         .execute(pool)
-//         .await
-//     {
-//         Ok(result) => Ok(result),
-//         Err(err) => {
-//             println!("error when insert database {}", err.to_string());
-//             Err(err)
-//         }
-//     }
-// }
-
-pub async fn get_statecoin_by_id(pool: &SqlitePool, statechain_id: &str) -> Result<StateCoin> {
-    let row = sqlx::query_as::<_,StateCoin>(r#"select tx_n, owner_seckey, signed_statechain_id, aggregated_pubkey, aggregated_address, funding_txid, funding_vout, key_agg_ctx, amount, account from Statecoin where statechain_id = $1 AND isVerified = true"#).bind(statechain_id).fetch_one(pool).await.unwrap();
+pub async fn get_statecoin_by_id(pool: &SqlitePool, statechain_id: &str) -> Result<Statecoin> {
+    let row = sqlx::query_as::<_,Statecoin>(r#"select tx_n, owner_seckey, signed_statechain_id, aggregated_pubkey, aggregated_address, funding_txid, funding_vout, key_agg_ctx, amount, account from Statecoin where statechain_id = $1 AND isVerified = true"#).bind(statechain_id).fetch_one(pool).await.unwrap();
     Ok(row)
 }
 
@@ -147,8 +123,8 @@ pub async fn get_seckey_by_id(pool: &SqlitePool, statechain_id: &str) -> Result<
 pub async fn get_statecoins_by_account(
     pool: &SqlitePool,
     account: &str,
-) -> Result<Vec<StateCoinInfo>> {
-    let statecoins = sqlx::query_as::<_,StateCoinInfo>("select statechain_id, aggregated_address, amount, funding_txid, funding_vout, n_lock_time from Statecoin where account = $1 AND isVerified = true").bind(account).fetch_all(pool).await?;
+) -> Result<Vec<StatecoinCard>> {
+    let statecoins = sqlx::query_as::<_,StatecoinCard>("select statechain_id,amount,n_lock_time from Statecoin where account = $1 AND isVerified = true").bind(account).fetch_all(pool).await?;
     Ok(statecoins)
 }
 
@@ -190,25 +166,6 @@ pub async fn update_deposit_tx(
         }
     }
 }
-
-// pub async fn get_bk_tx_by_statechain_id(
-//     pool: &SqlitePool,
-//     statechain_id: &str,
-// ) -> Result<Vec<String>, sqlx::Error> {
-
-//      let rows = sqlx::query(r#"select backup_tx from BackupTransaction where statechain_id =$1"#)
-//         .bind(&statechain_id)
-//         .fetch_all(pool)
-//         .await?;
-
-//     let mut txs = Vec::new();
-//     for row in rows {
-//         let tx: String = row.try_get("backup_tx")?;
-//         txs.push(tx);
-//     }
-
-//     Ok(txs)
-// }
 
 pub async fn get_seckey_by_authkey(
     pool: &SqlitePool,
@@ -274,8 +231,8 @@ pub async fn update_unverifed_statecoin(
                 SET statechain_id = $1, signed_statechain_id = $2, tx_n = $3,
                 n_lock_time = $4, amount = $5, key_agg_ctx = $6, 
                 aggregated_pubkey = $7, aggregated_address = $8, funding_txid =$9, 
-                funding_vout = $10, funding_tx = $11, isVerified = true
-                WHERE auth_pubkey = $12;
+                funding_vout = $10, funding_tx = $11, bk_tx = $12 isVerified = true
+                WHERE auth_pubkey = $13;
                       "#,
     )
     .bind(statechain_id)
@@ -289,6 +246,7 @@ pub async fn update_unverifed_statecoin(
     .bind(funding_txid)
     .bind(funding_vout as i64)
     .bind(funding_tx)
+    .bind(bk_tx)
     .bind(authkey)
     .execute(pool)
     .await?;
@@ -299,116 +257,25 @@ pub async fn delete_statecoin_by_statechain_id(
     pool: &SqlitePool,
     statechain_id: &str,
 ) -> Result<()> {
-    // sqlx::query(
-    //     r#"delete from Statecoin where statechain_id = $1"#)
-    //             .bind(statechain_id)
-    //             .execute(pool).await?;
-
-    //     let mut transaction = self.pool.begin().await.unwrap();
-    let mut transaction = pool.begin().await.unwrap();
-
-    // let query = "\
-    //     DELETE FROM BackupTransaction \
-    //     WHERE statechain_id = $1";
-
-    // let _ = sqlx::query(query)
-    //     .bind(statechain_id)
-    //     .execute(&mut *transaction)
-    //     .await
-    //     .unwrap();
-
-    let query = "\
-        DELETE FROM Statecoin \
-        WHERE statechain_id = $1";
-
-    let _ = sqlx::query(query)
+    sqlx::query(r#"delete from Statecoin where statechain_id = $1"#)
         .bind(statechain_id)
-        .execute(&mut *transaction)
-        .await
-        .unwrap();
-    transaction.commit().await.unwrap();
+        .execute(pool)
+        .await?;
+
+    println!("Delete from statecoin, id : {}", statechain_id);
+
     Ok(())
 }
 
-// pub async fn insert_or_update_new_statechain(
-//     &self,
-//     statechain_id: &str,
-//     amount: u32,
-//     server_pubkey_share: &PublicKey,
-//     aggregated_pubkey: &PublicKey,
-//     p2tr_agg_address: &Address,
-//     client_pubkey_share: &PublicKey,
-//     signed_statechain_id: &Signature,
-//     txid: &Txid,
-//     vout: u32,
-//     locktime: u32,
-//     vec_backup_transactions: &Vec<mercury_lib::transfer::ReceiverBackupTransaction>) {
-
-//     let mut transaction = self.pool.begin().await.unwrap();
-
-//     let query = "\
-//         DELETE FROM backup_transaction \
-//         WHERE statechain_id = $1";
-
-//     let _ = sqlx::query(query)
-//         .bind(statechain_id)
-//         .execute(&mut *transaction)
-//         .await
-//         .unwrap();
-
-//     let query = "\
-//         DELETE FROM statechain_data \
-//         WHERE statechain_id = $1";
-
-//     let _ = sqlx::query(query)
-//         .bind(statechain_id)
-//         .execute(&mut *transaction)
-//         .await
-//         .unwrap();
-
-//     let query = "\
-//         INSERT INTO statechain_data (statechain_id, amount, server_pubkey_share, aggregated_pubkey, p2tr_agg_address, funding_txid, funding_vout, client_pubkey_share, signed_statechain_id, locktime, status) \
-//         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'AVAILABLE')";
-
-//     let _ = sqlx::query(query)
-//         .bind(statechain_id)
-//         .bind(amount)
-//         .bind(server_pubkey_share.serialize().to_vec())
-//         .bind(aggregated_pubkey.serialize().to_vec())
-//         .bind(p2tr_agg_address.to_string())
-//         .bind(txid.to_string())
-//         .bind(vout)
-//         .bind(client_pubkey_share.serialize().to_vec())
-//         .bind(signed_statechain_id.to_string())
-//         .bind(locktime)
-//         .execute(&mut *transaction)
-//         .await
-//         .unwrap();
-
-//     for backup_tx in vec_backup_transactions {
-
-//         let query = "INSERT INTO backup_transaction \
-//             (tx_n, statechain_id, client_public_nonce, server_public_nonce, client_pubkey, server_pubkey, blinding_factor, backup_tx, recipient_address) \
-//             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)";
-
-//         let tx_bytes = bitcoin::consensus::encode::serialize(&backup_tx.tx);
-
-//         let _ = sqlx::query(query)
-//             .bind(backup_tx.tx_n)
-//             .bind(statechain_id)
-//             .bind(backup_tx.client_public_nonce.serialize().to_vec())
-//             .bind(backup_tx.server_public_nonce.serialize().to_vec())
-//             .bind(backup_tx.client_public_key.serialize().to_vec())
-//             .bind(backup_tx.server_public_key.serialize().to_vec())
-//             .bind(backup_tx.blinding_factor.as_bytes().to_vec())
-//             .bind(tx_bytes)
-//             .bind(backup_tx.recipient_address.clone())
-//             .execute(&mut *transaction)
-//             .await
-//             .unwrap();
-//     }
-
-//     transaction.commit().await.unwrap();
-
-// }
-// }
+pub async fn get_statecoin_detail_by_id(
+    pool: &SqlitePool,
+    statechain_id: &str,
+) -> Result<StatecoinDetail> {
+    let result = sqlx::query_as::<_,StatecoinDetail>(
+        "select statechain_id, aggregated_address, amount,tx_n, n_lock_time, bk_tx, funding_txid, created_at 
+        from Statecoin 
+        where statechain_id =$1")
+        .bind(statechain_id)
+        .fetch_one(pool).await?;
+    Ok(result)
+}

@@ -21,6 +21,7 @@ pub trait TraitStatechainRepo: Send + Sync + 'static {
         server_pubkey: &PublicKey,
         server_privkey: &SecretKey,
         amount: u32,
+        init_nlock_time: u64,
     ) -> Result<StateCoin>;
 
     async fn update_nonce(&self, secnonce: &str, statechain_id: &str) -> Result<()>;
@@ -34,6 +35,7 @@ pub trait TraitStatechainRepo: Send + Sync + 'static {
         statechain_id: &str,
         authkey: &str,
         random_key: &str,
+        random_point: &str,
     ) -> Result<()>;
     async fn update_transfer_message(&self, authkey: &str, transfer_msg: &str) -> Result<()>;
     async fn get_transfer_message(&self, authkey: &str) -> Result<String>;
@@ -51,4 +53,5 @@ pub trait TraitStatechainRepo: Send + Sync + 'static {
         server_pubkey: &str,
     ) -> Result<()>;
     async fn delete_statecoin_transfer(&self, authkey: &str) -> Result<()>;
+    async fn delete_statecoin_by_id(&self, statechain_id: &str) -> Result<()>;
 }

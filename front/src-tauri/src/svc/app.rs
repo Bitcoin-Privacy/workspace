@@ -189,6 +189,10 @@ pub async fn get_utxos(address: &str) -> Result<Vec<Utxo>> {
     shared::api::get_utxo(address).await
 }
 
+pub async fn get_status(txid: &str) -> Result<bool> {
+    shared::api::get_status(txid).await
+}
+
 pub async fn get_balance(address: &str) -> Result<u64> {
     let utxos = get_utxos(address).await?;
     Ok(utxos.iter().map(|utxo| utxo.value).sum())

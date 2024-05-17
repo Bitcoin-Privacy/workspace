@@ -15,7 +15,7 @@ rust-version = "1.60"
 tauri-build = { version = "1.5.0", features = [] }
 
 [dependencies]
-tauri = { version = "1.5.3", features = ["fs-all", "path-all", "wry"] }
+tauri = { version = "1.5.3", features = [ "shell-open", "fs-all", "path-all", "wry"] }
 
 secp256k1-zkp = { git = "https://github.com/tinguyen1107/rust-secp256k1-zkp.git", branch = "blinded-musig-scheme", features = [
   "rand-std",
@@ -35,7 +35,7 @@ anyhow = { workspace = true }
 thiserror = { workspace = true }
 serde_json = { workspace = true }
 serde = { workspace = true }
-
+chrono = { version = "0.4.24", features = ["serde"] }
 tokio = { workspace = true }
 reqwest = { workspace = true }
 

@@ -1,5 +1,5 @@
 import { TauriConnection } from "./core";
-import { StatechainDepositResDto, StateCoinDto, StateCoinTransferDto } from "@/dtos";
+import { StatechainDepositResDto, StatecoinDetailDto, StateCoinDto, StateCoinTransferDto } from "@/dtos";
 
 export const StatechainApi = Object.freeze({
   /* Utils */
@@ -62,6 +62,24 @@ export const StatechainApi = Object.freeze({
       deriv,
       transferMessage,
       authkey
+    });
+  },
+
+  async getStatecoinDetailById(
+    statechainId : string
+  ) : Promise <StatecoinDetailDto> {
+    return await TauriConnection.callAPI<StatecoinDetailDto>(this.name("get_statecoin_detail_by_id"), {
+      statechainId
+    });
+  },
+
+  async withdrawStatecoin(
+    statechainId : string,
+    deriv : string
+  ) : Promise <object> {
+    return await TauriConnection.callAPI<object>(this.name("withdraw_statecoin"), {
+      statechainId,
+      deriv 
     });
   }
 });

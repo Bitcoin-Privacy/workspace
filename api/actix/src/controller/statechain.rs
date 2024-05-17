@@ -55,32 +55,13 @@ pub async fn deposit(
     }
 }
 
-pub async fn create_bk_txn(
-    statechain_repo: Data<StatechainRepo>,
-    payload: Json<CreateBkTxnReq>,
-) -> HttpResponse {
-    match statechain::create_bk_txn(
-        &statechain_repo,
-        &payload.statechain_id,
-        &payload.scriptpubkey,
-        &payload.txn_bk,
-    )
-    .await
-    {
-        Ok(status) => response::success(status),
-        Err(message) => {
-            println!("Sign backup transaction got error: {}", message);
-            response::error(message.to_string())
-        }
-    }
-}
-
 pub async fn get_nonce(
     id: web::Path<String>,
     statechain_repo: Data<StatechainRepo>,
     payload: Json<GetNonceReq>,
 ) -> HttpResponse {
     let statechain_id = id.into_inner();
+
     if !statechain::verify_signature(
         &statechain_repo,
         &payload.signed_statechain_id,
@@ -136,11 +117,47 @@ pub async fn get_sig(
     }
 }
 
-pub async fn update_transfer_message(
+pub async fn withdraw(
+    id: web::Path<String>,
+    statechain_repo: Data<StatechainRepo>,
+    payload: Json<GetPartialSignatureReq>,
+) -> HttpResponse {
+    let statechain_id = id.into_inner();
+    if !statechain::verify_signature(
+        &statechain_repo,
+        &payload.signed_statechain_id,
+        &statechain_id,
+    )
+    .await
+    .unwrap()
+    {
+        return HttpResponse::Unauthorized().body("invalid signature for id");
+    }
+
+    println!("signature is valid");
+    match statechain::withdraw(
+        &statechain_repo,
+        &payload.serialized_key_agg_ctx,
+        &statechain_id,
+        &payload.parsed_tx,
+        &payload.agg_pubnonce,
+        &payload.script_pubkey,
+    )
+    .await
+    {
+        Ok(status) => response::success(status),
+        Err(message) => {
+            println!("Sign backup transaction got error: {}", message);
+            response::error(message.to_string())
+        }
+    }
+}
+
+pub async fn create_transfer_message(
     statechain_repo: Data<StatechainRepo>,
     payload: Json<TransferMessageReq>,
 ) -> HttpResponse {
-    match statechain::update_tranfer_message(
+    match statechain::create_transfer_message(
         &statechain_repo,
         &payload.authkey,
         &payload.transfer_msg,

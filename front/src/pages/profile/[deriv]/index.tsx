@@ -48,6 +48,7 @@ export default function ProfilePage() {
       onWithdrawBtnClick,
       onReceiveStatecoinBtnClick,
       onVerifyTransferStatecoinClick,
+      onDetailButtonClick,
     },
   } = useProfilePage();
 
@@ -204,7 +205,7 @@ export default function ProfilePage() {
                 <TabPanel>
                   <VStack h="100%" w="100%">
                     {listStatecoinsQuery.data?.map((val, index) => (
-                      <StateChainCard val={val} key={index} />
+                      <StateChainCard val={val} key={index} deriv = {deriv}/>
                     ))}
                   </VStack>
                 </TabPanel>

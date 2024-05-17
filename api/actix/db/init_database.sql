@@ -51,27 +51,12 @@ create table if not exists statechain (
 	server_public_key varchar NULL CONSTRAINT statechain_server_public_key_ukey UNIQUE ,
     server_private_key varchar NULL UNIQUE,
     amount int8 not null,
-
+    n_lock_time int8,
     txn int8 DEFAULT 1,
     sec_nonce varchar null, 
     created_at timestamp with time zone default current_timestamp,
     updated_at timestamp with time zone default current_timestamp
 );
-
--- CREATE OR REPLACE FUNCTION update_txn_on_auth_change()
--- RETURNS TRIGGER AS $$
--- BEGIN
---   IF NEW.authkey <> OLD.authkey THEN  -- Check if name has actually changed
---     NEW.txn := OLD.txn + 1;  -- Increment count by 1
---   END IF;
---   RETURN NEW;
--- END;
--- $$ LANGUAGE plpgsql;
-
--- CREATE OR REPLACE TRIGGER trigger_update_auth
--- AFTER UPDATE ON statechain
--- FOR EACH ROW
--- EXECUTE PROCEDURE update_txn_on_auth_change();
 
 create table if not exists statechain_transfer (
     authkey varchar not null CONSTRAINT transfer_authkey primary key,

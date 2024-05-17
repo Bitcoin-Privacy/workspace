@@ -27,6 +27,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             get_account,
             get_utxos,
             get_balance,
+            get_status
         ])
         .build()
 }
@@ -83,6 +84,11 @@ fn get_account(deriv: &str) -> TResult<AccountDTO> {
 #[command]
 async fn get_utxos(address: &str) -> TResult<Vec<Utxo>> {
     app::get_utxos(address).await.map_err(util::to_string)
+}
+
+#[command]
+async fn get_status(txid: &str) -> TResult<bool> {
+    app::get_status(txid).await.map_err(util::to_string)
 }
 
 #[command]

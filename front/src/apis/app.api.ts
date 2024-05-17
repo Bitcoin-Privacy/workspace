@@ -59,6 +59,11 @@ export const AppApi = Object.freeze({
       address: deriv,
     });
   },
+  async getStatus(txid: string): Promise<boolean> {
+    return await TauriConnection.callAPI<boolean>(this.name("get_status"), {
+      txid,
+    });
+  },
   async getBalance(address: string): Promise<number> {
     return await TauriConnection.callAPI<number>(this.name("get_balance"), {
       address,

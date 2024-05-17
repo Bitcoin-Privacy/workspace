@@ -15,9 +15,11 @@ use musig2::{AggNonce, BinaryEncoding, KeyAggContext, PartialSignature, PubNonce
 
 use rand::RngCore;
 use secp256k1::Message;
+use tokio::sync::broadcast;
 
 use std::{ops::ControlFlow, str::FromStr};
 
+use crate::api::statechain::broadcast_tx;
 use crate::svc::statechain::aggregate_pubkeys;
 use crate::svc::statechain::generate_auth_owner_keypairs;
 use crate::svc::statechain::sign_message;
@@ -115,9 +117,10 @@ pub async fn execute(
         panic!("Failed to insert statecoin data {:?}", e);
     }
 
+    let broadcast_res = broadcast_tx(deposit_tx).await?;
+    println!("broad cast response: {:?}", broadcast_res);
     Ok(DepositInfo {
         aggregated_address: aggregated_address.to_string(),
-        deposit_tx_hex: consensus::encode::serialize_hex(&deposit_tx),
     })
 }
 
@@ -211,8 +214,6 @@ pub async fn create_deposit_transaction(
     }
 
     let tx_hex = consensus::encode::serialize_hex(&unsigned_deposit_tx);
-    println!("deposit tx hex: {:?}", tx_hex);
-    println!("deposit tx raw {:#?}", unsigned_deposit_tx);
     let funding_txid = unsigned_deposit_tx.txid().to_string();
     let funding_vout = 0 as u64;
     Ok((funding_txid, funding_vout, tx_hex.to_string()))
@@ -235,11 +236,6 @@ pub async fn create_bk_tx(
 
     let agg_scriptpubkey = ScriptBuf::new_p2tr(&secp, agg_pubkey.x_only_public_key().0, None);
     let scriptpubkey = agg_scriptpubkey.to_hex_string();
-    println!(
-        "Public key agg: {}",
-        agg_pubkey.x_only_public_key().0.to_string()
-    );
-
     let prev_outpoint = OutPoint {
         txid: Txid::from_str(&txid)?,
         vout: vout as u32,
@@ -306,8 +302,6 @@ pub async fn create_bk_tx(
     let sighash = TapSighash::from_str(sighash)?;
     let msg = Message::from(sighash);
     let msg = msg.as_ref();
-    let msg_clone = msg.clone();
-
     let our_partial_signature: PartialSignature =
         musig2::sign_partial(&key_agg_ctx, *seckey, secnonce, &agg_pubnonce, msg)
             .expect("error creating partial signature");
@@ -354,41 +348,12 @@ pub async fn create_bk_tx(
         hash_ty: sighash_type,
     };
 
-    println!(
-        "signature byte: {:#?}",
-        signature.to_vec().to_lower_hex_string()
-    );
-
     let mut wit = Witness::new();
     wit.push(signature.to_vec());
-    // *sighasher.witness_mut(0).unwrap() = wit;
-
-    // let tx = sighasher.into_transaction();
 
     unsigned_tx.input[0].witness = wit;
 
-    println!("Bk tx raw: {:#?}", unsigned_tx);
-
-    let tx = unsigned_tx.clone();
-
-    // let prevout = TxOut{
-    //     value: Amount::from_sat(amount as u64),
-    //     script_pubkey: ScriptBuf::from_hex(&scriptpubkey)?,
-    // };
-    let spent = |outpoint: &OutPoint| -> Option<TxOut> {
-        Some(TxOut {
-            value: Amount::from_sat(amount - 1 as u64),
-            script_pubkey: ScriptBuf::from_hex(&scriptpubkey).unwrap(),
-        })
-    };
-
-    match tx.verify(spent) {
-        Ok(()) => (),
-        Err(e) => println!("transaction got error {}", e),
-    };
-
     let tx_hex = consensus::encode::serialize_hex(&unsigned_tx);
-
     println!("Bk tx hex: {}", tx_hex);
 
     Ok(tx_hex)

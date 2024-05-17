@@ -1,4 +1,7 @@
-use std::str::FromStr;
+use std::{
+    str::FromStr,
+    time::{SystemTime, UNIX_EPOCH},
+};
 
 use actix_web::web::Data;
 use anyhow::Result;
@@ -16,9 +19,12 @@ use rand::RngCore;
 use secp256k1::{schnorr::Signature, Message, Parity, Scalar};
 
 use crate::repo::statechain::{StatechainRepo, TraitStatechainRepo};
-use shared::intf::statechain::{
-    CreateBkTxnRes, DepositRes, GetNonceRes, GetPartialSignatureRes, GetTransferMessageRes,
-    KeyRegisterRes, UpdateKeyRes, VerifyStatecoinRes,
+use shared::{
+    intf::statechain::{
+        CreateBkTxnRes, DepositRes, GetNonceRes, GetPartialSignatureRes, GetTransferMessageRes,
+        KeyRegisterRes, UpdateKeyRes, VerifyStatecoinRes,
+    },
+    model::Status,
 };
 
 pub async fn create_deposit(
@@ -42,10 +48,27 @@ pub async fn create_deposit(
     }
 
     let pubkey = PublicKey::from_secret_key(&secp, &seckey);
+    let current_time = SystemTime::now();
+
+    // Calculate the Unix time by subtracting the UNIX epoch time
+    let current_unix_time = current_time.duration_since(UNIX_EPOCH).unwrap().as_secs();
+    let init_nlock_time = current_unix_time + 60 * 60 * 24 * 30 * 4;
+    println!(
+        "current time, nlocktime, {}, {}",
+        current_unix_time, init_nlock_time
+    );
     let statecoin = repo
-        .create_deposit_tx(token_id, &auth_key, &pubkey, &seckey, amount)
+        .create_deposit_tx(
+            token_id,
+            &auth_key,
+            &pubkey,
+            &seckey,
+            amount,
+            init_nlock_time,
+        )
         .await
         .map_err(|e| format!("Failed to add deposit: {}", e))?;
+
     let res = DepositRes {
         se_pubkey_1: pubkey.to_string(),
         statechain_id: statecoin.id.to_string(),
@@ -53,63 +76,9 @@ pub async fn create_deposit(
     Ok(res)
 }
 
-pub async fn create_bk_txn(
-    repo: &Data<StatechainRepo>,
-    statechain_id: &str,
-    scriptpubkey: &str,
-    txn: &str,
-) -> Result<CreateBkTxnRes> {
-    let statecoin = repo.get_by_id(statechain_id).await?;
-
-    let sk = SecretKey::from_str(&statecoin.server_private_key)?;
-    let secp = Secp256k1::new();
-    let keypair = Keypair::from_secret_key(&secp, &sk);
-
-    // let parsed_tx = consensus::deserialize::<Transaction>(&hex::decode(txn)?)?;
-
-    let sighash = TapSighash::from_str(txn)?;
-
-    // let sighash_type = TapSighashType::Default;
-
-    // let mut unsigned_txn = parsed_tx.clone();
-    // let mut sighasher = SighashCache::new(&mut unsigned_txn);
-
-    // let input_index = 0;
-
-    // let secp = Secp256k1::new();
-
-    // let prevouts = vec![TxOut {
-    //     value: Amount::from_sat(statecoin.amount as u64),
-    //     script_pubkey: ScriptBuf::from_hex(scriptpubkey)?,
-    // }];
-    // let prevouts = Prevouts::All(&prevouts);
-
-    // let sighash = sighasher
-    //     .taproot_key_spend_signature_hash(input_index, &prevouts, sighash_type)
-    //     .expect("failed to construct sighash");
-
-    let tweaked: TweakedKeypair = keypair.tap_tweak(&secp, None);
-    let msg = Message::from(sighash);
-
-    let signature = secp.sign_schnorr(&msg, &tweaked.to_inner());
-
-    // let signature = bitcoin::taproot::Signature {
-    //     sig: signature,
-    //     hash_ty: sighash_type,
-    // };
-
-    let res = CreateBkTxnRes {
-        sig: signature.to_string(),
-        rand_key: "".to_string(),
-    };
-
-    Ok(res)
-}
-
 pub async fn get_nonce(repo: &Data<StatechainRepo>, statechain_id: &str) -> Result<GetNonceRes> {
     let mut nonce_seed = [0u8; 32];
     rand::rngs::OsRng.fill_bytes(&mut nonce_seed);
-
     let secnonce = musig2::SecNonceBuilder::new(nonce_seed).build();
     let pubnonce = secnonce.public_nonce();
     repo.update_nonce(&secnonce.to_bytes().to_lower_hex_string(), &statechain_id)
@@ -128,12 +97,7 @@ pub async fn get_sig(
     agg_pubnonce: &str,
     script_pubkey: &str,
 ) -> Result<GetPartialSignatureRes> {
-    // if !verify_signature(&repo, &signed_statechain_id, &statechain_id).await? {
-    //     bail!("Invalid signature")
-    // }
-
     let statecoin = repo.get_by_id(statechain_id).await?;
-
     let secnonce = statecoin.sec_nonce.unwrap();
     let seckey = SecretKey::from_str(&statecoin.server_private_key)?;
     let secnonce = SecNonce::from_hex(&secnonce).unwrap();
@@ -145,7 +109,7 @@ pub async fn get_sig(
     let mut unsigned_txn = tx.clone();
     let mut sighasher = SighashCache::new(&mut unsigned_txn);
     let input_index = 0;
-    let secp = Secp256k1::new();
+
     let prevouts = vec![TxOut {
         value: Amount::from_sat(statecoin.amount as u64),
         script_pubkey: ScriptBuf::from_hex(script_pubkey)?,
@@ -172,33 +136,93 @@ pub async fn get_sig(
     })
 }
 
+pub async fn withdraw(
+    repo: &Data<StatechainRepo>,
+    serialized_key_agg_ctx: &str,
+    statechain_id: &str,
+    parsed_tx: &str,
+    agg_pubnonce: &str,
+    script_pubkey: &str,
+) -> Result<GetPartialSignatureRes> {
+    let statecoin = repo.get_by_id(statechain_id).await?;
+    let secnonce = statecoin.sec_nonce.unwrap();
+    let seckey = SecretKey::from_str(&statecoin.server_private_key)?;
+    let secnonce = SecNonce::from_hex(&secnonce).unwrap();
+    let key_agg_ctx = KeyAggContext::from_hex(serialized_key_agg_ctx).unwrap();
+    let agg_nonce = AggNonce::from_str(agg_pubnonce).unwrap();
+    let sighash_type = TapSighashType::Default;
+
+    let tx = consensus::deserialize::<Transaction>(&hex::decode(parsed_tx)?)?;
+    let mut unsigned_txn = tx.clone();
+    let mut sighasher = SighashCache::new(&mut unsigned_txn);
+    let input_index = 0;
+
+    let prevouts = vec![TxOut {
+        value: Amount::from_sat(statecoin.amount as u64),
+        script_pubkey: ScriptBuf::from_hex(script_pubkey)?,
+    }];
+    let prevouts = Prevouts::All(&prevouts);
+
+    let sighash = sighasher
+        .taproot_key_spend_signature_hash(input_index, &prevouts, sighash_type)
+        .expect("failed to construct sighash");
+
+    let sighash_str = sighash.to_string();
+    let msg = Message::from(sighash);
+    let msg = msg.as_ref();
+
+    let our_partial_signature: PartialSignature =
+        musig2::sign_partial(&key_agg_ctx, seckey, secnonce, &agg_nonce, msg)?;
+
+    let final_sig = our_partial_signature.serialize().to_hex_string(Case::Lower);
+
+    //_ = repo.delete_statecoin_by_id(statechain_id).await?;
+
+    Ok(GetPartialSignatureRes {
+        sighash: sighash_str,
+        partial_sig: final_sig,
+        n_lock_time: 0 as u64,
+    })
+}
+
 pub async fn register_key(
     repo: &Data<StatechainRepo>,
     statechain_id: &str,
     auth_pubkey_2: &str,
 ) -> Result<KeyRegisterRes> {
-    let x1 = Scalar::random();
+    let secp = Secp256k1::new();
+    let mut x1 = SecretKey::new(&mut rand::thread_rng());
+    let (_, parity) = PublicKey::from_secret_key(&secp, &x1).x_only_public_key();
 
-    let parsed_x1 = x1.to_be_bytes().to_lower_hex_string();
+    if parity == Parity::Odd {
+        x1 = x1.negate();
+    }
 
-    repo.create_statechain_transfer(statechain_id, auth_pubkey_2, &parsed_x1)
+    let x1_point = PublicKey::from_secret_key(&secp, &x1);
+    let x1_point = x1_point.to_string();
+
+    let parsed_x1 = x1.secret_bytes().to_lower_hex_string();
+
+    println!("X1 : {}, {}", parsed_x1, x1_point);
+
+    repo.create_statechain_transfer(statechain_id, auth_pubkey_2, &parsed_x1, &x1_point)
         .await?;
-    println!("register key, randowm :{}", parsed_x1);
+
     Ok(KeyRegisterRes {
         random_key: parsed_x1,
     })
 }
 
-pub async fn update_tranfer_message(
+pub async fn create_transfer_message(
     repo: &Data<StatechainRepo>,
     authkey: &str,
     transfer_msg: &str,
-) -> Result<(), String> {
+) -> Result<Status, String> {
     repo.update_transfer_message(authkey, transfer_msg)
         .await
         .map_err(|e| format!("Failed to update_tranfer_message: {}", e))?;
 
-    Ok(())
+    Ok(Status { confirmed: true })
 }
 
 pub async fn get_tranfer_message(
@@ -219,7 +243,7 @@ pub async fn verify_signature(
     repo: &Data<StatechainRepo>,
     signature: &str,
     statechain_id: &str,
-) -> Result<bool, anyhow::Error> {
+) -> Result<bool> {
     let auth_key = repo.get_auth_key_by_statechain_id(&statechain_id).await?;
 
     let pub_key = XOnlyPublicKey::from_str(&auth_key)?;

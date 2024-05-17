@@ -1,4 +1,5 @@
 use bitcoin::hex::parse;
+use reqwest::Response;
 use shared::intf::statechain::{DepositInfo, StatechainAddress};
 use tauri::{
     command,
@@ -7,9 +8,10 @@ use tauri::{
 };
 
 use crate::{
+    cfg::BASE_TX_FEE,
     connector::NodeConnector,
     db::PoolWrapper,
-    model::{StateCoinInfo, TransferStateCoinInfo},
+    model::{StatecoinCard, StatecoinDetail, TransferStateCoinInfo},
     svc::{statechain, statechain_deposit, statechain_receiver, statechain_sender},
     util, TResult,
 };
@@ -23,8 +25,10 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             send_statecoin,
             list_transfer_statecoins,
             verify_transfer_statecoin,
-            generate_statechain_address //create_deposit_tx
-                                        // Accessors
+            generate_statechain_address,
+            get_statecoin_detail_by_id,
+            withdraw_statecoin //create_deposit_tx
+                               // Accessors
         ])
         .build()
 }
@@ -38,6 +42,9 @@ pub async fn deposit(
     deriv: &str,
     amount: u64,
 ) -> TResult<DepositInfo> {
+    if amount < BASE_TX_FEE {
+        return Err(util::to_string("Amount is less than the base transaction fee").into());
+    }
     statechain_deposit::execute(&pool, &conn, &deriv, amount)
         .await
         .map_err(util::to_string)
@@ -47,7 +54,7 @@ pub async fn deposit(
 pub async fn list_statecoins(
     pool: State<'_, PoolWrapper>,
     deriv: &str,
-) -> TResult<Vec<StateCoinInfo>> {
+) -> TResult<Vec<StatecoinCard>> {
     statechain::list_statecoins(&pool, &deriv)
         .await
         .map_err(util::to_string)
@@ -111,6 +118,29 @@ pub async fn generate_statechain_address(
     statechain_receiver::generate_statechain_address(&pool, deriv)
         .await
         .map_err(util::to_string)
+}
+
+#[command]
+pub async fn get_statecoin_detail_by_id(
+    pool: State<'_, PoolWrapper>,
+    statechain_id: &str,
+) -> TResult<StatecoinDetail> {
+    statechain::get_statecoin_detail_by_id(&pool, statechain_id)
+        .await
+        .map_err(util::to_string)
+}
+
+#[command]
+pub async fn withdraw_statecoin(
+    pool: State<'_, PoolWrapper>,
+    conn: State<'_, NodeConnector>,
+    statechain_id: &str,
+    deriv: &str,
+) -> TResult<()> {
+    let _ = statechain::withdraw_statecoin(&conn, &pool, statechain_id, deriv)
+        .await
+        .map_err(util::to_string);
+    Ok(())
 }
 // pub async fn create_bk_tx(
 //     pool: State<'_, PoolWrapper>,

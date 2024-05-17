@@ -2,12 +2,12 @@ use anyhow::Result;
 use bitcoin::script;
 use reqwest::{Client, Response};
 use serde::Serialize;
-use shared::intf::statechain::{
+use shared::{intf::statechain::{
     self, CreateBkTxnReq, CreateBkTxnRes, GetNonceReq, GetNonceRes, GetPartialSignatureReq,
     GetPartialSignatureRes, GetTransferMessageReq, GetTransferMessageRes, KeyRegisterReq,
     KeyRegisterRes, ListStatecoinsReq, TransferMessage, TransferMessageReq, UpdateKeyReq,
     UpdateKeyRes, VerifyStatecoinReq, VerifyStatecoinRes,
-};
+}, model::Status};
 use tauri::http::Uri;
 
 extern crate reqwest;
@@ -75,19 +75,47 @@ pub async fn get_partial_signature(
         .post(&format!("statechain/{}/sig", statechain_id), &body)
         .await?;
     let json: GetPartialSignatureRes = serde_json::from_value(res)?;
-    println!("Sign partial signature {:#?}", json);
+
     Ok(json)
 }
 
-pub async fn broadcast_tx(tx_hex: String) -> Result<String, String> {
+pub async fn get_partial_signature_for_bk(
+    conn: &NodeConnector,
+    serialized_key_agg_ctx: &str,
+    statechain_id: &str,
+    signed_statechain_id: &str,
+    parsed_tx: &str,
+    agg_pubnonce: &str,
+    script_pubkey: &str,
+) -> Result<GetPartialSignatureRes> {
+    let req = GetPartialSignatureReq {
+        serialized_key_agg_ctx: serialized_key_agg_ctx.to_string(),
+        signed_statechain_id: signed_statechain_id.to_string(),
+        parsed_tx: parsed_tx.to_string(),
+        agg_pubnonce: agg_pubnonce.to_string(),
+        script_pubkey: script_pubkey.to_string(),
+    };
+
+    let body = serde_json::to_value(req)?;
+    let res = conn
+        .post(&format!("statechain/{}/withdraw", statechain_id), &body)
+        .await?;
+    let json: GetPartialSignatureRes = serde_json::from_value(res)?;
+
+    Ok(json)
+}
+
+pub async fn broadcast_tx(tx_hex: String) -> Result<String> {
     let url = "https://blockstream.info/testnet/api/tx";
     let client = reqwest::Client::new();
-    let res = client.post(url).body(tx_hex).send().await;
+    let res = client
+        .post(url)
+        .header("Content-Type", "text/plain")
+        .body(tx_hex)
+        .send()
+        .await?;
 
-    match res {
-        Ok(res) => Ok(res.json().await.unwrap()),
-        Err(err) => Err(err.to_string()),
-    }
+    Ok(res.text().await?)
 }
 
 pub async fn register_new_owner(
@@ -123,7 +151,7 @@ pub async fn create_transfer_msg(
     let res = conn
         .post("statechain/transfer/transfer-message", &body)
         .await?;
-    let json: KeyRegisterRes = serde_json::from_value(res)?;
+    let json: Status = serde_json::from_value(res)?;
     println!("send transfer message {:#?}", json);
     Ok(())
 }

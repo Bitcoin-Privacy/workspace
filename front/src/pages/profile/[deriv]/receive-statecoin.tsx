@@ -40,7 +40,7 @@ export default function ReceiveStatecoin() {
           </Text>
           {value && (
             <HStack spacing="8px" h="20px">
-              <QRCodeGenerator text={value} />
+              <QRCodeGenerator size="100px" text={value} />
               <Button
                 onClick={onCopy}
                 bgColor={"cyan.100"}
