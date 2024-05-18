@@ -41,6 +41,7 @@ export default function ProfilePage() {
       listStatecoinsQuery,
     },
     methods: {
+      router,
       onCopy,
       onSendBtnClick,
       onDepositBtnClick,
@@ -175,7 +176,12 @@ export default function ProfilePage() {
               <Box bg="gray.900" p="12px 12px" borderRadius="8px">
                 <Text> Connect to CoinJoin</Text>
               </Box>
-              <Box bg="gray.900" p="12px 12px" borderRadius="8px">
+              <Box
+                bg="gray.900"
+                p="12px 12px"
+                borderRadius="8px"
+                onClick={router.reload}
+              >
                 <Text> Connect to Statecoin</Text>
               </Box>
             </HStack>
@@ -205,7 +211,7 @@ export default function ProfilePage() {
                 <TabPanel>
                   <VStack h="100%" w="100%">
                     {listStatecoinsQuery.data?.map((val, index) => (
-                      <StateChainCard val={val} key={index} deriv = {deriv}/>
+                      <StateChainCard val={val} key={index} deriv={deriv} />
                     ))}
                   </VStack>
                 </TabPanel>

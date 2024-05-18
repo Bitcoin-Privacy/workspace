@@ -108,7 +108,7 @@ fn create_transaction(
     let input = TxIn {
         previous_output: input_utxo,
         script_sig: ScriptBuf::new(),
-        sequence: bitcoin::Sequence(0xFFFFFFFF), // Ignore nSequence.
+        sequence: bitcoin::Sequence(0xFFFFFFFF),
         witness: Witness::default(),
     };
 
@@ -242,4 +242,3 @@ fn sign_psbt_taproot(
         psbt_input.tap_key_sig = Some(final_signature);
     }
 }
-

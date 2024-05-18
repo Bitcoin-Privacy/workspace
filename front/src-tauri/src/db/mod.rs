@@ -10,7 +10,7 @@ use sqlx::{
     Executor, SqlitePool,
 };
 
-use crate::model::{RoomEntity, Statecoin, StatecoinCard, StatecoinDetail};
+use crate::model::{RoomEntity, Statecoin, StatecoinCard, StatecoinDetail, StatecoinEntity};
 
 mod sqlite;
 
@@ -46,13 +46,13 @@ impl PoolWrapper {
     pub async fn get_seed(&self) -> Result<Option<String>> {
         sqlite::get_cfg(&self.pool, "seed").await
     }
-    pub async fn get_statecoin_by_id(&self, statechain_id: &str) -> Result<Statecoin> {
+    pub async fn get_statecoin_by_id(&self, statechain_id: &str) -> Result<StatecoinEntity> {
         sqlite::get_statecoin_by_id(&self.pool, &statechain_id).await
     }
 
-    pub async fn get_seckey_by_id(&self, statechain_id: &str) -> Result<Option<String>> {
-        sqlite::get_seckey_by_id(&self.pool, &statechain_id).await
-    }
+    // pub async fn get_seckey_by_id(&self, statechain_id: &str) -> Result<Option<String>> {
+    //     sqlite::get_seckey_by_id(&self.pool, &statechain_id).await
+    // }
 
     pub async fn list_statecoins_by_account(&self, account: &str) -> Result<Vec<StatecoinCard>> {
         sqlite::get_statecoins_by_account(&self.pool, &account).await
@@ -66,25 +66,25 @@ impl PoolWrapper {
     }
 
     pub async fn delete_statecoin_by_statechain_id(&self, statechain_id: &str) -> Result<()> {
-        println!("delete id : {}",statechain_id);
+        println!("delete id : {}", statechain_id);
         sqlite::delete_statecoin_by_statechain_id(&self.pool, statechain_id).await
     }
 
     pub async fn create_unverified_statecoin(
         &self,
         account: &str,
-        auth_seckey: &str,
         auth_pubkey: &str,
-        owner_seckey: &str,
+        auth_seckey: &str,
         owner_pubkey: &str,
+        owner_seckey: &str,
     ) -> Result<()> {
         sqlite::create_unverified_statecoin(
             &self.pool,
             account,
-            auth_seckey,
             auth_pubkey,
-            owner_seckey,
+            auth_seckey,
             owner_pubkey,
+            owner_seckey,
         )
         .await
     }
@@ -92,34 +92,26 @@ impl PoolWrapper {
     pub async fn update_unverifed_statecoin(
         &self,
         statechain_id: &str,
-        signed_statechain_id: &str,
-        tx_n: u64,
-        n_lock_time: u64,
-        key_agg_ctx: &str,
-        aggregated_pubkey: &str,
-        aggregated_address: &str,
-        funding_txid: &str,
-        funding_vout: u64,
-        funding_tx: &str,
-        amount: u64,
+        statecoin: &Statecoin,
         bk_tx: &str,
         authkey: &str,
+        aggregated_address: &str,
     ) -> Result<()> {
         sqlite::update_unverifed_statecoin(
             &self.pool,
             statechain_id,
-            signed_statechain_id,
-            tx_n,
-            n_lock_time,
-            key_agg_ctx,
-            aggregated_pubkey,
+            &statecoin.signed_statechain_id,
+            statecoin.tx_n,
+            0,
+            &statecoin.key_agg_ctx,
+            &statecoin.aggregated_pubkey,
             aggregated_address,
-            funding_txid,
-            funding_vout,
-            funding_tx,
-            amount,
+            &statecoin.funding_txid,
+            statecoin.funding_vout,
+            statecoin.amount,
             bk_tx,
             authkey,
+            &statecoin.spend_key,
         )
         .await
     }
@@ -207,27 +199,24 @@ impl PoolWrapper {
         .await
     }
 
-    pub async fn update_deposit_tx(
-        &self,
-        statechain_id: &str,
-        funding_txid: &str,
-        funding_vout: u64,
-        funding_tx: &str,
-    ) -> Result<SqliteQueryResult, sqlx::Error> {
-        sqlite::update_deposit_tx(
-            &self.pool,
-            statechain_id,
-            funding_txid,
-            funding_vout,
-            funding_tx,
-        )
-        .await
-    }
+    // pub async fn update_deposit_tx(
+    //     &self,
+    //     statechain_id: &str,
+    //     funding_txid: &str,
+    //     funding_vout: u64,
+    //     funding_tx: &str,
+    // ) -> Result<SqliteQueryResult, sqlx::Error> {
+    //     sqlite::update_deposit_tx(
+    //         &self.pool,
+    //         statechain_id,
+    //         funding_txid,
+    //         funding_vout,
+    //         funding_tx,
+    //     )
+    //     .await
+    // }
 
-    pub async fn get_statecoin_detail_by_id(
-        &self,
-        statechain_id: &str,
-    ) -> Result<StatecoinDetail> {
+    pub async fn get_statecoin_detail_by_id(&self, statechain_id: &str) -> Result<StatecoinDetail> {
         sqlite::get_statecoin_detail_by_id(&self.pool, statechain_id).await
     }
 }

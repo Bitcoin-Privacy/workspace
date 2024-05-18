@@ -49,8 +49,8 @@ pub trait TraitStatechainRepo: Send + Sync + 'static {
         &self,
         statechain_id: &str,
         auth_pubkey: &str,
-        server_secret_key: &str,
-        server_pubkey: &str,
+        // server_secret_key: &str,
+        // server_pubkey: &str,
     ) -> Result<()>;
     async fn delete_statecoin_transfer(&self, authkey: &str) -> Result<()>;
     async fn delete_statecoin_by_id(&self, statechain_id: &str) -> Result<()>;

@@ -2,12 +2,15 @@ use anyhow::Result;
 use bitcoin::script;
 use reqwest::{Client, Response};
 use serde::Serialize;
-use shared::{intf::statechain::{
-    self, CreateBkTxnReq, CreateBkTxnRes, GetNonceReq, GetNonceRes, GetPartialSignatureReq,
-    GetPartialSignatureRes, GetTransferMessageReq, GetTransferMessageRes, KeyRegisterReq,
-    KeyRegisterRes, ListStatecoinsReq, TransferMessage, TransferMessageReq, UpdateKeyReq,
-    UpdateKeyRes, VerifyStatecoinReq, VerifyStatecoinRes,
-}, model::Status};
+use shared::{
+    intf::statechain::{
+        self, CreateBkTxnReq, CreateBkTxnRes, GetNonceReq, GetNonceRes, GetPartialSignatureReq,
+        GetPartialSignatureRes, GetTransferMessageReq, GetTransferMessageRes, KeyRegisterReq,
+        KeyRegisterRes, ListStatecoinsReq, TransferMessage, TransferMessageReq, UpdateKeyReq,
+        UpdateKeyRes, VerifyStatecoinReq, VerifyStatecoinRes,
+    },
+    model::Status,
+};
 use tauri::http::Uri;
 
 extern crate reqwest;
@@ -114,8 +117,11 @@ pub async fn broadcast_tx(tx_hex: String) -> Result<String> {
         .body(tx_hex)
         .send()
         .await?;
-
-    Ok(res.text().await?)
+    if res.status().is_success() {
+        Ok(res.text().await?)
+    } else {
+        Err(anyhow::anyhow!("Broadcast error: {}", res.text().await?))
+    }
 }
 
 pub async fn register_new_owner(
@@ -192,9 +198,7 @@ pub async fn get_verification_statecoin(
         authkey: authkey.to_string(),
     };
     let body = serde_json::to_value(req)?;
-    let res = conn
-        .post("statechain/transfer/transfer-message/verify", &body)
-        .await?;
+    let res = conn.post("statechain/transfer/verify", &body).await?;
 
     if res.is_null() {
         println!(
@@ -222,9 +226,7 @@ pub async fn update_new_key(
         signed_msg: signed_msg.to_string(),
     };
     let body = serde_json::to_value(req)?;
-    let res = conn
-        .post("statechain/transfer/transfer-message/update-key", &body)
-        .await?;
+    let res = conn.post("statechain/transfer/update-key", &body).await?;
 
     if res.is_null() {
         return Ok(None);

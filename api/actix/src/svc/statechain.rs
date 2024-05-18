@@ -6,6 +6,7 @@ use std::{
 use actix_web::web::Data;
 use anyhow::Result;
 use bitcoin::{
+    absolute::LockTime,
     consensus,
     hashes::sha256,
     hex::{Case, DisplayHex},
@@ -104,9 +105,15 @@ pub async fn get_sig(
     let key_agg_ctx = KeyAggContext::from_hex(serialized_key_agg_ctx).unwrap();
     let agg_nonce = AggNonce::from_str(agg_pubnonce).unwrap();
     let sighash_type = TapSighashType::Default;
+    let n_lock_time = statecoin.n_lock_time;
+    let txn = statecoin.txn as u64;
+
+    let new_lock_time = n_lock_time - txn * 60 * 60 * 24 * 3;
 
     let tx = consensus::deserialize::<Transaction>(&hex::decode(parsed_tx)?)?;
     let mut unsigned_txn = tx.clone();
+
+    unsigned_txn.lock_time = LockTime::from_time(new_lock_time as u32)?;
     let mut sighasher = SighashCache::new(&mut unsigned_txn);
     let input_index = 0;
 
@@ -132,7 +139,7 @@ pub async fn get_sig(
     Ok(GetPartialSignatureRes {
         sighash: sighash_str,
         partial_sig: final_sig,
-        n_lock_time: 0 as u64,
+        n_lock_time: new_lock_time,
     })
 }
 
@@ -293,39 +300,40 @@ pub async fn update_key(
     statechain_id: &str,
     t2: &str,
 ) -> Result<UpdateKeyRes> {
-    let secrets = repo
-        .get_seckey_and_random_by_statechain_id(&statechain_id)
-        .await?;
+    // let secrets = repo
+    //     .get_seckey_and_random_by_statechain_id(&statechain_id)
+    //     .await?;
 
-    let s1 = SecretKey::from_str(&secrets.server_private_key)?;
+    // let s1 = SecretKey::from_str(&secrets.server_private_key)?;
 
-    let t2 = hex::decode(t2)?;
+    // let t2 = hex::decode(t2)?;
 
-    let t2: [u8; 32] = t2.try_into().unwrap();
+    // let t2: [u8; 32] = t2.try_into().unwrap();
 
-    let t2 = Scalar::from_be_bytes(t2)?;
+    // let t2 = Scalar::from_be_bytes(t2)?;
 
-    let x1 = SecretKey::from_str(&secrets.random_key)?;
+    // let x1 = SecretKey::from_str(&secrets.random_key)?;
 
-    let negated_x1 = x1.negate();
+    // let negated_x1 = x1.negate();
 
-    let t2_negate_x1 = negated_x1.add_tweak(&t2)?.secret_bytes();
+    // let t2_negate_x1 = negated_x1.add_tweak(&t2)?.secret_bytes();
 
-    let t2_negate_x1_scalar = Scalar::from_be_bytes(t2_negate_x1)?;
+    // let t2_negate_x1_scalar = Scalar::from_be_bytes(t2_negate_x1)?;
 
-    let s2 = s1.add_tweak(&t2_negate_x1_scalar)?;
-    let secp = Secp256k1::new();
-    let new_owner_pubkey = PublicKey::from_secret_key(&secp, &s2);
+    // let s2 = s1.add_tweak(&t2_negate_x1_scalar)?;
+    // let secp = Secp256k1::new();
+
+    // let new_owner_pubkey = PublicKey::from_secret_key(&secp, &s2);
 
     repo.update_new_owner(
         statechain_id,
         authkey,
-        &s2.secret_bytes().to_lower_hex_string(),
-        &new_owner_pubkey.to_string(),
+        // &s2.secret_bytes().to_lower_hex_string(),
+        // &new_owner_pubkey.to_string(),
     )
     .await?;
 
-    //repo.delete_statecoin_transfer(authkey).await?;
+    repo.delete_statecoin_transfer(authkey).await?;
 
     Ok(UpdateKeyRes { status: 1 })
 }

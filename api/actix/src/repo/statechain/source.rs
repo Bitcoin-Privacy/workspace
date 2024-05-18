@@ -44,6 +44,7 @@ impl TraitStatechainRepo for StatechainRepo {
     ) -> Result<StateCoin> {
         let server_privkey_bytes = server_privkey.display_secret().to_string();
         let server_pubkey_bytes = server_pubkey.to_string();
+
         let auth_pubkey_bytes = auth_pubkey.to_string();
         let statecoin = sqlx::query_as::<_, StateCoin>(
             r#"
@@ -171,17 +172,18 @@ impl TraitStatechainRepo for StatechainRepo {
         &self,
         statechain_id: &str,
         auth_pubkey: &str,
-        server_secret_key: &str,
-        server_pub_key: &str,
+        // server_secret_key: &str,
+        // server_pub_key: &str,
     ) -> Result<()> {
         let mut transaction = self.pool.pool.begin().await.unwrap();
 
-        let query = "update statechain set authkey = $1, server_public_key = $2, server_private_key = $3, txn = txn + 1 where id = $4::uuid;";
+        //let query = "update statechain set authkey = $1, server_public_key = $2, server_private_key = $3, txn = txn + 1 where id = $4::uuid;";
+        let query = "update statechain set authkey = $1, txn = txn + 1 where id = $2::uuid;";
 
         let _ = sqlx::query(query)
             .bind(auth_pubkey)
-            .bind(server_pub_key)
-            .bind(server_secret_key)
+            // .bind(server_pub_key)
+            // .bind(server_secret_key)
             .bind(statechain_id)
             .execute(&mut *transaction)
             .await

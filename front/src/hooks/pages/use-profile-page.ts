@@ -100,6 +100,7 @@ export const useProfilePage = () => {
       listTransferStatecoinsQuery
     },
     methods: {
+      router,
       onCopy,
       onSendBtnClick,
       onDepositBtnClick,

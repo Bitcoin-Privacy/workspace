@@ -239,13 +239,14 @@ pub struct TransferMessageReq {
 pub struct TransferMessage {
     pub txn: u64,
     pub backup_txs: String,
-    pub t1: String,
+    pub x1: String,
     pub statechain_id: String,
     pub agg_pubkey: String,
     pub key_agg_ctx: String,
     pub funding_txid: String,
     pub funding_vout: u64,
     pub amount: u64,
+    pub spend_key: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

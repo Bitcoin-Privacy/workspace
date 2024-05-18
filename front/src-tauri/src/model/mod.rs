@@ -10,4 +10,5 @@ pub use statechain::StatechainKeypairs;
 pub use statechain::Statecoin;
 pub use statechain::StatecoinCard;
 pub use statechain::StatecoinDetail;
+pub use statechain::StatecoinEntity;
 pub use statechain::TransferStateCoinInfo;

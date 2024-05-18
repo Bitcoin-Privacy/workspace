@@ -36,8 +36,8 @@ pub async fn execute(
     let receiver_address = Address::p2wpkh(&b_pubkey, Network::Testnet)?;
     let statecoin = pool.get_statecoin_by_id(&statechain_id).await?;
     let authkey = &auth_publickey[2..];
-    let tx =
-        create_bk_tx_for_receiver(&conn, &statechain_id, &statecoin, &receiver_address).await?;
+    // let tx =
+    //     create_bk_tx_for_receiver(&conn, &statechain_id, &statecoin, &receiver_address).await?;
 
     //2. send register new owner
 
@@ -49,31 +49,32 @@ pub async fn execute(
     )
     .await?;
     let x1 = register_new_owner_res.random_key;
-    println!("x1 {}", x1);
-    let x1 = hex::decode(x1)?;
-    let x1: [u8; 32] = x1.try_into().unwrap();
-    let x1 = Scalar::from_be_bytes(x1)?;
+    // println!("x1 {}", x1);
+    // let x1 = hex::decode(x1)?;
+    // let x1: [u8; 32] = x1.try_into().unwrap();
+    // let x1 = Scalar::from_be_bytes(x1)?;
 
-    //3.compute t1
+    // //3.compute t1
 
-    let t1 = compute_t1(&SecretKey::from_str(&statecoin.owner_seckey)?, &x1);
+    // let t1 = compute_t1(&SecretKey::from_str(&statecoin.owner_seckey)?, &x1);
 
     //3. create transfer message
     let transfer_message = TransferMessage {
         txn: statecoin.tx_n as u64 + 1,
-        backup_txs: tx,
-        t1: t1.display_secret().to_string(),
+        backup_txs: statecoin.bk_tx,
+        x1: x1,
         statechain_id: statechain_id.to_string(),
         agg_pubkey: statecoin.aggregated_pubkey.to_string(),
         key_agg_ctx: statecoin.key_agg_ctx.to_string(),
         funding_txid: statecoin.funding_txid.to_string(),
         funding_vout: statecoin.funding_vout as u64,
         amount: statecoin.amount as u64,
+        spend_key: statecoin.spend_key,
     };
 
     let encrypted_msg_string = encrypt_transfer_message(&transfer_message, auth_publickey)?;
     statechain::create_transfer_msg(&conn, &encrypted_msg_string, authkey).await?;
-    println!("delete id : {}",statechain_id);
+    println!("delete id : {}", statechain_id);
     let del = pool
         .delete_statecoin_by_statechain_id(statechain_id)
         .await?;
@@ -91,7 +92,7 @@ pub async fn create_bk_tx_for_receiver(
     let vout = 0 as i64;
     let key_agg_ctx = KeyAggContext::from_hex(&statecoin.key_agg_ctx).unwrap();
     let secp = Secp256k1::new();
-    let seckey = &statecoin.owner_seckey;
+    let seckey = &statecoin.spend_key;
     let seckey = SecretKey::from_str(seckey).unwrap();
     let agg_scriptpubkey = ScriptBuf::new_p2tr(&secp, agg_pubkey.x_only_public_key().0, None);
     let scriptpubkey = agg_scriptpubkey.to_hex_string();
@@ -213,6 +214,7 @@ pub async fn create_bk_tx_for_receiver(
     unsigned_tx.input[0].witness = wit;
 
     let tx_hex = consensus::encode::serialize_hex(&unsigned_tx);
+    unsigned_tx.lock_time = LockTime::from_time(get_sign_res.n_lock_time as u32)?;
 
     Ok(tx_hex)
 }

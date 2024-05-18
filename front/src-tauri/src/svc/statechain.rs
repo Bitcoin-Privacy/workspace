@@ -190,7 +190,8 @@ pub async fn withdraw_statecoin(
     let account_address = account.get_addr();
     let account_address = Address::from_str(&account_address)?;
     let account_address_checked = account_address.require_network(Network::Testnet)?;
-    let statecoin = pool.get_statecoin_by_id(statechain_id).await?;
+    let statecoin_entity = pool.get_statecoin_by_id(statechain_id).await?;
+    let statecoin: Statecoin = statecoin_entity.into();
     let withdraw_tx =
         create_withdraw_tx(conn, statechain_id, &statecoin, &account_address_checked).await?;
 
@@ -198,7 +199,7 @@ pub async fn withdraw_statecoin(
 
     let res = statechain::broadcast_tx(withdraw_tx).await?;
     println!("broad cast transaction tx: {:?}", res);
-    //pool.delete_statecoin_by_statechain_id(statechain_id).await?;
+    pool.delete_statecoin_by_statechain_id(statechain_id).await?;
     Ok(res)
 }
 
@@ -213,7 +214,7 @@ pub async fn create_withdraw_tx(
     let vout = 0 as i64;
     let key_agg_ctx = KeyAggContext::from_hex(&statecoin.key_agg_ctx).unwrap();
     let secp = Secp256k1::new();
-    let seckey = &statecoin.owner_seckey;
+    let seckey = &statecoin.spend_key;
     let seckey = SecretKey::from_str(seckey).unwrap();
     let agg_scriptpubkey = ScriptBuf::new_p2tr(&secp, agg_pubkey.x_only_public_key().0, None);
     let scriptpubkey = agg_scriptpubkey.to_hex_string();

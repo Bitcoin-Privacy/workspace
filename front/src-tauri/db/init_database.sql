@@ -57,6 +57,7 @@ CREATE TABLE IF NOT EXISTS Statecoin (
     auth_seckey TEXT, 
     owner_pubkey TEXT,
     owner_seckey TEXT,
+    spend_key TEXT,
     bk_tx TEXT,
     --deposit tx info
     funding_txid TEXT,
