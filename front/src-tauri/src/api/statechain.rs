@@ -120,6 +120,7 @@ pub async fn broadcast_tx(tx_hex: String) -> Result<String> {
     if res.status().is_success() {
         Ok(res.text().await?)
     } else {
+        //println!("broadcast error: {}", res.text().await?);
         Err(anyhow::anyhow!("Broadcast error: {}", res.text().await?))
     }
 }

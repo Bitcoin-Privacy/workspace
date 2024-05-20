@@ -11,6 +11,7 @@ import {
   Grid,
   GridItem,
   Box,
+  Link,
 } from "@chakra-ui/react";
 import { Text, VStack, Button, HStack, Image, Flex } from "@chakra-ui/react";
 import {
@@ -102,18 +103,26 @@ export default function ProfilePage() {
             >
               <Flex w="full" alignItems={"center"} justifyContent={"center"}>
                 <HStack>
-                  <Image
-                    borderRadius="full"
-                    boxSize="50px"
-                    src="https://bit.ly/dan-abramov"
-                  />
+                  <Link
+                    href={`https://blockstream.info/testnet/address/${addr}`}
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
+                    {" "}
+                    <Image
+                      borderRadius="full"
+                      boxSize="50px"
+                      src="https://bit.ly/dan-abramov"
+                    />
+                  </Link>
+
                   <Button
                     onClick={onCopy}
                     bgColor={"cyan.200"}
                     rightIcon={hasCopied ? <FiCheck /> : <FiCopy />}
                     borderRadius={"16"}
                   >
-                    <Text isTruncated maxW={"120px"} p="5px">
+                    <Text isTruncated maxW={"320px"} p="5px">
                       {addr}
                     </Text>
                   </Button>
@@ -129,10 +138,8 @@ export default function ProfilePage() {
                   borderRadius={"8px"}
                 >
                   <Text>
-                    {balanceQuery.data !== undefined
-                      ? balanceQuery.data / 100000000
-                      : "-"}{" "}
-                    BTC
+                    {balanceQuery.data !== undefined ? balanceQuery.data : "-"}{" "}
+                    Sats
                   </Text>
                   <Text fontSize="16px"> 0 Statecoin in the wallet</Text>
                 </VStack>

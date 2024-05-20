@@ -153,10 +153,12 @@ pub async fn get_statecoins_by_account(
 }
 
 pub async fn get_authkeys_by_account(pool: &SqlitePool, account: &str) -> Result<Vec<String>> {
-    let rows = sqlx::query(r#"select auth_pubkey from Statecoin where account = $1 and isVerified = true"#)
-        .bind(account)
-        .fetch_all(pool)
-        .await?;
+    let rows = sqlx::query(
+        r#"select auth_pubkey from Statecoin where account = $1 and isVerified = false"#,
+    )
+    .bind(account)
+    .fetch_all(pool)
+    .await?;
 
     let mut authkeys = Vec::new();
     for row in rows {
@@ -255,7 +257,7 @@ pub async fn update_unverifed_statecoin(
                 n_lock_time = $4, amount = $5, key_agg_ctx = $6, 
                 aggregated_pubkey = $7, funding_txid =$8, 
                 funding_vout = $9, bk_tx = $10, spend_key = $11, aggregated_address = $12, isVerified = true
-                WHERE auth_pubkey = $12;
+                WHERE auth_pubkey = $13;
                       "#,
     )
     .bind(statechain_id)
@@ -269,8 +271,8 @@ pub async fn update_unverifed_statecoin(
     .bind(funding_vout as i64)
     .bind(bk_tx)
     .bind(spend_key)
-    .bind(authkey)
     .bind(aggregated_address)
+    .bind(authkey)
     .execute(pool)
     .await?;
     Ok(())

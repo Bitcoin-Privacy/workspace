@@ -12,6 +12,7 @@ import {
   Spacer,
   Button,
   Progress,
+  Badge,
 } from "@chakra-ui/react";
 import { useClipboard } from "@chakra-ui/react";
 import Link from "next/link";
@@ -33,96 +34,121 @@ export function StateChainCard(props: StateChainCardProps) {
   const { onCopy, value, setValue, hasCopied } = useClipboard(
     val.statechain_id
   );
-
-  const [showDetailButton, setShowDetailButton] = useState(false);
-  const handleCardClick = () => {
-    setShowDetailButton(!showDetailButton);
-  };
-
   const handleDetailButtonClick = () => {
-    // Navigate to detail screen with corresponding ID
     console.log(val.statechain_id);
     router.push(`${router.asPath}/statecoins/${val.statechain_id}`);
   };
 
   return (
-    <VStack
+    <Flex
       key={key}
-      color="white"
       w="100%"
-      textAlign="start"
-      bg="#3a3a3a"
-      paddingTop={{ base: "16px", md: "32px" }}
-      paddingX={{ base: "8px", md: "32px" }} // Adjust padding based on screen size
+      bg={"gray.900"}
       borderRadius="8px"
-      alignItems="space-between"
-      spacing="16px"
-      fontSize="md" // Adjust font size based on screen size
-      flexDirection={{ base: "row", md: "column" }} // Change direction based on screen size
-      onClick={handleCardClick} // Ha
+      px="16px"
+      pt="16px"
+      justifyContent={"space-between"}
+      direction={"column"}
+      wrap={"wrap"}
     >
-      <HStack>
+      <Flex justifyContent={"space-between"} mb={"6px"}>
         <Image
           borderRadius="full"
-          boxSize="50px"
+          boxSize="10%"
           src="https://i.ibb.co/R91rN3Q/statechain.png"
-          mb={{ base: "16px", md: 0 }} // Adjust margin bottom based on screen size
         />
-        <Flex w="full" alignItems="center" justifyContent="space-between">
-          <VStack
-            alignItems="flex-start"
-            spacing="8px"
-            mr={{ base: 0, md: "16px" }}
-            paddingBottom="20px"
-          >
+        <Flex
+          w={"100%"}
+          justifyContent={"space-between"}
+          ml={"16px"}
+          alignItems={"center"}
+        >
+          <VStack spacing="8px" alignItems="start">
+            <Badge
+              borderRadius="8"
+              colorScheme="yellow"
+              p="4px 10px"
+              isTruncated
+              maxW={"150px"}
+              fontSize={"larger"}
+            >
+              Statecoin
+            </Badge>
             <Button
               onClick={onCopy}
-              bgColor="gray"
+              bg={"cyan.200"}
+              variant="solid"
               rightIcon={hasCopied ? <FiCheck /> : <FiCopy />}
-              borderRadius="8"
-              p="4px"
-              maxW="100%" // Adjust max width to occupy full width on small screens
-              textAlign={{ base: "center", md: "left" }} // Center text on small screens
+              borderRadius="8px"
+              maxW={{ base: "60%", md: "100%" }} // Ensure max width is 100%
+              textAlign={"left"}
             >
-              <Text isTruncated maxW="200px">
+              <Text fontSize="16" isTruncated>
                 TxId: {val.statechain_id}
               </Text>
             </Button>
-            <Text>{val.amount} Sats</Text>
           </VStack>
-
-          <VStack
-            alignItems="flex-end"
-            spacing="8px"
-            w={{ base: "100%", md: "50%" }}
+          <Flex
+            h="full"
+            direction={"column"}
+            justifyContent={"space-around"}
+            textAlign={"center"}
+            alignItems={"end"}
           >
-            <Progress value={50} size="xs" colorScheme="pink" w="100%" />
-            <Text>Time to live: {val.n_lock_time}</Text>
-          </VStack>
+            <Box fontSize={"x-large"} fontWeight="800">
+              {" "}
+              {val.amount} SAT
+            </Box>
+            <Text> Due date: {val.n_lock_time}</Text>
+          </Flex>
         </Flex>
-      </HStack>
-      {showDetailButton && (
-        <Box
-          textAlign={"center"}
-          borderTop={"1px"}
-          borderTopColor={"cyan.200"}
-          p={"8px 4px"}
+      </Flex>
+      <Box
+        w="100%"
+        textAlign={"center"}
+        borderTop={"1px"}
+        borderTopColor={"cyan.200"}
+        mt={"8px"}
+        alignItems={"center"}
+        py="8px"
+      >
+        <Button
+          rightIcon={<IoIosArrowForward />}
+          textColor={"cyan.200"}
+          variant="link"
+          onClick={handleDetailButtonClick}
         >
-          <Button
-            rightIcon={<IoIosArrowForward />}
-            textColor={"cyan.200"}
-            variant="link"
-            w="40%"
-            onClick={handleDetailButtonClick}
-          >
-            {/* <Link
-              href={`profile/${b64EncodeUnicode(deriv)}/statecoins/${val.statechain_id}`}
-            > */}
-            Details
-            {/* </Link> */}
-          </Button>
-        </Box>
-      )}
-    </VStack>
+          {/* <Link
+        href={`profile/${b64EncodeUnicode(deriv)}/statecoins/${val.statechain_id}`}
+      > */}
+          Details
+          {/* </Link> */}
+        </Button>
+      </Box>
+    </Flex>
   );
 }
+
+// {showDetailButton && (
+//   <Box
+//     textAlign={"center"}
+//     borderTop={"1px"}
+//     borderTopColor={"cyan.200"}
+//     p={"8px 4px"}
+//   >
+//     <Button
+//       rightIcon={<IoIosArrowForward />}
+//       textColor={"cyan.200"}
+//       variant="link"
+//       w="40%"
+//       onClick={handleDetailButtonClick}
+//     >
+//       {/* <Link
+//         href={`profile/${b64EncodeUnicode(deriv)}/statecoins/${val.statechain_id}`}
+//       > */}
+//       Details
+//       {/* </Link> */}
+//     </Button>
+//   </Box>
+// )}
+// </VStack>

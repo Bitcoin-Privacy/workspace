@@ -18,5 +18,5 @@ export const useStatecoinDetail = () => {
   } catch (error) {
     console.error('Error decoding "deriv":', error);
   }
-  return { deriv, statechainId};
+  return { deriv, statechainId,  router};
 };
