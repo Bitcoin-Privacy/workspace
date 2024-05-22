@@ -1,17 +1,17 @@
-use shared::intf::coinjoin::{GetStatusRes, GetUnsignedTxnRes, RoomDto};
-use shared::util;
-
+use shared::intf::coinjoin::{GetStatusRes, GetUnsignedTxnRes};
 use tauri::{
     command,
     plugin::{Builder, TauriPlugin},
-    Wry,
+    Runtime,
 };
 
 use tauri::State;
 
-use crate::{connector::NodeConnector, db::PoolWrapper, svc::coinjoin, TResult};
+use crate::{
+    connector::NodeConnector, db::PoolWrapper, model::RoomEntity, svc::coinjoin, util, TResult,
+};
 
-pub fn init() -> TauriPlugin<Wry> {
+pub fn init<R: Runtime>() -> TauriPlugin<R> {
     Builder::new("coinjoin")
         .invoke_handler(tauri::generate_handler![
             // Modifier
@@ -28,12 +28,12 @@ pub fn init() -> TauriPlugin<Wry> {
 async fn register(
     pool: State<'_, PoolWrapper>,
     conn: State<'_, NodeConnector>,
-    window: tauri::Window,
+    // window: tauri::Window,
     deriv: &str,
     address: &str,
     amount: u64,
 ) -> TResult<()> {
-    coinjoin::register(&pool, &conn, window, deriv, amount, address)
+    coinjoin::register(&pool, &conn, deriv, amount, address)
         .await
         .map_err(util::to_string)?;
     Ok(())
@@ -49,8 +49,8 @@ async fn sign_txn(pool: State<'_, PoolWrapper>, deriv: &str, room_id: &str) -> T
 // Accessors --------------------------------------
 
 #[command]
-async fn get_rooms(conn: State<'_, NodeConnector>, deriv: &str) -> TResult<Vec<RoomDto>> {
-    coinjoin::get_rooms(&conn, deriv)
+async fn get_rooms(pool: State<'_, PoolWrapper>, deriv: &str) -> TResult<Vec<RoomEntity>> {
+    coinjoin::get_rooms(&pool, deriv)
         .await
         .map_err(util::to_string)
 }

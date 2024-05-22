@@ -1,4 +1,4 @@
-import { CoinJoinApi } from "@/apis";
+import { CoinJoinApi, StatechainApi } from "@/apis";
 import { TxStrategyEnum } from "@/dtos";
 import { convertBtcToSats as convertBtcToSat } from "@/utils";
 import { useMemo, useState } from "react";
@@ -6,8 +6,8 @@ import { useForm } from "react-hook-form";
 
 
 type SendStatecoinFromInput = {
-    o2_address : string;
-    o2_authkey : string;
+    address : string;
+    statechain_id : string;
 }
 
 export const useSendStateCoinForm = (derivationPath: string) => {
@@ -20,6 +20,11 @@ export const useSendStateCoinForm = (derivationPath: string) => {
         setIsLoading(true);
         try {
          
+          const res = await StatechainApi.sendStatecoin(
+            data.address,
+            data.statechain_id
+          );
+          console.log("send statecoin ", res);
         
         } catch (e) {
         } finally {

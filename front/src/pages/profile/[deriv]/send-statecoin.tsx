@@ -12,6 +12,10 @@ import {
   InputRightAddon,
   FormControl,
   FormErrorMessage,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  useDisclosure,
 } from "@chakra-ui/react";
 import { useRouter } from "next/router";
 import { useSendPage } from "@/hooks";
@@ -20,17 +24,17 @@ import { ChakraStylesConfig, Select } from "chakra-react-select";
 import { Layout, NavBar } from "@/components";
 import { TxStrategyEnum } from "@/dtos";
 import { useSendStateCoinPage } from "@/hooks/pages/use-send-statecoin-page";
+import { StateChainCard } from "@/components/statechain-card";
+import { StatecoinToSendCard } from "@/components/statecoin-to-send-card";
 
 const INPUT_WIDTH = "90%";
 
 export default function SendStateCoin() {
   const router = useRouter();
   const {
-    states: { deriv, form, isLoading, balanceQuery },
+    states: { deriv, form, isLoading, listStatecoinsQuery },
     methods: { handleFormSubmit },
   } = useSendStateCoinPage();
-
-  
 
 
   return (
@@ -53,62 +57,68 @@ export default function SendStateCoin() {
               color={"white"}
               p="0px 8px"
               w="full"
+              spacing={"16px"}
+              justifyContent={"space-between"}
             >
-              <VStack
-                bg={"gray.800"}
-                borderRadius={"8px"}
-                p="16px 24px"
-                w="full"
-              >
-                <Text> Select statecoin to send</Text>
+              <VStack h="100%" w="50%" px={"16px"}>
+                {listStatecoinsQuery.data?.map((val, index) => (
+                  //<StateChainCard val={val} key={index} deriv={deriv} />
+                  <StatecoinToSendCard val={val} key={index} deriv={deriv} />
+                ))}
               </VStack>
-
               <VStack
-                w="full"
                 alignItems={"start"}
                 bg={"gray.800"}
                 borderRadius={"8px"}
                 p="16px 24px"
                 spacing="16px"
+                w="50%"
               >
                 <Text> Transaction Details</Text>
                 <HStack w="full" justify="space-between">
                   <Text w="20%" color="white">
-                    Statechain Address:
+                    Statechain address
                   </Text>
                   <Input
-                    placeholder="tb1qtperkdhmm9hesga45wzzdzks6rrtejtp2uec40"
                     w={INPUT_WIDTH}
                     color="white"
-                    {...form.register("o2_address", {
+                    {...form.register("address", {
                       required: "Receiver address is required",
-                      pattern: {
-                        value: /^(tb1)[a-z0-9]{39,59}$/,
-                        message:
-                          "Addess should follow P2WPKH format, other type is not supported yet.",
-                      },
+                      // pattern: {
+                      //   value: /^(tb1)[a-z0-9]{39,59}$/,
+                      //   message:
+                      //     "Addess should follow P2WPKH format, other type is not supported yet.",
+                      // },
                     })}
                   />
                 </HStack>
+
                 <HStack w="full" justify="space-between">
                   <Text w="20%" color="white">
-                    Authen Address:
+                    Statechain ID
                   </Text>
                   <Input
-                    placeholder="tb1qtperkdhmm9hesga45wzzdzks6rrtejtp2uec40"
                     w={INPUT_WIDTH}
                     color="white"
-                    {...form.register("o2_authkey", {
-                      required: "Authen address is required",
-                      pattern: {
-                        value: /^(tb1)[a-z0-9]{39,59}$/,
-                        message:
-                          "Addess should follow P2WPKH format, other type is not supported yet.",
-                      },
+                    {...form.register("statechain_id", {
+                      required: "statechain_id is required",
+                      // pattern: {
+                      //   value: /^(tb1)[a-z0-9]{39,59}$/,
+                      //   message:
+                      //     "Addess should follow P2WPKH format, other type is not supported yet.",
+                      // },
                     })}
                   />
                 </HStack>
-                <Button alignSelf={"center"}> Send Statecoin</Button>
+
+                <Button
+                  alignSelf={"center"}
+                  type="submit"
+                  isLoading={isLoading}
+                >
+                  {" "}
+                  Send Statecoin
+                </Button>
               </VStack>
             </HStack>
           </VStack>

@@ -1,49 +1,154 @@
-import { StateChainDto } from "@/dtos/statechain.dto";
-import { Text, Image, VStack, Flex, HStack, Progress } from "@chakra-ui/react";
-import { useState } from "react";
+import { AppApi } from "@/apis";
+import { UtxoDto } from "@/dtos";
+import { StateCoinDto } from "@/dtos/statechain.dto";
+import { b64EncodeUnicode } from "@/utils";
+import {
+  Box,
+  Text,
+  Image,
+  VStack,
+  Flex,
+  HStack,
+  Spacer,
+  Button,
+  Progress,
+  Badge,
+} from "@chakra-ui/react";
+import { useClipboard } from "@chakra-ui/react";
+import Link from "next/link";
+import { NextRouter, useRouter } from "next/router";
+import { useEffect, useState } from "react";
+import { FaCheckCircle, FaClock } from "react-icons/fa";
+import { FiCheck, FiCopy } from "react-icons/fi";
+import { IoIosArrowForward } from "react-icons/io";
 
 interface StateChainCardProps {
-  val: StateChainDto;
+  val: StateCoinDto;
   key: number;
+  deriv: string;
 }
 
 export function StateChainCard(props: StateChainCardProps) {
-  const { val, key } = props;
-  const [timeValue] = useState(50);
+  const { val, key, deriv } = props;
+  const router = useRouter();
+  const { onCopy, value, setValue, hasCopied } = useClipboard(
+    val.statechain_id
+  );
+  const handleDetailButtonClick = () => {
+    console.log(val.statechain_id);
+    router.push(`${router.asPath}/statecoins/${val.statechain_id}`);
+  };
+
   return (
-    <HStack
+    <Flex
       key={key}
-      color="white"
-      textAlign="start"
       w="100%"
-      bg="#3a3a3a"
-      p="8px 16px"
+      bg={"gray.900"}
       borderRadius="8px"
-      dir="row"
-      alignItems={"center"}
-      spacing="8px"
+      px="16px"
+      pt="16px"
+      justifyContent={"space-between"}
+      direction={"column"}
+      wrap={"wrap"}
     >
-      <Image
-        alt=""
-        borderRadius="full"
-        boxSize="50px"
-        src="https://i.ibb.co/R91rN3Q/statechain.png"
-      />
-      <Flex w="full" alignItems="center" justify="space-between">
-        <VStack alignItems={"flex-start"} spacing="8px">
-          <Text isTruncated maxW={"160px"} fontSize={"16"} fontWeight={"800"}>
-            Address : {val.address}
-          </Text>
-          <Text isTruncated maxW={"160px"} fontSize={"16"} fontWeight={"400"}>
-            Txid : {val.txid}
-          </Text>
-          <Text>{val.value} Sats</Text>
-        </VStack>
-        <VStack alignItems={"end"} spacing={"8px"} w="100%">
-          <Progress value={timeValue} size="xs" colorScheme="pink" w="50%" />
-          <Text>Time to live: {val.n_locktime}</Text>
-        </VStack>
+      <Flex justifyContent={"space-between"} mb={"6px"}>
+        <Image
+          borderRadius="full"
+          boxSize="9%"
+          src="https://i.ibb.co/R91rN3Q/statechain.png"
+        />
+        <Flex
+          w={"100%"}
+          justifyContent={"space-between"}
+          ml={"16px"}
+          alignItems={"center"}
+        >
+          <VStack spacing="8px" alignItems="start">
+            <Badge
+              borderRadius="8"
+              colorScheme="yellow"
+              p="4px 10px"
+              isTruncated
+              maxW={"150px"}
+              fontSize={"larger"}
+            >
+              Statecoin
+            </Badge>
+            <Button
+              onClick={onCopy}
+              bg={"cyan.200"}
+              variant="solid"
+              rightIcon={hasCopied ? <FiCheck /> : <FiCopy />}
+              borderRadius="8px"
+              maxW={{ base: "60%", md: "100%" }} // Ensure max width is 100%
+              textAlign={"left"}
+            >
+              <Text fontSize="16" isTruncated>
+                TxId: {val.statechain_id}
+              </Text>
+            </Button>
+          </VStack>
+          <Flex
+            h="full"
+            direction={"column"}
+            justifyContent={"space-around"}
+            textAlign={"center"}
+            alignItems={"end"}
+          >
+            <Box fontSize={"x-large"} fontWeight="800">
+              {" "}
+              {val.amount} SAT
+            </Box>
+            <Text> Due date: {val.n_lock_time}</Text>
+          </Flex>
+        </Flex>
       </Flex>
-    </HStack>
+      <Box
+        w="100%"
+        textAlign={"center"}
+        borderTop={"1px"}
+        borderTopColor={"cyan.200"}
+        mt={"8px"}
+        alignItems={"center"}
+        py="8px"
+      >
+        <Button
+          rightIcon={<IoIosArrowForward />}
+          textColor={"cyan.200"}
+          variant="link"
+          onClick={handleDetailButtonClick}
+        >
+          {/* <Link
+        href={`profile/${b64EncodeUnicode(deriv)}/statecoins/${val.statechain_id}`}
+      > */}
+          Details
+          {/* </Link> */}
+        </Button>
+      </Box>
+    </Flex>
   );
 }
+
+// {showDetailButton && (
+//   <Box
+//     textAlign={"center"}
+//     borderTop={"1px"}
+//     borderTopColor={"cyan.200"}
+//     p={"8px 4px"}
+//   >
+//     <Button
+//       rightIcon={<IoIosArrowForward />}
+//       textColor={"cyan.200"}
+//       variant="link"
+//       w="40%"
+//       onClick={handleDetailButtonClick}
+//     >
+//       {/* <Link
+//         href={`profile/${b64EncodeUnicode(deriv)}/statecoins/${val.statechain_id}`}
+//       > */}
+//       Details
+//       {/* </Link> */}
+//     </Button>
+//   </Box>
+// )}
+// </VStack>

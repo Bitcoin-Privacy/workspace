@@ -32,11 +32,11 @@ impl NodeConnector {
     }
     pub async fn get(
         &self,
-        endpoint: &str,
+        endpoint: String,
         params: Option<Map<String, Value>>,
     ) -> NodeConnectorResult<Value> {
         let client = reqwest::Client::new();
-        let url = self.get_url(endpoint);
+        let url = self.get_url(&endpoint);
 
         let res = client
             .get(&url)

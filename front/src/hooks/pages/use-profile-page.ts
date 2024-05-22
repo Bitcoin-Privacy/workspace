@@ -4,7 +4,7 @@ import { useClipboard } from "@chakra-ui/react";
 import { useRouter } from "next/router";
 import { useQuery } from "react-query";
 
-import { AppApi, CoinJoinApi } from "@/apis";
+import { AppApi, CoinJoinApi, StatechainApi } from "@/apis";
 import { CachePrefixKeys } from "@/consts";
 import { b64EncodeUnicode } from "@/utils";
 import { useDeriv } from "@/hooks";
@@ -39,11 +39,29 @@ export const useProfilePage = () => {
     { enabled: !!addr },
   );
 
+  const listStatecoinsQuery = useQuery(
+    [CachePrefixKeys.ListStatecoins, addr],
+    () => StatechainApi.listStatecoins(deriv),
+    { enabled: !!addr },
+  );
+
+
+  const listTransferStatecoinsQuery = useQuery(
+    [CachePrefixKeys.ListTrasferStatecoins, addr],
+    () => StatechainApi.listTransferStatecoins(deriv),
+    { enabled: !!addr },
+  );
+
   const listRoomsQuery = useQuery(
     [CachePrefixKeys.ListRooms, addr],
     () => CoinJoinApi.getRooms(deriv),
     { enabled: !!addr },
   );
+  
+
+  const onDetailButtonClick = useCallback(() => {
+    router.push(`/profile/${b64EncodeUnicode(deriv)}/statecoins`);
+  }, [deriv]);
 
 
   const onSendBtnClick = useCallback(() => {
@@ -66,6 +84,10 @@ export const useProfilePage = () => {
     router.push(`/profile/${b64EncodeUnicode(deriv)}/receive-statecoin`);
   }, [deriv]);
 
+  const onVerifyTransferStatecoinClick = ( deriv: String,transfer_msg : String,authkey: String) => {
+    StatechainApi.verifyTransferStatecoin( deriv, transfer_msg, authkey)
+  }
+
   return {
     states: {
       deriv,
@@ -74,14 +96,19 @@ export const useProfilePage = () => {
       listUtxoQuery,
       balanceQuery,
       listRoomsQuery,
+      listStatecoinsQuery,
+      listTransferStatecoinsQuery
     },
     methods: {
+      router,
       onCopy,
       onSendBtnClick,
       onDepositBtnClick,
       onSendStatecoinBtnClick,
       onWithdrawBtnClick,
       onReceiveStatecoinBtnClick,
+      onVerifyTransferStatecoinClick,
+      onDetailButtonClick
     },
   };
 };

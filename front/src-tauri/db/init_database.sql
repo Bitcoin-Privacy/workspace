@@ -38,46 +38,55 @@ create table if not exists CoinJoinRoom (
   updated_at TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS StateCoin (
+CREATE TABLE IF NOT EXISTS Statecoin (
     --statecoin info
-    statechain_id TEXT NOT NULL PRIMARY KEY,
-    deriv TEXT NOT NULL,
+    id INTEGER,
+    statechain_id TEXT UNIQUE ,
+    signed_statechain_id TEXT,
+    account TEXT NOT NULL,
+    tx_n INT ,
+    n_lock_time INT,
     amount INT,
 
     --key pairs
+    key_agg_ctx TEXT,
     aggregated_pubkey TEXT,
     aggregated_address TEXT,
-    auth_pubkey INT,
-    auth_seckey INT, 
+
+    auth_pubkey TEXT UNIQUE,
+    auth_seckey TEXT, 
     owner_pubkey TEXT,
     owner_seckey TEXT,
-
-
+    spend_key TEXT,
+    bk_tx TEXT,
     --deposit tx info
     funding_txid TEXT,
     funding_vout INT,
     funding_tx TEXT,
-
-    --backup tx info
-
-    n_lock_time INT,
-    tx_n INT,
-    backup_tx  TEXT,
-    agg_pubnonce TEXT,
-    blinding_factor  TEXT,
-
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS BackupTransaction (
-    id TEXT NOT NULL PRIMARY KEY,
-    tx_n INT,
-    statechain_id TEXT,
-    agg_pubnonce TEXT,
-    server_pubkey  TEXT,
-    blinding_factor  TEXT,
-    backup_tx  TEXT,
-    recipient_address TEXT,
+    isVerified boolean NOT NULL DEFAULT TRUE,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (statechain_id) REFERENCES Statecoin(statechain_id)
+    PRIMARY KEY("id" AUTOINCREMENT)
 );
+
+-- create table if not exists TransferStatecoin (
+--   id INTEGER,
+--   account TEXT,
+--   auth_pubkey UNIQUE TEXT,
+--   auth_seckey TEXT, 
+--   owner_pubkey TEXT ,
+--   owner_seckey TEXT,
+--   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+--   PRIMARY KEY("id" AUTOINCREMENT)
+-- );
+
+-- CREATE TABLE IF NOT EXISTS BackupTransaction (
+--     --authkey TEXT PRIMARY KEY,
+--     id INTEGER,
+--     tx_n INT ,
+--     n_lock_time INT,
+--     statechain_id TEXT UNIQUE,
+--     backup_tx  TEXT,
+--     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+--     PRIMARY KEY("id" AUTOINCREMENT),
+--     FOREIGN KEY (statechain_id) REFERENCES StateCoin(statechain_id)
+-- );

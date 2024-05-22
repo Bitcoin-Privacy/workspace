@@ -1,13 +1,6 @@
 [workspace]
 resolver = "2"
-members = [
-  "api/actix",
-  "api/lib",
-  "shared",
-  "front/src-tauri",
-  "wallet",
-  "statechain-core",
-]
+members = ["api", "shared", "front/src-tauri", "wallet", "statechain-core"]
 
 [workspace.dependencies]
 # internal

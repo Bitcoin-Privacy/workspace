@@ -1,0 +1,62 @@
+[package]
+name = "node-service"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+# internal
+shared = { workspace = true, features = ["backend"] }
+wallet = { workspace = true }
+
+# actix
+actix-web = { workspace = true }
+actix-rt = "2.9.0"
+
+# utils
+dotenv = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+
+serde_json = { workspace = true }
+serde = { workspace = true }
+
+tokio = { workspace = true }
+
+lazy_static = { workspace = true }
+chrono = { version = "0.4.31", features = ["serde"] }
+
+async-trait = "0.1.74"
+env_logger = "0.11.3"
+log = "0.4.20"
+num-bigint = "0.4.4"
+num-traits = "0.2.17"
+
+# cryptography
+bitcoin = { workspace = true, features = ["serde"] }
+curve25519-dalek = { workspace = true }
+secp256k1 = { workspace = true }
+openssl = "0.10.59"
+base64 = { workspace = true }
+uuid = { workspace = true }
+hex = { workspace = true }
+
+digest = "0.10.7"
+rand = { workspace = true }
+sha3 = "0.10.8"
+subtle = "2.5.0"
+
+# sqlx
+sqlx = { workspace = true, features = [
+  "runtime-tokio-native-tls",
+  "macros",
+  "postgres",
+  "uuid",
+  "chrono",
+  "json",
+] }
+musig2 = "0.0.11"
+
+shuttle-actix-web = "0.44"
+shuttle-runtime = "0.44"

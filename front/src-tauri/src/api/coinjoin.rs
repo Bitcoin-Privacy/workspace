@@ -1,9 +1,8 @@
 use anyhow::Result;
-use serde_json::{json, Map};
 use shared::{
     intf::coinjoin::{
-        GetStatusRes, GetUnsignedTxnRes, RegisterReq, RegisterRes, RoomDto, SetOutputReq,
-        SetOutputRes, SignTxnReq, SignTxnRes,
+        GetStatusRes, GetUnsignedTxnRes, RegisterReq, RegisterRes, SetOutputReq, SetOutputRes,
+        SignTxnReq, SignTxnRes,
     },
     model::Utxo,
 };
@@ -56,7 +55,7 @@ pub async fn sign(room_id: &str, vins: Vec<u16>, txn: &str) -> Result<SignTxnRes
 pub async fn get_txn(room_id: &str) -> Result<GetUnsignedTxnRes> {
     let conn = NodeConnector::new(CFG.service_url.clone());
     let res = conn
-        .get(&format!("coinjoin/room/{id}/txn", id = room_id), None)
+        .get(format!("coinjoin/room/{id}/txn", id = room_id), None)
         .await?;
     Ok(serde_json::from_value::<GetUnsignedTxnRes>(res)?)
 }
@@ -64,15 +63,15 @@ pub async fn get_txn(room_id: &str) -> Result<GetUnsignedTxnRes> {
 pub async fn get_status(room_id: &str) -> Result<GetStatusRes> {
     let conn = NodeConnector::new(CFG.service_url.clone());
     let res = conn
-        .get(&format!("coinjoin/room/{id}/status", id = room_id), None)
+        .get(format!("coinjoin/room/{id}/status", id = room_id), None)
         .await?;
     Ok(serde_json::from_value::<GetStatusRes>(res)?)
 }
 
-pub async fn get_rooms(address: &str) -> Result<Vec<RoomDto>> {
+pub async fn get_room_list() -> Result<GetStatusRes> {
     let conn = NodeConnector::new(CFG.service_url.clone());
-    let mut params = Map::new();
-    params.insert("address".to_string(), json!(address));
-    let res = conn.get("coinjoin/room/list", Some(params)).await?;
-    Ok(serde_json::from_value::<Vec<RoomDto>>(res)?)
+    let res = conn
+        .get(format!("coinjoin/room/{id}/status", id = ""), None)
+        .await?;
+    Ok(serde_json::from_value::<GetStatusRes>(res)?)
 }

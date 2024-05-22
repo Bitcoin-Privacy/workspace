@@ -166,8 +166,6 @@ pub async fn create_txn(deriv: &str, receiver: &str, amount: u64) -> Result<()> 
     let tx_hex = consensus::encode::serialize_hex(&unsigned_tx);
     println!("hash: {:?}", tx_hex);
     println!("{:#?}", unsigned_tx);
-    let res = shared::api::broadcast_txn(&tx_hex).await;
-    println!("Boadcasted txn: {} \n-> res: {:#?}", tx_hex, res);
 
     Ok(())
 }
@@ -189,6 +187,10 @@ pub fn get_account(deriv: &str) -> Result<AccountDTO> {
 
 pub async fn get_utxos(address: &str) -> Result<Vec<Utxo>> {
     shared::api::get_utxo(address).await
+}
+
+pub async fn get_status(txid: &str) -> Result<bool> {
+    shared::api::get_status(txid).await
 }
 
 pub async fn get_balance(address: &str) -> Result<u64> {

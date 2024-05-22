@@ -1,25 +1,26 @@
+use std::{str::SplitTerminator, string};
+
 use serde::{Deserialize, Serialize};
+
+#[cfg_attr(feature = "backend", derive(Deserialize))]
+#[cfg_attr(feature = "frontend", derive(Serialize))]
+#[derive(Debug, Clone)]
+pub struct KeyRegisterReq {
+    pub statechain_id: String,
+    pub signed_id: String,
+    pub auth_pubkey_2: String,
+}
 
 #[cfg_attr(feature = "backend", derive(Serialize))]
 #[cfg_attr(feature = "frontend", derive(Deserialize))]
 #[derive(Debug, Clone)]
-pub struct StatecoinDto {
-    pub id: String,
-    pub token_id: String,
-    pub auth_xonly_public_key: String,
-    pub server_public_key: String,
-    pub server_private_key: String,
-    pub amount: u32,
-    pub sec_nonce: Option<String>,
-    pub pub_nonce: Option<String>,
-    pub created_at: u64,
-    pub updated_at: u64,
+pub struct KeyRegisterRes {
+    pub random_key: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DepositInfo {
     pub aggregated_address: String,
-    pub deposit_tx_hex: String,
 }
 
 // ---------------------------
@@ -134,15 +135,24 @@ pub struct TransferRes {
 #[cfg_attr(feature = "frontend", derive(Serialize))]
 #[derive(Debug, Clone)]
 pub struct ListStatecoinsReq {
-    pub addr: String,
+    pub authkey: String,
 }
 
-// #[cfg_attr(feature = "backend", derive(Serialize))]
-// #[cfg_attr(feature = "frontend", derive(Deserialize))]
-// #[derive(Debug, Clone)]
-// pub struct StatecoinDto {
-//     pub
-// }
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StatecoinInfo {
+    pub statechain_id: String,
+    pub amount: u64,
+    pub sequence: u64,
+    pub txid: String,
+    pub vout: String,
+}
+
+#[cfg_attr(feature = "backend", derive(Serialize))]
+#[cfg_attr(feature = "frontend", derive(Deserialize))]
+#[derive(Debug, Clone)]
+pub struct ListStatecoinsRes {
+    pub statecoins: Vec<StatecoinInfo>,
+}
 
 // ---------------------------
 // Update key
@@ -151,7 +161,10 @@ pub struct ListStatecoinsReq {
 #[cfg_attr(feature = "frontend", derive(Serialize))]
 #[derive(Debug, Clone)]
 pub struct UpdateKeyReq {
-    pub t: String,
+    pub authkey: String,
+    pub t2: String,
+    pub statechain_id: String,
+    pub signed_msg: String,
 }
 
 #[cfg_attr(feature = "backend", derive(Serialize))]
@@ -206,9 +219,77 @@ pub struct GetPartialSignatureReq {
     pub signed_statechain_id: String,
     pub parsed_tx: String,
     pub agg_pubnonce: String,
+    pub script_pubkey: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GetPartialSignatureRes {
-    pub partial_signature: String,
+    pub sighash: String,
+    pub partial_sig: String,
+    pub n_lock_time: u64,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TransferMessageReq {
+    pub transfer_msg: String,
+    pub authkey: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TransferMessage {
+    pub txn: u64,
+    pub backup_txs: String,
+    pub x1: String,
+    pub statechain_id: String,
+    pub agg_pubkey: String,
+    pub key_agg_ctx: String,
+    pub funding_txid: String,
+    pub funding_vout: u64,
+    pub amount: u64,
+    pub spend_key: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StatechainAddress {
+    pub owner_pubkey: String,
+    pub authkey: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GetTransferMessageReq {
+    pub authkey: String,
+}
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "backend", derive(Serialize))]
+#[cfg_attr(feature = "frontend", derive(Deserialize))]
+pub struct GetTransferMessageRes {
+    pub transfer_message: String,
+}
+
+#[cfg_attr(feature = "backend", derive(Deserialize))]
+#[cfg_attr(feature = "frontend", derive(Serialize))]
+#[derive(Debug, Clone)]
+pub struct VerifyStatecoinReq {
+    pub statechain_id: String,
+    pub signed_msg: String,
+    pub authkey: String,
+}
+
+#[cfg_attr(feature = "backend", derive(Serialize))]
+#[cfg_attr(feature = "frontend", derive(Deserialize))]
+#[derive(Debug, Clone)]
+pub struct VerifyStatecoinRes {
+    pub txn: u32,
+    pub server_pubkey: String,
+    pub random_point: String,
+}
+
+// #[derive(Debug, Clone, Serialize, Deserialize)]
+// pub struct GetStatecoinsReq {
+//     pub authkey: String,
+// }
+
+// #[derive(Debug, Clone, Serialize, Deserialize)]
+// pub struct GetStatecoinsRes {
+//     pub statecoins: Vec<StatecoinInfo>,
+// }
