@@ -54,7 +54,7 @@ export function StateChainCard(props: StateChainCardProps) {
       <Flex justifyContent={"space-between"} mb={"6px"}>
         <Image
           borderRadius="full"
-          boxSize="10%"
+          boxSize="9%"
           src="https://i.ibb.co/R91rN3Q/statechain.png"
         />
         <Flex

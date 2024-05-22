@@ -38,7 +38,7 @@ export function UTXOCard(props: UTXOCardProps) {
       <Flex justifyContent={"space-between"}>
         <Image
           borderRadius="full"
-          boxSize="10%"
+          boxSize="8%"
           src="https://i.ibb.co/M6xxyd6/istockphoto-905413264-612x612.jpg"
         />
         <Flex
