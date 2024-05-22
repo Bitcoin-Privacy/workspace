@@ -17,6 +17,10 @@ import {
   Grid,
   Center,
   useClipboard,
+  useDisclosure,
+  Modal,
+  ModalOverlay,
+  ModalContent,
 } from "@chakra-ui/react";
 import { useRouter } from "next/router";
 import { useSendPage } from "@/hooks";
@@ -32,6 +36,7 @@ const INPUT_WIDTH = "75%";
 
 export default function Deposit() {
   const router = useRouter();
+  const { isOpen, onOpen, onClose } = useDisclosure();
 
   const {
     states: { depositInfo, deriv, form, isLoading, isError, balanceQuery },
@@ -40,8 +45,14 @@ export default function Deposit() {
 
   const [amount, setAmount] = useState<number>(0);
 
-  return (
-    <React.Fragment>
+return (
+  <React.Fragment>
+      <Modal blockScrollOnMount={true} isOpen={isOpen} onClose={onClose}>
+        <ModalOverlay />
+        <ModalContent>
+          <Text>HIHIHIHIHIH</Text>
+        </ModalContent>
+      </Modal>
       <Head>
         <title>Deposit Bitcoin</title>
       </Head>
@@ -91,7 +102,9 @@ export default function Deposit() {
                   <Button
                     type="submit"
                     onClick={() => {
+                      onOpen;
                       setAmount(form.getValues("amount"));
+                      onClose;
                     }}
                     isLoading={isLoading}
                     isDisabled={(() => {

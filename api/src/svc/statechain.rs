@@ -108,7 +108,7 @@ pub async fn get_sig(
     let n_lock_time = statecoin.n_lock_time;
     let txn = statecoin.txn as u64;
 
-    let new_lock_time = n_lock_time - txn * 60 * 60 * 24 * 3;
+    let new_lock_time = n_lock_time - txn * 60 * 60 * 24 * 1;
 
     let tx = consensus::deserialize::<Transaction>(&hex::decode(parsed_tx)?)?;
     let mut unsigned_txn = tx.clone();

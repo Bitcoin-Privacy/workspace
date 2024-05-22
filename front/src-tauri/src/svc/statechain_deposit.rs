@@ -141,6 +141,9 @@ pub async fn execute(
     let bk_tx =
         create_bk_tx_for_receiver(conn, &statechain_id, &statecoin, &checked_output_address)
             .await?;
+    let deposit_tx_clone = deposit_tx.clone();
+    let broadcast_res = broadcast_tx(deposit_tx_clone).await?;
+    println!("broad cast response: {:?}", broadcast_res);
 
     if let Err(e) = pool
         .create_statecoin(
@@ -167,8 +170,6 @@ pub async fn execute(
         panic!("Failed to insert statecoin data {:?}", e);
     }
 
-    let broadcast_res = broadcast_tx(deposit_tx).await?;
-    println!("broad cast response: {:?}", broadcast_res);
     Ok(DepositInfo {
         aggregated_address: aggregated_address.to_string(),
     })

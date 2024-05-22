@@ -16,8 +16,6 @@ use serde_json::{json, to_string};
 
 use std::str::FromStr;
 
-use crate::svc::statechain::compute_t1;
-
 use crate::{api::statechain, cfg::BASE_TX_FEE, db::PoolWrapper, model::Statecoin};
 use shared::intf::statechain::TransferMessage;
 
@@ -62,7 +60,7 @@ pub async fn execute(
     let transfer_message = TransferMessage {
         txn: statecoin.tx_n as u64 + 1,
         backup_txs: statecoin.bk_tx,
-        x1: x1,
+        x1: x1, 
         statechain_id: statechain_id.to_string(),
         agg_pubkey: statecoin.aggregated_pubkey.to_string(),
         key_agg_ctx: statecoin.key_agg_ctx.to_string(),
@@ -73,9 +71,9 @@ pub async fn execute(
     };
 
     let encrypted_msg_string = encrypt_transfer_message(&transfer_message, auth_publickey)?;
-    statechain::create_transfer_msg(&conn, &encrypted_msg_string, authkey).await?;
+    let _res = statechain::create_transfer_msg(&conn, &encrypted_msg_string, authkey).await?;
     println!("delete id : {}", statechain_id);
-    let del = pool
+    let _del = pool
         .delete_statecoin_by_statechain_id(statechain_id)
         .await?;
     Ok("send success".to_string())
@@ -105,7 +103,7 @@ pub async fn create_bk_tx_for_receiver(
     let input = TxIn {
         previous_output: prev_outpoint,
         script_sig: ScriptBuf::default(),
-        sequence: Sequence::ENABLE_RBF_NO_LOCKTIME,
+        sequence: Sequence(0xFFFFFFFE),
         witness: Witness::default(),
     };
 
@@ -157,6 +155,8 @@ pub async fn create_bk_tx_for_receiver(
         &scriptpubkey,
     )
     .await?;
+
+    unsigned_tx.lock_time = LockTime::from_time(get_sign_res.n_lock_time as u32)?;
 
     let sighash = &get_sign_res.sighash;
     let sighash = TapSighash::from_str(sighash)?;
@@ -214,8 +214,6 @@ pub async fn create_bk_tx_for_receiver(
     unsigned_tx.input[0].witness = wit;
 
     let tx_hex = consensus::encode::serialize_hex(&unsigned_tx);
-    unsigned_tx.lock_time = LockTime::from_time(get_sign_res.n_lock_time as u32)?;
-
     Ok(tx_hex)
 }
 

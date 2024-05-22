@@ -1,6 +1,7 @@
 import { useApp, useLogout } from "@/hooks";
 import {
   Box,
+  Flex,
   HStack,
   Menu,
   MenuButton,
@@ -34,6 +35,7 @@ export const Layout: React.FC<ILayout> = ({ title, children }) => {
       alignItems="start"
       position="relative"
       textColor={"white"}
+     
     >
       <Box
         top="-50px"
