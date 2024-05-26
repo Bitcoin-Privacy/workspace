@@ -8,12 +8,12 @@ type CreateDepositFormInput = {
   amount: number;
 };
 
-export const useDepositForm = (derivationPath: string) => {
-  const form = useForm<CreateDepositFormInput>();
+export const  useDepositForm = (derivationPath: string) => {
+  const form = useForm<CreateDepositFormInput>({
+    criteriaMode: "all",
+  });
 
   const [depositInfo,setDepositInfo] = useState<StatechainDepositResDto>();
-
-
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isError,setIsError] = useState<boolean>(false);
 
@@ -28,10 +28,15 @@ export const useDepositForm = (derivationPath: string) => {
             convertBtcToSats(data.amount),
           );
           // get the aggregated address
-          console.log("api response ",res);
+          console.log("api response nee",res);
           setDepositInfo(res);
           form.reset({ amount: 0 });
-        } catch (e) {
+        } catch (e :any ){
+          console.log("api response error", e );
+          form.setError('root', {
+            message: e
+          });
+          setIsError(true)
         } finally {
           setIsLoading(false);
         }
@@ -48,6 +53,7 @@ export const useDepositForm = (derivationPath: string) => {
     },
     methods: {
       handleFormSubmit,
+      setIsError
     },
   };
 };

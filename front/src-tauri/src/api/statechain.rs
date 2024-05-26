@@ -189,28 +189,19 @@ pub async fn get_transfer_msg(
 
 pub async fn get_verification_statecoin(
     conn: &NodeConnector,
-    authkey: &str,
     statechain_id: &str,
     signed_msg: &str,
-) -> Result<Option<VerifyStatecoinRes>> {
+) -> Result<VerifyStatecoinRes> {
     let req = VerifyStatecoinReq {
         statechain_id: statechain_id.to_string(),
         signed_msg: signed_msg.to_string(),
-        authkey: authkey.to_string(),
     };
     let body = serde_json::to_value(req)?;
     let res = conn.post("statechain/transfer/verify", &body).await?;
 
-    if res.is_null() {
-        println!(
-            "Null value for statecoin transfer verification: {}",
-            authkey
-        );
-        return Ok(None);
-    }
     let json: VerifyStatecoinRes = serde_json::from_value(res)?;
 
-    Ok(Some(json))
+    Ok(json)
 }
 
 pub async fn update_new_key(

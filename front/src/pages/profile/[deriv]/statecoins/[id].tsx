@@ -11,6 +11,9 @@ import {
   Modal,
   ModalOverlay,
   ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
 } from "@chakra-ui/react";
 import { useStatecoinDetail } from "@/hooks/atoms/use-statecoin-detail";
 import Head from "next/head";
@@ -38,15 +41,11 @@ export default function StatecoinDetail() {
   }, [statechainId]);
 
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const [isError, setIsError] = useState<boolean>(false);
+  const [withdrawError, setWithdrawError] = useState<string>("");
 
   return (
     <React.Fragment>
-      <Modal blockScrollOnMount={true} isOpen={isOpen} onClose={onClose}>
-        <ModalOverlay />
-        <ModalContent>
-          <Text>HIHIHIHIHIH</Text>
-        </ModalContent>
-      </Modal>
       <Head>
         <title> Detail Page</title>
       </Head>
@@ -94,14 +93,18 @@ export default function StatecoinDetail() {
               maxW="80%"
               colorScheme="red"
               onClick={async () => {
-                onOpen;
-                let res = await StatechainApi.withdrawStatecoin(
-                  statecoin?.statechain_id as string,
-                  deriv
-                );
-                console.log("withdraw ", res);
-                onClose;
-                router.back;
+                try {
+                  let res = await StatechainApi.withdrawStatecoin(
+                    statecoin?.statechain_id as string,
+                    deriv
+                  );
+                  console.log("withdraw ", res);
+                  // router.back();
+                } catch (error: any) {
+                  setWithdrawError(error);
+                  console.error("Error withdrawing statecoin: ", error);
+                  setIsError(true);
+                }
               }}
             >
               Withdraw
@@ -181,6 +184,25 @@ export default function StatecoinDetail() {
             </Flex>
           </Flex>
         </Flex>
+        <Modal closeOnOverlayClick={false} isOpen={isError} onClose={onClose}>
+          <ModalOverlay />
+          <ModalContent>
+            <ModalHeader>ERROR !!!!</ModalHeader>
+
+            <ModalBody pb={6}>{withdrawError}</ModalBody>
+            <ModalFooter>
+              <Button
+                colorScheme="red"
+                onClick={() => {
+                  onClose;
+                  setIsError(false);
+                }}
+              >
+                Cancel
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
       </Layout>
     </React.Fragment>
   );

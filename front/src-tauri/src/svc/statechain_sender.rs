@@ -58,7 +58,7 @@ pub async fn execute(
 
     //3. create transfer message
     let transfer_message = TransferMessage {
-        txn: statecoin.tx_n as u64 + 1,
+        txn: statecoin.tx_n as u64,
         backup_txs: statecoin.bk_tx,
         x1: x1, 
         statechain_id: statechain_id.to_string(),

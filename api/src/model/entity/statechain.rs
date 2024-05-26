@@ -25,7 +25,8 @@ pub struct StatecoinVerificationInfo {
     #[sqlx(try_from = "i64")]
     pub txn: u32,
     pub server_public_key: String,
-    pub random_point: String,
+    #[sqlx(try_from = "i64")]
+    pub n_lock_time: u64,
 }
 
 #[derive(sqlx::FromRow, Debug, Clone)]

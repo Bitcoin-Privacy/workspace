@@ -272,16 +272,14 @@ pub struct GetTransferMessageRes {
 pub struct VerifyStatecoinReq {
     pub statechain_id: String,
     pub signed_msg: String,
-    pub authkey: String,
 }
 
 #[cfg_attr(feature = "backend", derive(Serialize))]
 #[cfg_attr(feature = "frontend", derive(Deserialize))]
 #[derive(Debug, Clone)]
 pub struct VerifyStatecoinRes {
-    pub txn: u32,
     pub server_pubkey: String,
-    pub random_point: String,
+    pub txn_n_lock_time_commitment: String,
 }
 
 // #[derive(Debug, Clone, Serialize, Deserialize)]

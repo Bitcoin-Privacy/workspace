@@ -140,9 +140,8 @@ impl TraitStatechainRepo for StatechainRepo {
 
     async fn get_verify_statecoin(&self, statechain_id: &str) -> Result<StatecoinVerificationInfo> {
         let row = sqlx::query_as::<_, StatecoinVerificationInfo>(
-            r#"select txn, server_public_key, random_point 
-            from statechain s join statechain_transfer sf 
-            on s.statechain_id = sf.statechain_id 
+            r#"select txn, server_public_key, n_lock_time
+            from statechain
             where statechain_id  = $1::uuid"#,
         )
         .bind(statechain_id)

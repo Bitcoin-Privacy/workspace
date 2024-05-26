@@ -190,6 +190,17 @@ pub async fn verify_statecoin(
     statechain_repo: Data<StatechainRepo>,
     payload: Json<VerifyStatecoinReq>,
 ) -> HttpResponse {
+    if !statechain::verify_signature_transfer(
+        &statechain_repo,
+        &payload.signed_msg,
+        &payload.statechain_id,
+    )
+    .await
+    .unwrap()
+    {
+        return HttpResponse::Unauthorized().body("invalid signature for id");
+    }
+
     match statechain::verify_statecoin(&statechain_repo, &payload.statechain_id).await {
         Ok(status) => response::success(status),
         Err(message) => {

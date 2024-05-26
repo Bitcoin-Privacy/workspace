@@ -12,6 +12,13 @@ import {
   GridItem,
   Box,
   Link,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  useDisclosure,
 } from "@chakra-ui/react";
 import { Text, VStack, Button, HStack, Image, Flex } from "@chakra-ui/react";
 import {
@@ -28,6 +35,7 @@ import { CoinJoinRoomCard } from "@/components";
 import { useProfilePage } from "@/hooks";
 import { UTXOCard } from "@/components/utxo-card";
 import { StateChainCard } from "@/components/statechain-card";
+import { StatechainApi } from "@/apis";
 
 export default function ProfilePage() {
   const {
@@ -49,11 +57,14 @@ export default function ProfilePage() {
       onSendStatecoinBtnClick,
       onWithdrawBtnClick,
       onReceiveStatecoinBtnClick,
-      onVerifyTransferStatecoinClick,
+      //onVerifyTransferStatecoinClick,
       onDetailButtonClick,
     },
   } = useProfilePage();
 
+  const [isVerifying, setIsVerifying] = useState<boolean>(false);
+  const [verifyError, setVerifyError] = useState<string>();
+  const { isOpen, onOpen, onClose } = useDisclosure();
   const featureButtons = [
     {
       name: "Deposit",
@@ -266,13 +277,33 @@ export default function ProfilePage() {
 
                           <VStack alignItems={"end"} spacing={"8px"} w="100%">
                             <Button
-                              onClick={() =>
-                                onVerifyTransferStatecoinClick(
-                                  deriv,
-                                  val.transfer_message,
-                                  val.auth_key
-                                )
-                              }
+                              // onClick={() =>
+                              //   onVerifyTransferStatecoinClick(
+                              //     deriv,
+                              //     val.transfer_message,
+                              //     val.auth_key
+                              //   )
+                              // }
+                              onClick={async () => {
+                                setIsVerifying(true);
+                                try {
+                                  let res =
+                                    await StatechainApi.verifyTransferStatecoin(
+                                      deriv,
+                                      val.transfer_message,
+                                      val.auth_key
+                                    );
+                                  console.log("verify statecoin :", res);
+                                } catch (e: any) {
+                                  console.error(
+                                    "Error when verify statecoin:",
+                                    e
+                                  );
+                                  setVerifyError(e);
+                                } finally {
+                                  setIsVerifying(false);
+                                }
+                              }}
                             >
                               {" "}
                               Verify
@@ -299,6 +330,30 @@ export default function ProfilePage() {
             </Tabs>
           </VStack>
         </VStack>
+
+        <Modal
+          closeOnOverlayClick={false}
+          isOpen={!!verifyError}
+          onClose={onClose}
+        >
+          <ModalOverlay />
+          <ModalContent>
+            <ModalHeader>ERROR !!!!</ModalHeader>
+
+            <ModalBody pb={6}>{verifyError}</ModalBody>
+            <ModalFooter>
+              <Button
+                colorScheme="red"
+                onClick={() => {
+                  onClose();
+                  setVerifyError(undefined);
+                }}
+              >
+                Cancel
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
       </Layout>
     </React.Fragment>
   );

@@ -136,11 +136,11 @@ pub async fn withdraw_statecoin(
     conn: State<'_, NodeConnector>,
     statechain_id: &str,
     deriv: &str,
-) -> TResult<()> {
-    let _ = statechain::withdraw_statecoin(&conn, &pool, statechain_id, deriv)
+) -> TResult<String> {
+    statechain::withdraw_statecoin(&conn, &pool, statechain_id, deriv)
         .await
-        .map_err(util::to_string);
-    Ok(())
+        .map_err(util::to_string)
+
 }
 // pub async fn create_bk_tx(
 //     pool: State<'_, PoolWrapper>,

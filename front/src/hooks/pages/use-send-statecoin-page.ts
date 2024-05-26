@@ -27,8 +27,8 @@ export const useSendStateCoinPage = () => {
   );
 
   const {
-    states: { form, isLoading },
-    methods: { handleFormSubmit },
+    states: { form, isLoading, isError },
+    methods: { handleFormSubmit, setIsError },
   } = useSendStateCoinForm(deriv);
 
   return {
@@ -39,7 +39,8 @@ export const useSendStateCoinPage = () => {
       profQuery,
       balanceQuery,
       listStatecoinsQuery,
+      isError
     },
-    methods: { handleFormSubmit },
+    methods: { handleFormSubmit,  setIsError },
   };
 };

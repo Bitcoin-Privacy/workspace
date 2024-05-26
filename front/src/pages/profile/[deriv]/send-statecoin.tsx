@@ -16,6 +16,9 @@ import {
   ModalOverlay,
   ModalContent,
   useDisclosure,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
 } from "@chakra-ui/react";
 import { useRouter } from "next/router";
 import { useSendPage } from "@/hooks";
@@ -32,11 +35,10 @@ const INPUT_WIDTH = "90%";
 export default function SendStateCoin() {
   const router = useRouter();
   const {
-    states: { deriv, form, isLoading, listStatecoinsQuery },
-    methods: { handleFormSubmit },
+    states: { deriv, form, isLoading, listStatecoinsQuery, isError },
+    methods: { handleFormSubmit, setIsError },
   } = useSendStateCoinPage();
-
-
+  const { isOpen, onOpen, onClose } = useDisclosure();
   return (
     <React.Fragment>
       <Head>
@@ -62,7 +64,6 @@ export default function SendStateCoin() {
             >
               <VStack h="100%" w="50%" px={"16px"}>
                 {listStatecoinsQuery.data?.map((val, index) => (
-                  //<StateChainCard val={val} key={index} deriv={deriv} />
                   <StatecoinToSendCard val={val} key={index} deriv={deriv} />
                 ))}
               </VStack>
@@ -84,11 +85,6 @@ export default function SendStateCoin() {
                     color="white"
                     {...form.register("address", {
                       required: "Receiver address is required",
-                      // pattern: {
-                      //   value: /^(tb1)[a-z0-9]{39,59}$/,
-                      //   message:
-                      //     "Addess should follow P2WPKH format, other type is not supported yet.",
-                      // },
                     })}
                   />
                 </HStack>
@@ -102,11 +98,6 @@ export default function SendStateCoin() {
                     color="white"
                     {...form.register("statechain_id", {
                       required: "statechain_id is required",
-                      // pattern: {
-                      //   value: /^(tb1)[a-z0-9]{39,59}$/,
-                      //   message:
-                      //     "Addess should follow P2WPKH format, other type is not supported yet.",
-                      // },
                     })}
                   />
                 </HStack>
@@ -122,6 +113,30 @@ export default function SendStateCoin() {
               </VStack>
             </HStack>
           </VStack>
+
+          <Modal closeOnOverlayClick={false} isOpen={isError} onClose={onClose}>
+            <ModalOverlay />
+            <ModalContent>
+              <ModalHeader>ERROR !!!!</ModalHeader>
+
+              <ModalBody pb={6}>
+                {form.formState.errors.root?.message}
+              </ModalBody>
+              <ModalFooter>
+                <Button
+                  colorScheme="red"
+                  //onClick={onClose}
+                  onClick={() => {
+                    setIsError(false);
+
+                    onClose();
+                  }}
+                >
+                  Cancel
+                </Button>
+              </ModalFooter>
+            </ModalContent>
+          </Modal>
         </form>
       </Layout>
     </React.Fragment>

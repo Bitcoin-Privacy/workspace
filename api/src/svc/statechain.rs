@@ -3,7 +3,7 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-use actix_web::web::Data;
+use actix_web::{body::MessageBody, web::Data};
 use anyhow::Result;
 use bitcoin::{
     absolute::LockTime,
@@ -16,6 +16,8 @@ use bitcoin::{
     Amount, ScriptBuf, TapSighash, TapSighashType, Transaction, TxOut, XOnlyPublicKey,
 };
 use musig2::{AggNonce, BinaryEncoding, KeyAggContext, PartialSignature, SecNonce};
+use num_traits::ToBytes;
+use openssl::sha::Sha256;
 use rand::RngCore;
 use secp256k1::{schnorr::Signature, Message, Parity, Scalar};
 
@@ -252,8 +254,23 @@ pub async fn verify_signature(
     statechain_id: &str,
 ) -> Result<bool> {
     let auth_key = repo.get_auth_key_by_statechain_id(&statechain_id).await?;
-
     let pub_key = XOnlyPublicKey::from_str(&auth_key)?;
+    let signed_message = Signature::from_str(signature).unwrap();
+    let msg = Message::from_hashed_data::<sha256::Hash>(statechain_id.to_string().as_bytes());
+
+    let secp = Secp256k1::new();
+    Ok(secp.verify_schnorr(&signed_message, &msg, &pub_key).is_ok())
+}
+
+pub async fn verify_signature_transfer(
+    repo: &Data<StatechainRepo>,
+    signature: &str,
+    statechain_id: &str,
+) -> Result<bool> {
+    let auth_key = repo
+        .get_auth_key_transfer_by_statechain_id(&statechain_id)
+        .await?;
+    let pub_key = XOnlyPublicKey::from_str(&auth_key.authkey)?;
     let signed_message = Signature::from_str(signature).unwrap();
     let msg = Message::from_hashed_data::<sha256::Hash>(statechain_id.to_string().as_bytes());
 
@@ -287,10 +304,16 @@ pub async fn verify_statecoin(
         .await
         .map_err(|e| format!("Failed to get transfer message: {}", e))?;
 
+    let txn_str = info.txn.to_string();
+    let n_lock_time_str = info.n_lock_time.to_string();
+    let commitment = txn_str + &n_lock_time_str;
+    let mut hasher = Sha256::new();
+    hasher.update(commitment.as_bytes());
+    let result = hasher.finish();
+
     Ok(VerifyStatecoinRes {
-        txn: info.txn,
         server_pubkey: info.server_public_key,
-        random_point: info.random_point,
+        txn_n_lock_time_commitment: result.to_lower_hex_string(),
     })
 }
 

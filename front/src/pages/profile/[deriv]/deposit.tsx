@@ -1,26 +1,23 @@
 import React, { useMemo, useState } from "react";
 import Head from "next/head";
 import {
-  Box,
   Text,
   VStack,
   Button,
   Input,
   HStack,
-  Spacer,
   InputGroup,
   InputRightAddon,
   FormControl,
   FormErrorMessage,
-  Flex,
-  Square,
-  Grid,
   Center,
-  useClipboard,
   useDisclosure,
   Modal,
   ModalOverlay,
   ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
 } from "@chakra-ui/react";
 import { useRouter } from "next/router";
 import { useSendPage } from "@/hooks";
@@ -40,19 +37,13 @@ export default function Deposit() {
 
   const {
     states: { depositInfo, deriv, form, isLoading, isError, balanceQuery },
-    methods: { handleFormSubmit },
+    methods: { handleFormSubmit, setIsError },
   } = useDepositPage();
 
   const [amount, setAmount] = useState<number>(0);
 
-return (
-  <React.Fragment>
-      <Modal blockScrollOnMount={true} isOpen={isOpen} onClose={onClose}>
-        <ModalOverlay />
-        <ModalContent>
-          <Text>HIHIHIHIHIH</Text>
-        </ModalContent>
-      </Modal>
+  return (
+    <React.Fragment>
       <Head>
         <title>Deposit Bitcoin</title>
       </Head>
@@ -190,6 +181,30 @@ return (
               </VStack>
             )}
           </VStack>
+          {/* {form.formState.errors.root && (
+          
+          )} */}
+          <Modal closeOnOverlayClick={false} isOpen={isError} onClose={onClose}>
+            <ModalOverlay />
+            <ModalContent>
+              <ModalHeader>ERROR !!!!</ModalHeader>
+
+              <ModalBody pb={6}>
+                {form.formState.errors.root?.message}
+              </ModalBody>
+              <ModalFooter>
+                <Button
+                  colorScheme="red"
+                  onClick={() => {
+                    onClose;
+                    setIsError(false);
+                  }}
+                >
+                  Cancel
+                </Button>
+              </ModalFooter>
+            </ModalContent>
+          </Modal>
         </form>
       </Layout>
     </React.Fragment>
