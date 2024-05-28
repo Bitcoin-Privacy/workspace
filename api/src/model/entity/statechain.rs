@@ -11,7 +11,7 @@ pub struct StateCoin {
     #[sqlx(try_from = "i64")]
     pub txn: u32,
     #[sqlx(try_from = "i64")]
-    pub n_lock_time: u64,
+    pub n_lock_time: u32,
     pub sec_nonce: Option<String>,
 }
 
@@ -26,7 +26,7 @@ pub struct StatecoinVerificationInfo {
     pub txn: u32,
     pub server_public_key: String,
     #[sqlx(try_from = "i64")]
-    pub n_lock_time: u64,
+    pub n_lock_time: u32,
 }
 
 #[derive(sqlx::FromRow, Debug, Clone)]

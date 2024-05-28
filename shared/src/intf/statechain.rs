@@ -226,7 +226,7 @@ pub struct GetPartialSignatureReq {
 pub struct GetPartialSignatureRes {
     pub sighash: String,
     pub partial_sig: String,
-    pub n_lock_time: u64,
+    pub n_lock_time: u32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

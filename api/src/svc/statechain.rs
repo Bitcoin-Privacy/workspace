@@ -108,7 +108,7 @@ pub async fn get_sig(
     let agg_nonce = AggNonce::from_str(agg_pubnonce).unwrap();
     let sighash_type = TapSighashType::Default;
     let n_lock_time = statecoin.n_lock_time;
-    let txn = statecoin.txn as u64;
+    let txn = statecoin.txn;
 
     let new_lock_time = n_lock_time - txn * 60 * 60 * 24 * 1;
 
@@ -190,7 +190,7 @@ pub async fn withdraw(
     Ok(GetPartialSignatureRes {
         sighash: sighash_str,
         partial_sig: final_sig,
-        n_lock_time: 0 as u64,
+        n_lock_time: 0,
     })
 }
 
@@ -304,12 +304,16 @@ pub async fn verify_statecoin(
         .await
         .map_err(|e| format!("Failed to get transfer message: {}", e))?;
 
+    let current_n_lock_time = info.n_lock_time - &info.txn * 60 * 60 * 24 * 1;
+
     let txn_str = info.txn.to_string();
-    let n_lock_time_str = info.n_lock_time.to_string();
+    let n_lock_time_str = current_n_lock_time.to_string();
     let commitment = txn_str + &n_lock_time_str;
     let mut hasher = Sha256::new();
     hasher.update(commitment.as_bytes());
     let result = hasher.finish();
+
+    println!("server commitment : {:#?}", result);
 
     Ok(VerifyStatecoinRes {
         server_pubkey: info.server_public_key,

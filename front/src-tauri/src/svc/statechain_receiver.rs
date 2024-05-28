@@ -70,7 +70,7 @@ pub async fn execute(
     let signed_msg = sign_message(&x1, &auth_seckey).to_string();
 
     let updatekey_res =
-        statechain::update_new_key(&conn, &x1, &signed_msg, &statechain_id, &authkey).await?;
+    statechain::update_new_key(&conn, &x1, &signed_msg, &statechain_id, &authkey).await?;
     //let auth_secret_key = SecretKey::from_str(&auth_seckey)?;
 
     let signed_statechain_id = sign_message(&statechain_id, &auth_seckey);
@@ -156,6 +156,7 @@ pub async fn verify_transfer_statecoin(
     hasher.update(txn_n_lock_time.as_bytes());
     let client_commitment = hasher.finish().to_lower_hex_string();
 
+    println!("client commitment : {:#?}", client_commitment);
     let res = statechain::get_verification_statecoin(conn, statechain_id, signed_id).await?;
 
     //check the previous transaction is valid and not spent
