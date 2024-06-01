@@ -9,7 +9,7 @@ use curve25519_dalek::RistrettoPoint;
 
 use crate::{
     constance::COINJOIN_FEE,
-    model::entity::coinjoin::Room,
+    model::entity::coinjoin::RoomEntity,
     repo::coinjoin::{CoinJoinRepo, TraitCoinJoinRepo},
     CFG,
 };
@@ -21,7 +21,7 @@ pub async fn register(
     amount: u32,
     change_addr: &str,
     output_addr: &str,
-) -> Result<(Room, String), String> {
+) -> Result<(RoomEntity, String), String> {
     // Find compatible room
     let room = match repo.get_compatible_room(amount).await {
         Ok(room) => room,
@@ -159,7 +159,10 @@ async fn get_txn(repo: Data<CoinJoinRepo>, room_id: &str) -> Result<bitcoin::Tra
     })
 }
 
-pub async fn get_room_by_addr(repo: Data<CoinJoinRepo>, addr: &str) -> Result<Vec<Room>, String> {
+pub async fn get_room_by_addr(
+    repo: Data<CoinJoinRepo>,
+    addr: &str,
+) -> Result<Vec<RoomEntity>, String> {
     repo.get_room_by_addr(addr).await
 }
 

@@ -10,25 +10,25 @@ import Moment from "moment";
 
 import { CoinJoinApi } from "@/apis";
 import { RoomDto } from "@/dtos";
+import { FC } from "react";
 
-interface CoinJoinRoomCardProps {
+interface ICoinJoinRoomCard {
   key: any;
   data: RoomDto;
   deriv: string;
 }
 
-export function CoinJoinRoomCard(props: CoinJoinRoomCardProps) {
+export const CoinJoinRoomCard: FC<ICoinJoinRoomCard> = (props) => {
   const { key, data } = props;
   return (
     <HStack
       key={key}
       color="white"
       textAlign="start"
-      maxW="300px"
+      w="100%"
       bg="#3a3a3a"
       p="8px 16px"
       borderRadius="8px"
-      align="stretch"
       minW="300px"
       justifyContent="space-between"
     >
@@ -38,20 +38,21 @@ export function CoinJoinRoomCard(props: CoinJoinRoomCardProps) {
         </Text>
         <UnorderedList w="100%">
           <ListItem>Amount: {data.base_amount} sats</ListItem>
+          <ListItem>Number of peers: {data.no_peer}</ListItem>
           <ListItem>Status: {data.status}</ListItem>
           <ListItem>
-            Due 1: {Moment(data.created_at + data.due1).format("MMM DD, HH:mm")}
+            {"Due 1: " +
+              Moment(data.created_at + data.due1).format("MMM DD, HH:mm")}
           </ListItem>
           <ListItem>
-            Due 2:{" "}
-            {Moment(data.created_at + data.due1 + data.due2).format(
-              "MMM DD, HH:mm",
-            )}
+            {"Due 2: " +
+              Moment(data.created_at + data.due1 + data.due2).format(
+                "MMM DD, HH:mm",
+              )}
           </ListItem>
         </UnorderedList>
       </Box>
       <Button
-        h="100%"
         onClick={() => {
           CoinJoinApi.signTxn(props.deriv, data.id);
         }}
@@ -60,4 +61,4 @@ export function CoinJoinRoomCard(props: CoinJoinRoomCardProps) {
       </Button>
     </HStack>
   );
-}
+};

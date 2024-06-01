@@ -186,26 +186,25 @@ export default function Send() {
                   }}
                 />
               </HStack>
-              <Box width={"full"}>
+              <Box width="full" textColor="white">
                 <HStack>
-                  <Text color={"white"}>Current balance</Text>
+                  <Text>Current balance</Text>
                   <Spacer />
-                  <Text color={"white"}>
-                    {balanceQuery.data !== undefined
+                  <Text>
+                    {(balanceQuery.data !== undefined
                       ? balanceQuery.data / 10000000
-                      : "-"}{" "}
-                    BTC
+                      : "-") + " BTC"}
                   </Text>
                 </HStack>
                 <HStack>
-                  <Text color={"white"}>Gas</Text>
+                  <Text>Gas</Text>
                   <Spacer />
-                  <Text color={"white"}>0.0003 BTC</Text>
+                  <Text>0.0003 BTC</Text>
                 </HStack>
                 <HStack>
-                  <Text color={"white"}>Likely in 30 seconds</Text>
+                  <Text>Likely in 30 seconds</Text>
                   <Spacer />
-                  <Text color={"white"}>Max fee: BTC</Text>
+                  <Text>Max fee: BTC</Text>
                 </HStack>
               </Box>
             </VStack>

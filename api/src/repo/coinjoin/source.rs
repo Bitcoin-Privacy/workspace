@@ -3,7 +3,7 @@ use sqlx::Executor;
 
 use crate::{
     db::Database,
-    model::entity::coinjoin::{Input, Output, Proof, Room},
+    model::entity::coinjoin::{Input, Output, Proof, RoomEntity},
     CFG,
 };
 use uuid::Uuid;
@@ -20,8 +20,8 @@ impl CoinJoinRepo {
         Self { pool }
     }
 
-    pub async fn get_room_by_addr(&self, addr: &str) -> CoinjoinResult<Vec<Room>> {
-        sqlx::query_as::<_, Room>(
+    pub async fn get_room_by_addr(&self, addr: &str) -> CoinjoinResult<Vec<RoomEntity>> {
+        sqlx::query_as::<_, RoomEntity>(
             r#"select r.*
             from room r
             inner join (
@@ -39,19 +39,27 @@ impl CoinJoinRepo {
 
 #[async_trait]
 impl TraitCoinJoinRepo for CoinJoinRepo {
-    async fn get_rooms(&self) -> CoinjoinResult<Vec<Room>> {
-        sqlx::query_as::<_, Room>(r#"select * from room"#)
+    async fn get_rooms(&self) -> CoinjoinResult<Vec<RoomEntity>> {
+        sqlx::query_as::<_, RoomEntity>(r#"select * from room"#)
             .fetch_all(&self.pool.pool)
             .await
             .map_err(|e| e.to_string())
     }
 
-    async fn get_compatible_room(&self, base_amount: u32) -> CoinjoinResult<Room> {
-        let rooms = sqlx::query_as::<_, Room>(r#"select * from room where base_amount = $1"#)
-            .bind(base_amount as i64)
-            .fetch_all(&self.pool.pool)
-            .await
-            .map_err(|e| e.to_string())?;
+    async fn get_compatible_room(&self, base_amount: u32) -> CoinjoinResult<RoomEntity> {
+        let rooms = sqlx::query_as::<_, RoomEntity>(
+            r#"
+            select * 
+            from room
+            where base_amount = 10
+              and status = 0
+              and created_at + interval '1 second' * (room.due1 / 1000) > now();
+            "#,
+        )
+        .bind(base_amount as i64)
+        .fetch_all(&self.pool.pool)
+        .await
+        .map_err(|e| e.to_string())?;
 
         if rooms.is_empty() {
             self.create_room(base_amount, CFG.due_time_1, CFG.due_time_2)
@@ -61,8 +69,13 @@ impl TraitCoinJoinRepo for CoinJoinRepo {
         }
     }
 
-    async fn create_room(&self, base_amount: u32, due1: u32, due2: u32) -> CoinjoinResult<Room> {
-        sqlx::query_as::<_, Room>(
+    async fn create_room(
+        &self,
+        base_amount: u32,
+        due1: u32,
+        due2: u32,
+    ) -> CoinjoinResult<RoomEntity> {
+        sqlx::query_as::<_, RoomEntity>(
             r#"insert into room (base_amount, due1, due2) values ($1, $2, $3) returning *"#,
         )
         .bind(base_amount as i64)
@@ -106,8 +119,8 @@ impl TraitCoinJoinRepo for CoinJoinRepo {
         }
     }
 
-    async fn get_room_by_id(&self, room_id: &str) -> CoinjoinResult<Room> {
-        sqlx::query_as::<_, Room>(r#"select * from room where id = $1::uuid"#)
+    async fn get_room_by_id(&self, room_id: &str) -> CoinjoinResult<RoomEntity> {
+        sqlx::query_as::<_, RoomEntity>(r#"select * from room where id = $1::uuid"#)
             .bind(room_id)
             .fetch_one(&self.pool.pool)
             .await

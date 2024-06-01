@@ -4,7 +4,7 @@ use shared::intf::coinjoin::{GetRoomByIdRes, RoomDto};
 // Room table
 // ---------------------------
 #[derive(sqlx::FromRow, Debug, Clone)]
-pub struct Room {
+pub struct RoomEntity {
     pub id: uuid::Uuid,
     #[sqlx(try_from = "i64")]
     pub base_amount: u32,
@@ -20,8 +20,8 @@ pub struct Room {
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
 
-impl From<Room> for RoomDto {
-    fn from(value: Room) -> Self {
+impl From<RoomEntity> for RoomDto {
+    fn from(value: RoomEntity) -> Self {
         RoomDto {
             id: value.id.to_string(),
             base_amount: value.base_amount,
@@ -35,8 +35,8 @@ impl From<Room> for RoomDto {
     }
 }
 
-impl From<&Room> for RoomDto {
-    fn from(value: &Room) -> Self {
+impl From<&RoomEntity> for RoomDto {
+    fn from(value: &RoomEntity) -> Self {
         RoomDto {
             id: value.id.to_string(),
             base_amount: value.base_amount,
@@ -50,8 +50,8 @@ impl From<&Room> for RoomDto {
     }
 }
 
-impl From<Room> for GetRoomByIdRes {
-    fn from(value: Room) -> Self {
+impl From<RoomEntity> for GetRoomByIdRes {
+    fn from(value: RoomEntity) -> Self {
         GetRoomByIdRes {
             id: value.id.to_string(),
             base_amount: value.base_amount,

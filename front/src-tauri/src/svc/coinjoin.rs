@@ -7,7 +7,7 @@ use bitcoin::hex::DisplayHex;
 use bitcoin::{
     consensus, secp256k1::Secp256k1, sighash::SighashCache, EcdsaSighashType, Transaction,
 };
-use shared::intf::coinjoin::GetStatusRes;
+use shared::intf::coinjoin::{GetStatusRes, RoomDto};
 use tokio::time::{sleep, Duration};
 
 use shared::api;
@@ -163,6 +163,7 @@ pub async fn get_status(room_id: &str) -> Result<GetStatusRes> {
     crate::api::coinjoin::get_status(room_id).await
 }
 
-pub async fn get_rooms(pool: &PoolWrapper, deriv: &str) -> Result<Vec<RoomEntity>> {
-    pool.get_all_rooms(deriv)
+pub async fn get_rooms(deriv: &str) -> Result<Vec<RoomDto>> {
+    let acct = account::get_internal_account(deriv)?;
+    crate::api::coinjoin::get_room_list(&acct.get_addr()).await
 }

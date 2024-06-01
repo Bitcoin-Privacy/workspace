@@ -1,4 +1,4 @@
-use shared::intf::coinjoin::{GetStatusRes, GetUnsignedTxnRes};
+use shared::intf::coinjoin::{GetStatusRes, GetUnsignedTxnRes, RoomDto};
 use tauri::{
     command,
     plugin::{Builder, TauriPlugin},
@@ -49,10 +49,8 @@ async fn sign_txn(pool: State<'_, PoolWrapper>, deriv: &str, room_id: &str) -> T
 // Accessors --------------------------------------
 
 #[command]
-async fn get_rooms(pool: State<'_, PoolWrapper>, deriv: &str) -> TResult<Vec<RoomEntity>> {
-    coinjoin::get_rooms(&pool, deriv)
-        .await
-        .map_err(util::to_string)
+async fn get_rooms(deriv: &str) -> TResult<Vec<RoomDto>> {
+    coinjoin::get_rooms(deriv).await.map_err(util::to_string)
 }
 
 #[command]

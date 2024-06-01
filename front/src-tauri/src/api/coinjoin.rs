@@ -1,8 +1,8 @@
 use anyhow::Result;
 use shared::{
     intf::coinjoin::{
-        GetStatusRes, GetUnsignedTxnRes, RegisterReq, RegisterRes, SetOutputReq, SetOutputRes,
-        SignTxnReq, SignTxnRes,
+        GetStatusRes, GetUnsignedTxnRes, RegisterReq, RegisterRes, RoomDto, SetOutputReq,
+        SetOutputRes, SignTxnReq, SignTxnRes,
     },
     model::Utxo,
 };
@@ -68,10 +68,13 @@ pub async fn get_status(room_id: &str) -> Result<GetStatusRes> {
     Ok(serde_json::from_value::<GetStatusRes>(res)?)
 }
 
-pub async fn get_room_list() -> Result<GetStatusRes> {
+pub async fn get_room_list(address: &str) -> Result<Vec<RoomDto>> {
     let conn = NodeConnector::new(CFG.service_url.clone());
     let res = conn
-        .get(format!("coinjoin/room/{id}/status", id = ""), None)
+        .get(
+            format!("coinjoin/room/list?address={address}", address = address),
+            None,
+        )
         .await?;
-    Ok(serde_json::from_value::<GetStatusRes>(res)?)
+    Ok(serde_json::from_value::<Vec<RoomDto>>(res)?)
 }
