@@ -3,15 +3,15 @@ import Moment from "moment";
 
 import { RoomDto } from "@/dtos";
 import { FC, useMemo } from "react";
-import { CoinJoinRoomStatus } from "./coinjoin-room-status";
+import { CoinjoinStatus } from "./coinjoin-status";
 
-interface ICoinJoinRoomCard {
+interface ICoinjoinCard {
   key: any;
   data: RoomDto;
   deriv: string;
 }
 
-export const CoinJoinRoomCard: FC<ICoinJoinRoomCard> = (props) => {
+export const CoinjoinCard: FC<ICoinjoinCard> = (props) => {
   const { key, data, deriv } = props;
 
   const dues = useMemo(() => {
@@ -49,7 +49,7 @@ export const CoinJoinRoomCard: FC<ICoinJoinRoomCard> = (props) => {
           </ListItem>
         </UnorderedList>
       </Box>
-      <CoinJoinRoomStatus
+      <CoinjoinStatus
         deriv={deriv}
         roomId={data.id}
         endOfDue1={data.created_at + data.due1}

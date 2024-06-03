@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use shared::{intf::coinjoin::RegisterRes, model::Utxo};
+use shared::{intf::coinjoin::CoinjoinRegisterRes, model::Utxo};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct RoomEntity {
@@ -15,8 +15,8 @@ pub struct RoomEntity {
     pub utxos: Vec<Utxo>,
 }
 
-impl From<RegisterRes> for RoomEntity {
-    fn from(value: RegisterRes) -> Self {
+impl From<CoinjoinRegisterRes> for RoomEntity {
+    fn from(value: CoinjoinRegisterRes) -> Self {
         RoomEntity {
             id: value.room.id.clone(),
             base_amount: value.room.base_amount,

@@ -12,7 +12,7 @@ import { Text, VStack, Button, HStack, Image, Flex } from "@chakra-ui/react";
 import { UTXOCard } from "@/components";
 import { useProfilePage } from "@/hooks";
 import { ListStateChain } from "./list-statechain";
-import { ListCoinjoinRoom } from "./list-coinjoin-room";
+import { CoinjoinList } from "..";
 
 interface IProfilePanel { }
 
@@ -114,7 +114,7 @@ export const ProfilePannel: FC<IProfilePanel> = (props) => {
           </VStack>
         </TabPanel>
         <TabPanel>
-          <ListCoinjoinRoom
+          <CoinjoinList
             isLoading={listCoinjoinRoomsQuery.isLoading}
             isError={listCoinjoinRoomsQuery.isError}
             deriv={deriv}

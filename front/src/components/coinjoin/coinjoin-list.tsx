@@ -1,7 +1,7 @@
 import { RoomDto } from "@/dtos";
 import { Spinner, Text, VStack } from "@chakra-ui/react";
 import { FC } from "react";
-import { CoinJoinRoomCard } from "..";
+import { CoinjoinCard } from "..";
 
 interface IListCoinjoinRoom {
   isLoading: boolean;
@@ -9,7 +9,7 @@ interface IListCoinjoinRoom {
   deriv: string;
   data: RoomDto[];
 }
-export const ListCoinjoinRoom: FC<IListCoinjoinRoom> = (props) => {
+export const CoinjoinList: FC<IListCoinjoinRoom> = (props) => {
   const { deriv, data, isLoading, isError } = props;
   if (isLoading)
     return (
@@ -26,7 +26,7 @@ export const ListCoinjoinRoom: FC<IListCoinjoinRoom> = (props) => {
   return (
     <VStack h="100%" w="100%">
       {data?.map((val, index) => (
-        <CoinJoinRoomCard key={index} data={val} deriv={deriv} />
+        <CoinjoinCard key={index} data={val} deriv={deriv} />
       ))}
     </VStack>
   );

@@ -11,11 +11,11 @@ use uuid::Uuid;
 use super::{CoinjoinResult, TraitCoinJoinRepo};
 
 #[derive(Clone)]
-pub struct CoinJoinRepo {
+pub struct CoinjoinRepo {
     pool: Database,
 }
 
-impl CoinJoinRepo {
+impl CoinjoinRepo {
     pub fn new(pool: Database) -> Self {
         Self { pool }
     }
@@ -38,7 +38,7 @@ impl CoinJoinRepo {
 }
 
 #[async_trait]
-impl TraitCoinJoinRepo for CoinJoinRepo {
+impl TraitCoinJoinRepo for CoinjoinRepo {
     async fn get_rooms(&self) -> CoinjoinResult<Vec<RoomEntity>> {
         sqlx::query_as::<_, RoomEntity>(r#"select * from room"#)
             .fetch_all(&self.pool.pool)

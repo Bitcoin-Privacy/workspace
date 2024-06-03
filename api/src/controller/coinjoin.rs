@@ -4,13 +4,12 @@ use actix_web::{
 };
 use bitcoin::{consensus, Transaction};
 use shared::intf::coinjoin::{
-    GetRoomByIdRes, GetStatusRes, GetUnsignedTxnRes, RegisterReq, RegisterRes, RoomDto,
-    RoomListQuery, RoomQueryReq, SetOutputReq, SetOutputRes, SignTxnReq,
+    CoinjoinRegisterReq, CoinjoinRegisterRes, GetRoomByIdRes, GetStatusRes, GetUnsignedTxnRes,
+    RoomDto, RoomListQuery, RoomQueryReq, SetOutputReq, SetOutputRes, SignTxnReq, SignTxnRes,
 };
 
 use crate::{
-    repo::coinjoin::{CoinJoinRepo, TraitCoinJoinRepo},
-    svc::{account, coinjoin},
+    svc::{account, CoinjoinService},
     util::response,
 };
 
@@ -19,8 +18,8 @@ use crate::{
 /// - Find/create peer room -> add to this room
 /// - Blind sign output address
 pub async fn register(
-    coinjoin_repo: Data<CoinJoinRepo>,
-    payload: Json<RegisterReq>,
+    coinjoin_service: Data<CoinjoinService>,
+    payload: Json<CoinjoinRegisterReq>,
 ) -> HttpResponse {
     // Check valid UTXOs
     if let Err(err) = account::validate_utxos(&payload.utxos).await {
@@ -35,16 +34,16 @@ pub async fn register(
         .map(|(utxo, proof)| account::proof_validator(utxo, proof))
         .reduce(|acc, e| acc && e);
 
-    match coinjoin::register(
-        &coinjoin_repo,
-        &payload.utxos,
-        payload.amount,
-        &payload.change_addr,
-        &payload.blinded_out_addr,
-    )
-    .await
+    match coinjoin_service
+        .register(
+            &payload.utxos,
+            payload.amount,
+            &payload.change_addr,
+            &payload.blinded_out_addr,
+        )
+        .await
     {
-        Ok((room, sig)) => response::success(RegisterRes {
+        Ok((room, sig)) => response::success(CoinjoinRegisterRes {
             room: room.into(),
             utxos: payload.utxos.clone(),
             signed_blined_output: sig,
@@ -56,16 +55,12 @@ pub async fn register(
 /// Set output address
 /// - Set plain output address with a sig
 pub async fn set_output(
-    coinjoin_repo: Data<CoinJoinRepo>,
+    coinjoin_service: Data<CoinjoinService>,
     payload: Json<SetOutputReq>,
 ) -> HttpResponse {
-    match coinjoin::set_output(
-        coinjoin_repo,
-        &payload.room_id,
-        &payload.out_addr,
-        &payload.sig,
-    )
-    .await
+    match coinjoin_service
+        .set_output(&payload.room_id, &payload.out_addr, &payload.sig)
+        .await
     {
         Ok(status) => response::success(SetOutputRes { status }),
         Err(message) => response::error(message),
@@ -75,67 +70,33 @@ pub async fn set_output(
 /// Set signature for coinjoin transaction
 ///
 pub async fn set_signature(
-    coinjoin_repo: Data<CoinJoinRepo>,
+    coinjoin_service: Data<CoinjoinService>,
     payload: Json<SignTxnReq>,
 ) -> HttpResponse {
-    // TODO: verify sig
-    let parsed_tx =
-        consensus::deserialize::<Transaction>(&hex::decode(payload.txn.clone()).unwrap()).unwrap();
-
-    for vin in payload.vins.iter() {
-        let signed_input = parsed_tx.input.get(*vin as usize);
-        if let Some(signed_input) = signed_input {
-            let witness = &signed_input.witness;
-            if witness.is_empty() {
-                return HttpResponse::BadRequest().into();
-            };
-            let result = coinjoin_repo
-                .add_script(
-                    &payload.room_id,
-                    *vin,
-                    &serde_json::to_string(signed_input).expect("Cannot encode input"),
-                )
-                .await;
-            return match result {
-                Ok(_) => continue,
-                Err(e) => {
-                    response::error("Cannot write your unlock script to database".to_string() + &e)
-                }
-            };
-        } else {
-            return response::error("Cannot get signed input".to_string());
-        }
+    match coinjoin_service
+        .set_sig(&payload.room_id, &payload.vins, &payload.txn)
+        .await
+    {
+        Ok(status) => response::success(SignTxnRes { status }),
+        Err(message) => response::error(message.to_string()),
     }
-
-    let completed =
-        coinjoin::check_tx_completed(Data::clone(&coinjoin_repo), &payload.room_id).await;
-    match completed {
-        Ok(tx) => {
-            let tx_hex = consensus::encode::serialize_hex(&tx);
-            println!("TX: {:#?}", tx);
-            println!("TX completed: {}", tx_hex)
-        }
-        Err(e) => println!("Check completed got error: {}", e),
-    }
-
-    response::ok()
 }
 
 pub async fn get_room_list(
-    coinjoin_repo: Data<CoinJoinRepo>,
+    coinjoin_service: Data<CoinjoinService>,
     query: web::Query<RoomListQuery>,
 ) -> HttpResponse {
-    match coinjoin::get_room_by_addr(coinjoin_repo, &query.address).await {
+    match coinjoin_service.get_room_by_addr(&query.address).await {
         Ok(tx) => response::success(tx.iter().map(|dto| dto.into()).collect::<Vec<RoomDto>>()),
         Err(e) => response::error(e),
     }
 }
 
 pub async fn get_room_by_id(
-    coinjoin_repo: Data<CoinJoinRepo>,
+    coinjoin_service: Data<CoinjoinService>,
     path: web::Path<RoomQueryReq>,
 ) -> HttpResponse {
-    let room = coinjoin_repo.get_room_by_id(&path.id).await.unwrap();
+    let room = coinjoin_service.get_room_by_id(&path.id).await.unwrap();
 
     let res: GetRoomByIdRes = room.into();
 
@@ -143,10 +104,10 @@ pub async fn get_room_by_id(
 }
 
 pub async fn get_status(
-    coinjoin_repo: Data<CoinJoinRepo>,
+    coinjoin_service: Data<CoinjoinService>,
     path: web::Path<RoomQueryReq>,
 ) -> HttpResponse {
-    match coinjoin_repo.get_room_by_id(&path.id).await {
+    match coinjoin_service.get_room_by_id(&path.id).await {
         Ok(room) => response::success(GetStatusRes {
             status: room.status,
         }),
@@ -155,10 +116,10 @@ pub async fn get_status(
 }
 
 pub async fn get_txn(
-    coinjoin_repo: Data<CoinJoinRepo>,
+    coinjoin_service: Data<CoinjoinService>,
     path: web::Path<RoomQueryReq>,
 ) -> HttpResponse {
-    match coinjoin::get_txn_hex(coinjoin_repo, &path.id).await {
+    match coinjoin_service.get_txn_hex(&path.id).await {
         Ok(tx) => response::success(GetUnsignedTxnRes { tx }),
         Err(e) => response::error(e),
     }

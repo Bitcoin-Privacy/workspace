@@ -2,7 +2,7 @@ use crate::model::entity::coinjoin::{Input, Output, Proof, RoomEntity};
 use async_trait::async_trait;
 
 mod source;
-pub use source::CoinJoinRepo;
+pub use source::CoinjoinRepo;
 
 pub type CoinjoinError = String;
 pub type CoinjoinResult<T> = Result<T, CoinjoinError>;

@@ -1,4 +1,6 @@
 pub mod account;
 pub mod blindsign;
-pub mod coinjoin;
+mod coinjoin;
 pub mod statechain;
+
+pub use coinjoin::CoinjoinService;

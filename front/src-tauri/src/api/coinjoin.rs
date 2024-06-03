@@ -1,8 +1,8 @@
 use anyhow::Result;
 use shared::{
     intf::coinjoin::{
-        GetStatusRes, GetUnsignedTxnRes, RegisterReq, RegisterRes, RoomDto, SetOutputReq,
-        SetOutputRes, SignTxnReq, SignTxnRes,
+        CoinjoinRegisterReq, CoinjoinRegisterRes, GetStatusRes, GetUnsignedTxnRes, RoomDto,
+        SetOutputReq, SetOutputRes, SignTxnReq, SignTxnRes,
     },
     model::Utxo,
 };
@@ -15,8 +15,8 @@ pub async fn register(
     blinded_output_address: &str,
     change_address: &str,
     amount: u64,
-) -> Result<RegisterRes> {
-    let req = RegisterReq {
+) -> Result<CoinjoinRegisterRes> {
+    let req = CoinjoinRegisterReq {
         utxos: input_coins,
         proofs: vec![],
         blinded_out_addr: blinded_output_address.to_string(),
@@ -25,7 +25,7 @@ pub async fn register(
     };
     let body = serde_json::to_value(req).unwrap();
     let res = conn.post("coinjoin/register", &body).await?;
-    Ok(serde_json::from_value::<RegisterRes>(res)?)
+    Ok(serde_json::from_value::<CoinjoinRegisterRes>(res)?)
 }
 
 pub async fn set_output(room_id: &str, out_addr: &str, sig: &str) -> Result<SetOutputRes> {

@@ -31,7 +31,7 @@ pub struct ProofSignature {
 #[cfg_attr(feature = "backend", derive(Deserialize))]
 #[cfg_attr(feature = "frontend", derive(Serialize))]
 #[derive(Debug, Clone)]
-pub struct RegisterReq {
+pub struct CoinjoinRegisterReq {
     pub utxos: Vec<Utxo>,            // List of UTXOs the user wants to register
     pub proofs: Vec<ProofSignature>, // Proof signatures associated with the UTXOs
     pub blinded_out_addr: String,    // Blinded set of output address
@@ -42,7 +42,7 @@ pub struct RegisterReq {
 #[cfg_attr(feature = "backend", derive(Serialize))]
 #[cfg_attr(feature = "frontend", derive(Deserialize))]
 #[derive(Debug, Clone)]
-pub struct RegisterRes {
+pub struct CoinjoinRegisterRes {
     pub room: RoomDto,
     pub utxos: Vec<Utxo>,
     pub signed_blined_output: String,
