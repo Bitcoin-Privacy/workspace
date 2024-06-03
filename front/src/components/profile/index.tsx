@@ -9,18 +9,19 @@ import {
   Spacer,
 } from "@chakra-ui/react";
 import { Text, VStack, Button, HStack, Image, Flex } from "@chakra-ui/react";
-import { CoinJoinRoomCard } from "@/components";
+import { UTXOCard } from "@/components";
 import { useProfilePage } from "@/hooks";
-import { UTXOCard } from "@/components/utxo-card";
-import { ListStateChain } from "@/components/profile/list-statechain";
+import { ListStateChain } from "./list-statechain";
+import { ListCoinjoinRoom } from "./list-coinjoin-room";
 
-interface IProfilePanel {}
+interface IProfilePanel { }
+
 export const ProfilePannel: FC<IProfilePanel> = (props) => {
   const {
     states: {
       deriv,
       listUtxoQuery,
-      listRoomsQuery,
+      listCoinjoinRoomsQuery,
       listTransferStatecoinsQuery,
       listStatecoinsQuery,
     },
@@ -113,11 +114,12 @@ export const ProfilePannel: FC<IProfilePanel> = (props) => {
           </VStack>
         </TabPanel>
         <TabPanel>
-          <VStack>
-            {listRoomsQuery.data?.map((val, id) => (
-              <CoinJoinRoomCard key={id} data={val} deriv={deriv} />
-            ))}
-          </VStack>
+          <ListCoinjoinRoom
+            isLoading={listCoinjoinRoomsQuery.isLoading}
+            isError={listCoinjoinRoomsQuery.isError}
+            deriv={deriv}
+            data={listCoinjoinRoomsQuery.data ?? []}
+          />
         </TabPanel>
       </TabPanels>
     </Tabs>

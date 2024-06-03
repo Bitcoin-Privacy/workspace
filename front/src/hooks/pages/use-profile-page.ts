@@ -45,24 +45,21 @@ export const useProfilePage = () => {
     { enabled: !!addr },
   );
 
-
   const listTransferStatecoinsQuery = useQuery(
     [CachePrefixKeys.ListTrasferStatecoins, addr],
     () => StatechainApi.listTransferStatecoins(deriv),
     { enabled: !!addr },
   );
 
-  const listRoomsQuery = useQuery(
+  const listCoinjoinRoomsQuery = useQuery(
     [CachePrefixKeys.ListRooms, addr],
     () => CoinJoinApi.getRooms(deriv),
     { enabled: !!addr },
   );
-  
 
   const onDetailButtonClick = useCallback(() => {
     router.push(`/profile/${b64EncodeUnicode(deriv)}/statecoins`);
   }, [deriv]);
-
 
   const onSendBtnClick = useCallback(() => {
     router.push(`/profile/${b64EncodeUnicode(deriv)}/send`);
@@ -84,9 +81,13 @@ export const useProfilePage = () => {
     router.push(`/profile/${b64EncodeUnicode(deriv)}/receive-statecoin`);
   }, [deriv]);
 
-  const onVerifyTransferStatecoinClick = ( deriv: String,transfer_msg : String,authkey: String) => {
-    StatechainApi.verifyTransferStatecoin( deriv, transfer_msg, authkey)
-  }
+  const onVerifyTransferStatecoinClick = (
+    deriv: String,
+    transfer_msg: String,
+    authkey: String,
+  ) => {
+    StatechainApi.verifyTransferStatecoin(deriv, transfer_msg, authkey);
+  };
 
   return {
     states: {
@@ -95,9 +96,9 @@ export const useProfilePage = () => {
       hasCopied,
       listUtxoQuery,
       balanceQuery,
-      listRoomsQuery,
+      listCoinjoinRoomsQuery,
       listStatecoinsQuery,
-      listTransferStatecoinsQuery
+      listTransferStatecoinsQuery,
     },
     methods: {
       router,
@@ -108,7 +109,7 @@ export const useProfilePage = () => {
       onWithdrawBtnClick,
       onReceiveStatecoinBtnClick,
       onVerifyTransferStatecoinClick,
-      onDetailButtonClick
+      onDetailButtonClick,
     },
   };
 };

@@ -1,41 +1,18 @@
-import React, { useMemo } from "react";
+import React from "react";
 import Head from "next/head";
-import {
-  Box,
-  Text,
-  VStack,
-  Button,
-  Input,
-  HStack,
-  Spacer,
-  InputGroup,
-  InputRightAddon,
-  FormControl,
-  FormErrorMessage,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  useDisclosure,
-} from "@chakra-ui/react";
-import { useRouter } from "next/router";
-import { useSendPage } from "@/hooks";
-import { ChakraStylesConfig, Select } from "chakra-react-select";
+import { Text, VStack, Button, Input, HStack } from "@chakra-ui/react";
 
 import { Layout, NavBar } from "@/components";
-import { TxStrategyEnum } from "@/dtos";
 import { useSendStateCoinPage } from "@/hooks/pages/use-send-statecoin-page";
-import { StateChainCard } from "@/components/statechain-card";
 import { StatecoinToSendCard } from "@/components/statecoin-to-send-card";
 
 const INPUT_WIDTH = "90%";
 
 export default function SendStateCoin() {
-  const router = useRouter();
   const {
     states: { deriv, form, isLoading, listStatecoinsQuery },
     methods: { handleFormSubmit },
   } = useSendStateCoinPage();
-
 
   return (
     <React.Fragment>

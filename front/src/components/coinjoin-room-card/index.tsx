@@ -1,16 +1,9 @@
-import {
-  Box,
-  Button,
-  HStack,
-  ListItem,
-  Text,
-  UnorderedList,
-} from "@chakra-ui/react";
+import { Box, HStack, ListItem, Text, UnorderedList } from "@chakra-ui/react";
 import Moment from "moment";
 
-import { CoinJoinApi } from "@/apis";
 import { RoomDto } from "@/dtos";
-import { FC } from "react";
+import { FC, useMemo } from "react";
+import { CoinJoinRoomStatus } from "./coinjoin-room-status";
 
 interface ICoinJoinRoomCard {
   key: any;
@@ -19,7 +12,15 @@ interface ICoinJoinRoomCard {
 }
 
 export const CoinJoinRoomCard: FC<ICoinJoinRoomCard> = (props) => {
-  const { key, data } = props;
+  const { key, data, deriv } = props;
+
+  const dues = useMemo(() => {
+    return {
+      endOfDue1: data.created_at + data.due1,
+      endOfDue2: data.created_at + data.due1 + data.due2,
+    };
+  }, [data]);
+
   return (
     <HStack
       key={key}
@@ -41,24 +42,19 @@ export const CoinJoinRoomCard: FC<ICoinJoinRoomCard> = (props) => {
           <ListItem>Number of peers: {data.no_peer}</ListItem>
           <ListItem>Status: {data.status}</ListItem>
           <ListItem>
-            {"Due 1: " +
-              Moment(data.created_at + data.due1).format("MMM DD, HH:mm")}
+            {"Due 1: " + Moment(dues.endOfDue1).format("MMM DD YYYY, HH:mm")}
           </ListItem>
           <ListItem>
-            {"Due 2: " +
-              Moment(data.created_at + data.due1 + data.due2).format(
-                "MMM DD, HH:mm",
-              )}
+            {"Due 2: " + Moment(dues.endOfDue2).format("MMM DD YYYY, HH:mm")}
           </ListItem>
         </UnorderedList>
       </Box>
-      <Button
-        onClick={() => {
-          CoinJoinApi.signTxn(props.deriv, data.id);
-        }}
-      >
-        Sign
-      </Button>
+      <CoinJoinRoomStatus
+        deriv={deriv}
+        roomId={data.id}
+        endOfDue1={data.created_at + data.due1}
+        endOfDue2={data.created_at + data.due1 + data.due2}
+      />
     </HStack>
   );
 };
