@@ -8,10 +8,7 @@ use bitcoin::{
 use curve25519_dalek::RistrettoPoint;
 
 use crate::{
-    constance::COINJOIN_FEE,
-    model::entity::coinjoin::RoomEntity,
-    repo::coinjoin::{CoinjoinRepo, TraitCoinJoinRepo},
-    CFG,
+    constance::COINJOIN_FEE, model::entity::coinjoin::RoomEntity, repo::coinjoin::CoinjoinRepo, CFG,
 };
 use shared::model::Utxo;
 
@@ -30,12 +27,9 @@ impl CoinjoinService {
         amount: u32,
         change_addr: &str,
         output_addr: &str,
-    ) -> Result<(RoomEntity, String), String> {
+    ) -> Result<(RoomEntity, String)> {
         // Find compatible room
-        let room = match self.repo.get_compatible_room(amount).await {
-            Ok(room) => room,
-            Err(e) => return Err(e),
-        };
+        let room = self.repo.get_compatible_room(amount).await?;
 
         // Update room
         let first_utxo = utxo.first().unwrap();
@@ -45,12 +39,12 @@ impl CoinjoinService {
         let change = if total > est {
             total - est
         } else {
-            return Err("Insufficient funds for CoinJoin fee".to_string());
+            return Err(anyhow!("Insufficient funds for CoinJoin fee"));
         };
 
         let des_addr = match super::account::parse_addr_from_str(change_addr, Network::Testnet) {
             Ok(a) => a,
-            Err(e) => return Err(format!("Invalid address: {}", e)),
+            Err(e) => return Err(anyhow!("Invalid address: {}", e)),
         };
 
         let add_peer_res = self
@@ -72,20 +66,14 @@ impl CoinjoinService {
         Ok((room, sig))
     }
 
-    pub async fn set_output(
-        &self,
-        room_id: &str,
-        output_addr: &str,
-        sig: &str,
-    ) -> Result<u8, String> {
+    pub async fn set_output(&self, room_id: &str, output_addr: &str, sig: &str) -> Result<u8> {
         // Attempt to get the room and handle the error if it doesn't exist
         let room = self.repo.get_room_by_id(room_id).await?;
 
         // Attempt to add output and handle any potential error
         self.repo
             .add_output(room_id, output_addr, room.base_amount)
-            .await
-            .map_err(|e| format!("Failed to add output: {}", e))?;
+            .await?;
 
         let keypair = CFG.blind_keypair;
 
@@ -95,7 +83,7 @@ impl CoinjoinService {
         if valid {
             Ok(0)
         } else {
-            Err("Invalid signature".to_string())
+            Err(anyhow!("Invalid signature"))
         }
     }
 
@@ -144,12 +132,12 @@ impl CoinjoinService {
         }
     }
 
-    pub async fn get_txn_hex(&self, room_id: &str) -> Result<String, String> {
+    pub async fn get_txn_hex(&self, room_id: &str) -> Result<String> {
         let txn = self.get_txn(room_id).await?;
         Ok(consensus::encode::serialize_hex(&txn))
     }
 
-    async fn get_txn(&self, room_id: &str) -> Result<bitcoin::Transaction, String> {
+    async fn get_txn(&self, room_id: &str) -> Result<bitcoin::Transaction> {
         let raw_inputs = self.repo.get_inputs(room_id).await?;
         let raw_outputs = self.repo.get_outputs(room_id).await?;
 
@@ -189,26 +177,26 @@ impl CoinjoinService {
         })
     }
 
-    pub async fn get_room_by_addr(&self, addr: &str) -> Result<Vec<RoomEntity>, String> {
+    pub async fn get_room_by_addr(&self, addr: &str) -> Result<Vec<RoomEntity>> {
         self.repo.get_room_by_addr(addr).await
     }
 
-    pub async fn get_room_by_id(&self, id: &str) -> Result<RoomEntity, String> {
+    pub async fn get_room_by_id(&self, id: &str) -> Result<RoomEntity> {
         self.repo.get_room_by_id(id).await
     }
 
-    pub async fn check_tx_completed(&self, room_id: &str) -> Result<bitcoin::Transaction, String> {
+    pub async fn check_tx_completed(&self, room_id: &str) -> Result<bitcoin::Transaction> {
         let mut origin_tx = self.get_txn(room_id).await.unwrap();
         // TODO: check valid tx
         let proofs = self.repo.get_proofs(room_id).await.unwrap();
         if origin_tx.input.len() != proofs.len() {
-            return Err("TX is not completed yet".to_string());
+            return Err(anyhow!("TX is not completed yet"));
         }
         for (id, val) in origin_tx.input.iter_mut().enumerate() {
             let proof = proofs.get(id).unwrap();
             let txin = serde_json::from_str::<TxIn>(&proof.script).unwrap();
             if val.previous_output != txin.previous_output {
-                return Err("Invalid Proofs".to_string());
+                return Err(anyhow!("Invalid Proofs"));
             }
             // TODO: check valid signature
             *val = txin;
@@ -223,7 +211,7 @@ impl CoinjoinService {
         _hex_sig: &str,
         _public_key: RistrettoPoint, // Assuming you have some PublicKey type
         _output_address: &str,
-    ) -> Result<bool, String> {
+    ) -> Result<bool> {
         // let sig = WiredUnblindedSigData::try_from(hex_sig)?
         //     .to_internal_format()
         //     .map_err(|_| "Invalid signature type".to_string())?;

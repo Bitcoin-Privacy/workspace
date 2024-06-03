@@ -2,7 +2,6 @@ use actix_web::{
     web::{self, Data, Json},
     HttpResponse,
 };
-use bitcoin::{consensus, Transaction};
 use shared::intf::coinjoin::{
     CoinjoinRegisterReq, CoinjoinRegisterRes, GetRoomByIdRes, GetStatusRes, GetUnsignedTxnRes,
     RoomDto, RoomListQuery, RoomQueryReq, SetOutputReq, SetOutputRes, SignTxnReq, SignTxnRes,
@@ -63,7 +62,7 @@ pub async fn set_output(
         .await
     {
         Ok(status) => response::success(SetOutputRes { status }),
-        Err(message) => response::error(message),
+        Err(message) => response::error(message.to_string()),
     }
 }
 
@@ -88,7 +87,7 @@ pub async fn get_room_list(
 ) -> HttpResponse {
     match coinjoin_service.get_room_by_addr(&query.address).await {
         Ok(tx) => response::success(tx.iter().map(|dto| dto.into()).collect::<Vec<RoomDto>>()),
-        Err(e) => response::error(e),
+        Err(e) => response::error(e.to_string()),
     }
 }
 
@@ -111,7 +110,7 @@ pub async fn get_status(
         Ok(room) => response::success(GetStatusRes {
             status: room.status,
         }),
-        Err(e) => response::error(e),
+        Err(e) => response::error(e.to_string()),
     }
 }
 
@@ -121,6 +120,6 @@ pub async fn get_txn(
 ) -> HttpResponse {
     match coinjoin_service.get_txn_hex(&path.id).await {
         Ok(tx) => response::success(GetUnsignedTxnRes { tx }),
-        Err(e) => response::error(e),
+        Err(e) => response::error(e.to_string()),
     }
 }
