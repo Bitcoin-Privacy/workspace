@@ -14,16 +14,17 @@ use shared::api;
 use shared::blindsign::WiredUnblindedSigData;
 use shared::model::Utxo;
 
-use crate::api::coinjoin;
 use crate::connector::NodeConnector;
 use crate::db::PoolWrapper;
 use crate::model::{AccountActions, RoomEntity};
 use crate::svc::account;
 use crate::svc::blindsign;
+use crate::{api::coinjoin, model::event};
 
 pub async fn register(
     pool: &PoolWrapper,
     conn: &NodeConnector,
+    window: tauri::Window,
     deriv: &str,
     amount: u64,
     dest: &str,
@@ -33,10 +34,7 @@ pub async fn register(
     let utxo = utxos
         .iter()
         .find(|x: &&Utxo| x.value > amount)
-        .expect(&format!(
-            "Donot have compatible utxo {}, {:?}",
-            amount, utxos
-        ))
+        .ok_or_else(|| anyhow!("Donot have compatible utxo {}, {:?}", amount, utxos))?
         .to_owned();
 
     let (blinded_address, unblinder) = blindsign::blind_message(conn, dest).await?;
@@ -50,22 +48,20 @@ pub async fn register(
     )
     .await?;
 
-    let signed_msg: [u8; 32] = hex::decode(&register_res.signed_blined_output)
-        .expect("Invalid sig")
+    let signed_msg: [u8; 32] = hex::decode(&register_res.signed_blined_output)?
         .try_into()
-        .expect("Invalid size");
+        .map_err(|e| anyhow!("Internal error: {:?}", e))?;
 
     let unblinded_sig = unblinder
         .gen_signed_msg(&signed_msg)
-        .expect("Cannot unblind the sig");
+        .map_err(|e| anyhow!("Cannot unblind the sig: {:?}", e))?;
     let wired = WiredUnblindedSigData::from(unblinded_sig);
     let sig = wired.as_bytes().to_hex_string(Case::Lower);
 
     let room_entity: RoomEntity = register_res.clone().into();
 
-    if let Err(e) = pool.add_or_update_room(deriv, &room_entity) {
-        panic!("Failed to update room {:?}", e);
-    }
+    pool.add_or_update_room(deriv, &room_entity)
+        .map_err(|e| anyhow!("Failed to update room {:?}", e))?;
 
     let (room_id, address, sig_cloned) =
         (register_res.room.id.clone(), dest.to_string(), sig.clone());
@@ -77,19 +73,19 @@ pub async fn register(
 
         if let Err(e) = coinjoin::set_output(&room_id, &address, &sig_cloned).await {
             println!("Set output got error {}", e);
-            // tauri::Window::emit(
-            //     &window,
-            //     "coinjoin-register-complete",
-            //     Some(event::CoinJoinRegisterCompleteEvent { room_id, status: 0 }),
-            // )
-            // .expect("Failed to emit event");
+            tauri::Window::emit(
+                &window,
+                "coinjoin-register-complete",
+                Some(event::CoinJoinRegisterCompleteEvent { room_id, status: 0 }),
+            )
+            .expect("Failed to emit event");
         } else {
-            // tauri::Window::emit(
-            //     &window,
-            //     "coinjoin-register-complete",
-            //     Some(event::CoinJoinRegisterCompleteEvent { room_id, status: 1 }),
-            // )
-            // .expect("Failed to emit event");
+            tauri::Window::emit(
+                &window,
+                "coinjoin-register-complete",
+                Some(event::CoinJoinRegisterCompleteEvent { room_id, status: 1 }),
+            )
+            .expect("Failed to emit event");
         }
     });
 

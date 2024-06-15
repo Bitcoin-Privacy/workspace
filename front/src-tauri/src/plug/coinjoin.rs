@@ -2,16 +2,14 @@ use shared::intf::coinjoin::{GetStatusRes, GetUnsignedTxnRes, RoomDto};
 use tauri::{
     command,
     plugin::{Builder, TauriPlugin},
-    Runtime,
+    Wry,
 };
 
 use tauri::State;
 
-use crate::{
-    connector::NodeConnector, db::PoolWrapper, model::RoomEntity, svc::coinjoin, util, TResult,
-};
+use crate::{connector::NodeConnector, db::PoolWrapper, svc::coinjoin, util, TResult};
 
-pub fn init<R: Runtime>() -> TauriPlugin<R> {
+pub fn init() -> TauriPlugin<Wry> {
     Builder::new("coinjoin")
         .invoke_handler(tauri::generate_handler![
             // Modifier
@@ -28,12 +26,12 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
 async fn register(
     pool: State<'_, PoolWrapper>,
     conn: State<'_, NodeConnector>,
-    // window: tauri::Window,
+    window: tauri::Window,
     deriv: &str,
     address: &str,
     amount: u64,
 ) -> TResult<()> {
-    coinjoin::register(&pool, &conn, deriv, amount, address)
+    coinjoin::register(&pool, &conn, window, deriv, amount, address)
         .await
         .map_err(util::to_string)?;
     Ok(())
