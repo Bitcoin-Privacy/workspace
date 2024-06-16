@@ -3,8 +3,9 @@ use actix_web::{
     HttpResponse,
 };
 use shared::intf::coinjoin::{
-    CoinjoinRegisterReq, CoinjoinRegisterRes, GetRoomByIdRes, GetStatusRes, GetUnsignedTxnRes,
-    RoomDto, RoomListQuery, RoomQueryReq, SetOutputReq, SetOutputRes, SignTxnReq, SignTxnRes,
+    AddressQuery, CoinjoinRegisterReq, CoinjoinRegisterRes, GetRoomByIdRes, GetStatusRes,
+    GetUnsignedTxnRes, RoomDto, RoomListQuery, RoomQueryReq, SetOutputReq, SetOutputRes,
+    SignTxnReq, SignTxnRes,
 };
 
 use crate::{
@@ -20,6 +21,7 @@ pub async fn register(
     coinjoin_service: Data<CoinjoinService>,
     payload: Json<CoinjoinRegisterReq>,
 ) -> HttpResponse {
+    let service = coinjoin_service.get_ref();
     // Check valid UTXOs
     if let Err(err) = account::validate_utxos(&payload.utxos).await {
         return response::error(err);
@@ -33,7 +35,7 @@ pub async fn register(
         .map(|(utxo, proof)| account::proof_validator(utxo, proof))
         .reduce(|acc, e| acc && e);
 
-    match coinjoin_service
+    match service
         .register(
             &payload.utxos,
             payload.amount,
@@ -57,7 +59,8 @@ pub async fn set_output(
     coinjoin_service: Data<CoinjoinService>,
     payload: Json<SetOutputReq>,
 ) -> HttpResponse {
-    match coinjoin_service
+    let service = coinjoin_service.get_ref();
+    match service
         .set_output(&payload.room_id, &payload.out_addr, &payload.sig)
         .await
     {
@@ -72,7 +75,8 @@ pub async fn set_signature(
     coinjoin_service: Data<CoinjoinService>,
     payload: Json<SignTxnReq>,
 ) -> HttpResponse {
-    match coinjoin_service
+    let service = coinjoin_service.get_ref();
+    match service
         .set_sig(&payload.room_id, &payload.vins, &payload.txn)
         .await
     {
@@ -85,7 +89,8 @@ pub async fn get_room_list(
     coinjoin_service: Data<CoinjoinService>,
     query: web::Query<RoomListQuery>,
 ) -> HttpResponse {
-    match coinjoin_service.get_room_by_addr(&query.address).await {
+    let service = coinjoin_service.get_ref();
+    match service.get_room_by_addr(&query.address).await {
         Ok(tx) => response::success(tx.iter().map(|dto| dto.into()).collect::<Vec<RoomDto>>()),
         Err(e) => response::error(e.to_string()),
     }
@@ -94,19 +99,23 @@ pub async fn get_room_list(
 pub async fn get_room_by_id(
     coinjoin_service: Data<CoinjoinService>,
     path: web::Path<RoomQueryReq>,
+    query: web::Query<AddressQuery>,
 ) -> HttpResponse {
-    let room = coinjoin_service.get_room_by_id(&path.id).await.unwrap();
+    let service = coinjoin_service.get_ref();
+    let room = service.get_room_by_id(&path.id).await.unwrap();
 
-    let res: GetRoomByIdRes = room.into();
-
-    response::success(res)
+    response::success(GetRoomByIdRes {
+        room: room.into(),
+        utxo: vec![],
+    })
 }
 
 pub async fn get_status(
     coinjoin_service: Data<CoinjoinService>,
     path: web::Path<RoomQueryReq>,
 ) -> HttpResponse {
-    match coinjoin_service.get_room_by_id(&path.id).await {
+    let service = coinjoin_service.get_ref();
+    match service.get_room_by_id(&path.id).await {
         Ok(room) => response::success(GetStatusRes {
             status: room.status,
         }),
@@ -118,7 +127,8 @@ pub async fn get_txn(
     coinjoin_service: Data<CoinjoinService>,
     path: web::Path<RoomQueryReq>,
 ) -> HttpResponse {
-    match coinjoin_service.get_txn_hex(&path.id).await {
+    let service = coinjoin_service.get_ref();
+    match service.get_txn_hex(&path.id).await {
         Ok(tx) => response::success(GetUnsignedTxnRes { tx }),
         Err(e) => response::error(e.to_string()),
     }

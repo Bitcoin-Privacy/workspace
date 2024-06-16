@@ -50,21 +50,6 @@ impl From<&RoomEntity> for RoomDto {
     }
 }
 
-impl From<RoomEntity> for GetRoomByIdRes {
-    fn from(value: RoomEntity) -> Self {
-        GetRoomByIdRes {
-            id: value.id.to_string(),
-            base_amount: value.base_amount,
-            no_peer: value.no_peer,
-            status: value.status,
-            due1: value.due1,
-            due2: value.due2,
-            created_at: value.created_at.timestamp_millis() as u64,
-            updated_at: value.updated_at.timestamp_millis() as u64,
-        }
-    }
-}
-
 // ---------------------------
 // Input table
 // ---------------------------
