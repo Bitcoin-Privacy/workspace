@@ -1,9 +1,7 @@
 use std::ops::ControlFlow;
 
-use anyhow::anyhow;
-use anyhow::Result;
-use bitcoin::hex::Case;
-use bitcoin::hex::DisplayHex;
+use anyhow::{anyhow, Result};
+use bitcoin::hex::{Case, DisplayHex};
 use bitcoin::{
     consensus, secp256k1::Secp256k1, sighash::SighashCache, EcdsaSighashType, Transaction,
 };

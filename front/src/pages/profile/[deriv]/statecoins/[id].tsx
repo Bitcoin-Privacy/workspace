@@ -2,9 +2,7 @@ import React, { useEffect, useState } from "react";
 import {
   Box,
   Text,
-  VStack,
   Button,
-  HStack,
   Tooltip,
   Flex,
   useDisclosure,
@@ -13,7 +11,6 @@ import {
   ModalContent,
 } from "@chakra-ui/react";
 import { useStatecoinDetail } from "@/hooks/atoms/use-statecoin-detail";
-import Head from "next/head";
 import { Layout, NavBar } from "@/components";
 import QRCodeGenerator from "@/components/qr-code-generator";
 import { AppApi, StatechainApi } from "@/apis";
@@ -47,9 +44,6 @@ export default function StatecoinDetail() {
           <Text>HIHIHIHIHIH</Text>
         </ModalContent>
       </Modal>
-      <Head>
-        <title> Detail Page</title>
-      </Head>
       <Layout>
         <NavBar title={"Detail Page"} />
 
@@ -78,7 +72,7 @@ export default function StatecoinDetail() {
                 maxW="80%"
                 onClick={() => {
                   open(
-                    `https://blockstream.info/testnet/tx/${statecoin?.funding_txid}`
+                    `https://blockstream.info/testnet/tx/${statecoin?.funding_txid}`,
                   );
                 }}
                 p="4px"
@@ -97,7 +91,7 @@ export default function StatecoinDetail() {
                 onOpen;
                 let res = await StatechainApi.withdrawStatecoin(
                   statecoin?.statechain_id as string,
-                  deriv
+                  deriv,
                 );
                 console.log("withdraw ", res);
                 onClose;
