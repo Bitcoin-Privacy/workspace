@@ -1,34 +1,23 @@
-import React, { useMemo, useState } from "react";
-import Head from "next/head";
+import React, { useState } from "react";
 import {
-  Box,
   Text,
   VStack,
   Button,
   Input,
   HStack,
-  Spacer,
   InputGroup,
   InputRightAddon,
   FormControl,
   FormErrorMessage,
-  Flex,
-  Square,
-  Grid,
   Center,
-  useClipboard,
   useDisclosure,
   Modal,
   ModalOverlay,
   ModalContent,
 } from "@chakra-ui/react";
 import { useRouter } from "next/router";
-import { useSendPage } from "@/hooks";
-import { ChakraStylesConfig, Select } from "chakra-react-select";
 import { FaLongArrowAltRight } from "react-icons/fa";
 import { Layout, NavBar } from "@/components";
-import { TxStrategyEnum } from "@/dtos";
-import { FiCheck, FiCopy } from "react-icons/fi";
 import { useDepositPage } from "@/hooks/pages/use-deposit-page";
 import QRCodeGenerator from "@/components/qr-code-generator";
 
@@ -39,23 +28,20 @@ export default function Deposit() {
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   const {
-    states: { depositInfo, deriv, form, isLoading, isError, balanceQuery },
+    states: { depositInfo, deriv, form, isLoading, balanceQuery },
     methods: { handleFormSubmit },
   } = useDepositPage();
 
   const [amount, setAmount] = useState<number>(0);
 
-return (
-  <React.Fragment>
+  return (
+    <React.Fragment>
       <Modal blockScrollOnMount={true} isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
         <ModalContent>
           <Text>HIHIHIHIHIH</Text>
         </ModalContent>
       </Modal>
-      <Head>
-        <title>Deposit Bitcoin</title>
-      </Head>
       <Layout>
         <form onSubmit={handleFormSubmit}>
           <VStack p="0px 16px" spacing="20px">
