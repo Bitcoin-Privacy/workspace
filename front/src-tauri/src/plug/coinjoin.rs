@@ -38,8 +38,8 @@ async fn register(
 }
 
 #[command]
-async fn sign_txn(pool: State<'_, PoolWrapper>, deriv: &str, room_id: &str) -> TResult<()> {
-    coinjoin::sign_txn(&pool, deriv, room_id)
+async fn sign_txn(deriv: &str, room_id: &str) -> TResult<()> {
+    coinjoin::sign_txn(deriv, room_id)
         .await
         .map_err(util::to_string)
 }

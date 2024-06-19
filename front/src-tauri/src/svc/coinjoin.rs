@@ -92,14 +92,14 @@ pub async fn register(
     Ok((register_res.room.id, sig))
 }
 
-pub async fn sign_txn(pool: &PoolWrapper, deriv: &str, room_id: &str) -> Result<()> {
+pub async fn sign_txn(deriv: &str, room_id: &str) -> Result<()> {
     let (account, mut unlocker) = account::get_account(deriv)?;
 
     let res = coinjoin::get_txn(room_id).await?;
     let parsed_tx = consensus::deserialize::<Transaction>(&hex::decode(res.tx.clone())?)?;
     let mut unsigned_tx = parsed_tx.clone();
 
-    let room = pool.get_room(deriv, room_id)?;
+    let room = coinjoin::get_room(deriv, room_id).await?;
 
     let secp = Secp256k1::new();
     let sighash_type = EcdsaSighashType::All;
@@ -110,7 +110,7 @@ pub async fn sign_txn(pool: &PoolWrapper, deriv: &str, room_id: &str) -> Result<
         .iter()
         .enumerate()
         .filter(|(_, input)| {
-            room.utxos
+            room.utxo
                 .iter()
                 .any(|utxo| input.previous_output.txid.to_string() == utxo.txid)
         })
