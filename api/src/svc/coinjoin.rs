@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{ops::Not, str::FromStr};
 
 use anyhow::{anyhow, Result};
 use bitcoin::{
@@ -8,7 +8,9 @@ use bitcoin::{
 use curve25519_dalek::RistrettoPoint;
 
 use crate::{
-    constance::COINJOIN_FEE, model::entity::coinjoin::RoomEntity, repo::coinjoin::CoinjoinRepo, CFG,
+    constance::COINJOIN_FEE,
+    model::entity::coinjoin::{Input, RoomEntity},
+    repo::coinjoin::CoinjoinRepo,
 };
 use shared::model::Utxo;
 
@@ -31,9 +33,6 @@ impl CoinjoinService {
         // Find compatible room
         let room = self.repo.get_compatible_room(amount).await?;
 
-        // Update room
-        let first_utxo = utxo.first().unwrap();
-
         let total: u64 = utxo.iter().map(|utxo| utxo.value).sum();
         let est = (amount + COINJOIN_FEE) as u64;
         let change = if total > est {
@@ -42,24 +41,20 @@ impl CoinjoinService {
             return Err(anyhow!("Insufficient funds for CoinJoin fee"));
         };
 
-        let des_addr = match super::account::parse_addr_from_str(change_addr, Network::Testnet) {
-            Ok(a) => a,
-            Err(e) => return Err(anyhow!("Invalid address: {}", e)),
-        };
+        let des_addr = super::account::parse_addr_from_str(change_addr, Network::Testnet)
+            .map_err(|e| anyhow!("Invalid address: {}", e))?;
 
-        let add_peer_res = self
-            .repo
+        // Update room
+        self.repo
             .add_peer(
                 room.id,
-                vec![first_utxo.txid.to_string()],
-                vec![first_utxo.vout],
-                vec![first_utxo.value],
+                utxo.iter().map(|utxo| utxo.txid.to_string()).collect(),
+                utxo.iter().map(|utxo| utxo.vout).collect(),
+                utxo.iter().map(|utxo| utxo.value).collect(),
                 change,
                 des_addr.to_string(),
             )
-            .await;
-
-        println!("ADD PEER RES: {:#?}", add_peer_res);
+            .await?;
 
         let sig = super::blindsign::blind_sign(output_addr)?;
 
@@ -75,12 +70,11 @@ impl CoinjoinService {
             .add_output(room_id, output_addr, room.base_amount)
             .await?;
 
-        let keypair = CFG.blind_keypair;
-
-        // Process signature errors in one go
-        let valid = self.validate_signature(sig, keypair.public(), output_addr)?;
+        // Verify signature
+        let valid = super::blindsign::verifiy_sig(sig, output_addr)?;
 
         if valid {
+            // TODO: check if signature used or not
             Ok(0)
         } else {
             Err(anyhow!("Invalid signature"))
@@ -92,29 +86,28 @@ impl CoinjoinService {
 
         for vin in vins.iter() {
             let signed_input = parsed_tx.input.get(*vin as usize);
-            if let Some(signed_input) = signed_input {
-                let witness = &signed_input.witness;
-                if witness.is_empty() {
-                    return Err(anyhow!("Witness is empty"));
-                };
-                let result = self
-                    .repo
-                    .add_script(
-                        room_id,
-                        *vin,
-                        &serde_json::to_string(signed_input).expect("Cannot encode input"),
-                    )
-                    .await;
-                return match result {
-                    Ok(_) => continue,
-                    Err(e) => Err(anyhow!(
-                        "Failed to update the signature to database! Detail {:?}",
-                        e
-                    )),
-                };
-            } else {
-                return Err(anyhow!("Cannot get signed input"));
-            }
+            let signed_input = signed_input.ok_or(anyhow!("Cannot get signed input"))?;
+            let witness = &signed_input.witness;
+            witness
+                .is_empty()
+                .not()
+                .then_some(())
+                .ok_or(anyhow!("Witness is empty"))?;
+            let result = self
+                .repo
+                .add_script(
+                    room_id,
+                    *vin,
+                    &serde_json::to_string(signed_input).expect("Cannot encode input"),
+                )
+                .await;
+            return match result {
+                Ok(_) => continue,
+                Err(e) => Err(anyhow!(
+                    "Failed to update the signature to database! Detail {:?}",
+                    e
+                )),
+            };
         }
 
         let completed = self.check_tx_completed(room_id).await;
@@ -177,12 +170,22 @@ impl CoinjoinService {
         })
     }
 
-    pub async fn get_room_by_addr(&self, addr: &str) -> Result<Vec<RoomEntity>> {
-        self.repo.get_room_by_addr(addr).await
+    pub async fn get_rooms_by_addr(&self, addr: &str) -> Result<Vec<RoomEntity>> {
+        self.repo.get_rooms_by_addr(addr).await
     }
 
     pub async fn get_room_by_id(&self, id: &str) -> Result<RoomEntity> {
         self.repo.get_room_by_id(id).await
+    }
+
+    pub async fn get_room_detail_by_id(
+        &self,
+        id: &str,
+        addr: &str,
+    ) -> Result<(RoomEntity, Vec<Input>)> {
+        let room = self.repo.get_room_by_id(id).await?;
+        let utxo = self.repo.get_inputs_by_addr(id, addr).await?;
+        Ok((room, utxo))
     }
 
     pub async fn check_tx_completed(&self, room_id: &str) -> Result<bitcoin::Transaction> {

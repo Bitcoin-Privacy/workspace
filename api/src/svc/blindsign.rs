@@ -1,4 +1,5 @@
 use anyhow::{anyhow, Result};
+use shared::blindsign::WiredUnblindedSigData;
 
 use crate::CFG;
 
@@ -21,5 +22,19 @@ pub fn blind_sign(msg: &str) -> Result<String> {
     match session.sign_ep(&msg, CFG.blind_keypair.private()) {
         Ok(signed_blind_output) => Ok(hex::encode(signed_blind_output)),
         Err(e) => Err(anyhow!(e.to_string())), // Assuming e can be converted to String
+    }
+}
+
+pub fn verifiy_sig(hex_sig: &str, msg: &str) -> Result<bool> {
+    let keypair = CFG.blind_keypair;
+    let sig = WiredUnblindedSigData::try_from(hex_sig)
+        .map_err(|e| anyhow!(e))?
+        .to_internal_format()
+        .map_err(|_| anyhow!("Invalid signature type"))?;
+
+    if !sig.msg_authenticate::<sha3::Sha3_512, &[u8]>(keypair.public(), msg.as_bytes()) {
+        Ok(false)
+    } else {
+        Ok(true)
     }
 }

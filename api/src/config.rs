@@ -21,7 +21,7 @@ pub struct Config {
 
 impl Config {
     fn new() -> Self {
-        dotenv().ok(); // Load .env file
+        dotenv().ok(); // Load `.env` file
 
         let port = get_env::<String>("PORT", Some("6080".to_string()));
         let postgres_uri = get_env::<String>("POSTGRES_URI", None);

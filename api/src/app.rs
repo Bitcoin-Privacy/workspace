@@ -16,7 +16,6 @@ pub fn config(cfg: &mut web::ServiceConfig, db: db::Database) {
                 http::StatusCode::INTERNAL_SERVER_ERROR,
                 middleware::add_error_header,
             ))
-            // .wrap(middleware::LoggingMiddleware)
             .configure(|cfg| route::config(cfg, db)),
     );
 }

@@ -7,6 +7,7 @@ use shared::intf::coinjoin::{
     GetUnsignedTxnRes, RoomDto, RoomListQuery, RoomQueryReq, SetOutputReq, SetOutputRes,
     SignTxnReq, SignTxnRes,
 };
+use sqlx::query;
 
 use crate::{
     svc::{account, CoinjoinService},
@@ -90,7 +91,7 @@ pub async fn get_room_list(
     query: web::Query<RoomListQuery>,
 ) -> HttpResponse {
     let service = coinjoin_service.get_ref();
-    match service.get_room_by_addr(&query.address).await {
+    match service.get_rooms_by_addr(&query.address).await {
         Ok(tx) => response::success(tx.iter().map(|dto| dto.into()).collect::<Vec<RoomDto>>()),
         Err(e) => response::error(e.to_string()),
     }
@@ -102,11 +103,14 @@ pub async fn get_room_by_id(
     query: web::Query<AddressQuery>,
 ) -> HttpResponse {
     let service = coinjoin_service.get_ref();
-    let room = service.get_room_by_id(&path.id).await.unwrap();
+    let (room, utxo) = service
+        .get_room_detail_by_id(&path.id, &query.address)
+        .await
+        .unwrap();
 
     response::success(GetRoomByIdRes {
         room: room.into(),
-        utxo: vec![],
+        utxo: utxo.iter().map(|input| input.into()).collect(),
     })
 }
 

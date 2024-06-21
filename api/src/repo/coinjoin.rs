@@ -18,7 +18,7 @@ impl CoinjoinRepo {
         Self { pool }
     }
 
-    pub async fn get_room_by_addr(&self, addr: &str) -> Result<Vec<RoomEntity>> {
+    pub async fn get_rooms_by_addr(&self, addr: &str) -> Result<Vec<RoomEntity>> {
         let res = sqlx::query_as::<_, RoomEntity>(
             r#"select r.*
             from room r
@@ -34,12 +34,12 @@ impl CoinjoinRepo {
         Ok(res)
     }
 
-    pub async fn get_rooms(&self) -> Result<Vec<RoomEntity>> {
-        let res = sqlx::query_as::<_, RoomEntity>(r#"select * from room"#)
-            .fetch_all(&self.pool.pool)
-            .await?;
-        Ok(res)
-    }
+    // pub async fn get_rooms(&self) -> Result<Vec<RoomEntity>> {
+    //     let res = sqlx::query_as::<_, RoomEntity>(r#"select * from room"#)
+    //         .fetch_all(&self.pool.pool)
+    //         .await?;
+    //     Ok(res)
+    // }
 
     pub async fn get_compatible_room(&self, base_amount: u32) -> Result<RoomEntity> {
         let rooms = sqlx::query_as::<_, RoomEntity>(
@@ -92,9 +92,7 @@ impl CoinjoinRepo {
         let amounts_array: Vec<i64> = amounts.into_iter().map(|amount| amount as i64).collect();
 
         let query = sqlx::query(
-            r#"
-        select add_new_peer($1, $2::varchar[], $3::int[], $4::bigint[], $5, $6);
-    "#,
+            r#"select add_new_peer($1, $2::varchar[], $3::int[], $4::bigint[], $5, $6);"#,
         )
         .bind(room_id)
         .bind(&txids_array)
@@ -120,6 +118,17 @@ impl CoinjoinRepo {
             r#"select * from txin where room_id = $1::uuid order by txid"#,
         )
         .bind(room_id)
+        .fetch_all(&self.pool.pool)
+        .await?;
+        Ok(res)
+    }
+
+    pub async fn get_inputs_by_addr(&self, room_id: &str, address: &str) -> Result<Vec<Input>> {
+        let res = sqlx::query_as::<_, Input>(
+            r#"select * from txin where room_id = $1::uuid and address = $2 order by txid"#,
+        )
+        .bind(room_id)
+        .bind(address)
         .fetch_all(&self.pool.pool)
         .await?;
         Ok(res)

@@ -1,4 +1,7 @@
-use shared::intf::coinjoin::{GetRoomByIdRes, RoomDto};
+use shared::{
+    intf::coinjoin::RoomDto,
+    model::{Status, Utxo},
+};
 
 // ---------------------------
 // Room table
@@ -64,6 +67,17 @@ pub struct Input {
     #[sqlx(try_from = "i64")]
     pub amount: u32,
     pub created_at: chrono::DateTime<chrono::Utc>,
+}
+
+impl From<&Input> for Utxo {
+    fn from(value: &Input) -> Self {
+        Utxo {
+            txid: value.txid.clone(),
+            vout: value.vout,
+            value: value.amount as u64,
+            status: Status { confirmed: true },
+        }
+    }
 }
 
 // ---------------------------
