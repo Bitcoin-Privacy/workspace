@@ -4,7 +4,6 @@ import {
   Image,
   VStack,
   Flex,
-  HStack,
   Button,
   Badge,
   Box,
@@ -13,14 +12,14 @@ import { useClipboard } from "@chakra-ui/react";
 import { FaCheckCircle, FaClock } from "react-icons/fa";
 import { FiCheck, FiCopy } from "react-icons/fi";
 
-interface UTXOCardProps {
-  val: UtxoDto;
+interface IUtxoCard {
+  data: UtxoDto;
   key: number;
 }
 
-export function UTXOCard(props: UTXOCardProps) {
-  const { val, key } = props;
-  const { onCopy, value, setValue, hasCopied } = useClipboard(val.txid);
+export function UtxoCard(props: IUtxoCard) {
+  const { data: val, key } = props;
+  const { onCopy, hasCopied } = useClipboard(val.txid);
 
   return (
     <Flex

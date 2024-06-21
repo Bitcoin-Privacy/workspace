@@ -1,16 +1,16 @@
-import { StateCoinDto } from "@/dtos";
+import { StateCoinTransferDto } from "@/dtos";
 import { Spinner, Text, VStack } from "@chakra-ui/react";
 import { FC } from "react";
-import { StateChainCard } from "../statechain-card";
+import { StateChainTransferCard } from "./statechain-transfer-card";
 
-interface IListStateChain {
+interface IStateChainTransferList {
   isLoading: boolean;
   isError: boolean;
   deriv: string;
-  data: StateCoinDto[];
+  data: StateCoinTransferDto[];
 }
 
-export const ListStateChain: FC<IListStateChain> = (props) => {
+export const StateChainTransferList: FC<IStateChainTransferList> = (props) => {
   const { deriv, data, isLoading, isError } = props;
   if (isLoading)
     return (
@@ -27,7 +27,7 @@ export const ListStateChain: FC<IListStateChain> = (props) => {
   return (
     <VStack h="100%" w="100%">
       {data?.map((val, index) => (
-        <StateChainCard val={val} key={index} deriv={deriv} />
+        <StateChainTransferCard data={val} key={index} deriv={deriv} />
       ))}
     </VStack>
   );

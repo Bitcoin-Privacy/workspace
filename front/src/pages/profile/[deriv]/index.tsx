@@ -1,12 +1,7 @@
 import React from "react";
-import { Spacer, Box, Link } from "@chakra-ui/react";
+import { Box, Link } from "@chakra-ui/react";
 import { Text, VStack, Button, HStack, Image, Flex } from "@chakra-ui/react";
-import {
-  FiArrowDownLeft,
-  FiArrowUpRight,
-  FiCheck,
-  FiCopy,
-} from "react-icons/fi";
+import { FiArrowDownLeft, FiArrowUpRight } from "react-icons/fi";
 import { TiMinus } from "react-icons/ti";
 import { FaPlus } from "react-icons/fa";
 import { IoMdSwap } from "react-icons/io";
@@ -16,10 +11,9 @@ import { useProfilePage } from "@/hooks";
 
 export default function ProfilePage() {
   const {
-    states: { deriv, addr, hasCopied, balanceQuery },
+    states: { deriv, addr, balanceQuery },
     methods: {
       router,
-      onCopy,
       onSendBtnClick,
       onDepositBtnClick,
       onSendStatecoinBtnClick,
@@ -63,20 +57,20 @@ export default function ProfilePage() {
           <VStack
             justifyContent="center"
             id="control_box"
-            bg={"gray.900"}
-            borderRadius={"8px"}
+            bg="gray.900"
+            borderRadius="8px"
             p="20px 16px"
             spacing="80px"
             w="full"
           >
-            <Flex w="full" alignItems="center" justifyContent="space-between">
-              <HStack align="top" h="full">
+            <Flex w="full" alignItems="start" justifyContent="space-between">
+              <HStack w="100%" alignItems="start" flex="1">
                 <Image
                   borderRadius="full"
                   boxSize="50px"
                   src="https://bit.ly/dan-abramov"
                 />
-                <VStack align="start" pl="5px">
+                <VStack align="start" pl="5px" w="100%" flex="1">
                   <Text fontWeight="700" fontSize="20px">
                     Account {deriv.slice(0, deriv.indexOf("/"))}
                   </Text>
@@ -91,9 +85,8 @@ export default function ProfilePage() {
                   </Link>
                 </VStack>
               </HStack>
-
               <VStack
-                bg={"gray.600"}
+                bg="gray.600"
                 fontSize="24px"
                 fontWeight="200"
                 textColor="white"

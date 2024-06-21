@@ -1,5 +1,5 @@
 import { TauriConnection } from "./core";
-import { InitState, mapToInitState, AccountDto } from "@/dtos";
+import { InitState, mapToInitState, AccountDto, UtxoDto } from "@/dtos";
 
 export const AppApi = Object.freeze({
   /* Utils */
@@ -54,8 +54,8 @@ export const AppApi = Object.freeze({
       deriv,
     });
   },
-  async getUtxos(deriv: string): Promise<any[]> {
-    return await TauriConnection.callAPI<any[]>(this.name("get_utxos"), {
+  async getUtxos(deriv: string): Promise<UtxoDto[]> {
+    return await TauriConnection.callAPI<UtxoDto[]>(this.name("get_utxos"), {
       address: deriv,
     });
   },
