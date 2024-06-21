@@ -9,9 +9,8 @@ where
             eprintln!("Cannot parse {}: {:?}", key, e);
             panic!("Invalid format for {}", key)
         }),
-        Err(_) => default.expect(&format!(
-            "{} must be set in .env file or have a default",
-            key
-        )),
+        Err(_) => {
+            default.unwrap_or_else(|| panic!("{} must be set in .env file or have a default", key))
+        }
     }
 }

@@ -1,3 +1,7 @@
+use crate::{
+    svc::{account, CoinjoinService},
+    util::response,
+};
 use actix_web::{
     web::{self, Data, Json},
     HttpResponse,
@@ -6,12 +10,6 @@ use shared::intf::coinjoin::{
     AddressQuery, CoinjoinRegisterReq, CoinjoinRegisterRes, GetRoomByIdRes, GetStatusRes,
     GetUnsignedTxnRes, RoomDto, RoomListQuery, RoomQueryReq, SetOutputReq, SetOutputRes,
     SignTxnReq, SignTxnRes,
-};
-use sqlx::query;
-
-use crate::{
-    svc::{account, CoinjoinService},
-    util::response,
 };
 
 /// Register to CoinJoin Room

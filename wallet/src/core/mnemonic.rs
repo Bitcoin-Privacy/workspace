@@ -65,7 +65,7 @@ impl Mnemonic {
             .collect::<Vec<String>>()
     }
 
-    /// create a seed from mnemonic
+    /// Create a seed from mnemonic
     /// with optional passphrase for plausible deniability see BIP39
     pub fn to_seed(&self, pd_passphrase: Option<&str>) -> Seed {
         let mut mac = Hmac::new(Sha512::new(), self.to_string().as_bytes());
@@ -90,7 +90,7 @@ impl Mnemonic {
         Self::new(random.as_slice())
     }
 
-    /// create a mnemonic for some data
+    /// Create a mnemonic for some data
     pub fn new(data: &[u8]) -> Result<Mnemonic, Error> {
         if data.len() % 4 != 0 {
             return Err(Error::Mnemonic(

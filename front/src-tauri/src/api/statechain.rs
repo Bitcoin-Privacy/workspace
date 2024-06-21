@@ -1,17 +1,12 @@
 use anyhow::Result;
-use bitcoin::script;
-use reqwest::{Client, Response};
-use serde::Serialize;
 use shared::{
     intf::statechain::{
-        self, CreateBkTxnReq, CreateBkTxnRes, GetNonceReq, GetNonceRes, GetPartialSignatureReq,
-        GetPartialSignatureRes, GetTransferMessageReq, GetTransferMessageRes, KeyRegisterReq,
-        KeyRegisterRes, ListStatecoinsReq, TransferMessage, TransferMessageReq, UpdateKeyReq,
-        UpdateKeyRes, VerifyStatecoinReq, VerifyStatecoinRes,
+        CreateBkTxnReq, CreateBkTxnRes, GetNonceReq, GetNonceRes, GetPartialSignatureReq,
+        GetPartialSignatureRes, GetTransferMessageRes, KeyRegisterReq, KeyRegisterRes,
+        TransferMessageReq, UpdateKeyReq, UpdateKeyRes, VerifyStatecoinReq, VerifyStatecoinRes,
     },
     model::Status,
 };
-use tauri::http::Uri;
 
 extern crate reqwest;
 

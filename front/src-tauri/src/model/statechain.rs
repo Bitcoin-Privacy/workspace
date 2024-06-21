@@ -1,6 +1,6 @@
 use secp256k1::{PublicKey, SecretKey};
 use serde::{Deserialize, Serialize};
-use sqlx::types::chrono::{self, NaiveDateTime};
+use sqlx::types::chrono::{self};
 #[derive(sqlx::FromRow, Debug, Clone, Deserialize, Serialize)]
 pub struct Statecoin {
     pub tx_n: i64,

@@ -111,7 +111,7 @@ impl Account {
         &self.instantiated
     }
 
-    /// look ahead from last seen
+    /// Look ahead from last seen
     pub fn do_look_ahead(&mut self, seen: Option<u32>) -> Result<Vec<(u32, ScriptBuf)>, Error> {
         use std::cmp::max;
 
@@ -136,13 +136,6 @@ impl Account {
         let kix = self.instantiated.len() as u32;
 
         let scripter = |public: &PublicKey, _| match self.address_type {
-            // AddrType::P2SHWPKH => Builder::new()
-            //     .push_opcode(all::OP_DUP)
-            //     .push_opcode(all::OP_HASH160)
-            //     .push_slice(hash160::Hash::hash(&public.serialize()).to_byte_array())
-            //     .push_opcode(all::OP_EQUALVERIFY)
-            //     .push_opcode(all::OP_CHECKSIG)
-            //     .into_script(),
             AddrType::P2WPKH => Builder::new()
                 .push_opcode(all::OP_DUP)
                 .push_opcode(all::OP_HASH160)
@@ -192,7 +185,7 @@ impl Account {
         self.next as usize
     }
 
-    // get all pubkey scripts of this account
+    // Get all pubkey scripts of this account
     pub fn get_scripts(
         &self,
     ) -> impl Iterator<Item = (u32, ScriptBuf, Option<Vec<u8>>, Option<u16>)> + '_ {
@@ -230,7 +223,7 @@ impl Account {
         }
     }
 
-    /// sign a transaction with keys in this account works for types except P2WSH
+    /// Sign a transaction with keys in this account works for types except P2WSH
     pub fn sign<R>(
         &self,
         transaction: &mut Transaction,
@@ -242,7 +235,7 @@ impl Account {
         R: Fn(&OutPoint) -> Option<TxOut>,
     {
         let mut signed = 0;
-        //TODO(stevenroose) try to prevent this clone here
+        // TODO: try to prevent this clone here
         let mut txclone = transaction.clone();
         let mut bip143hasher = SighashCache::new(&mut txclone);
         for (ix, input) in transaction.input.iter_mut().enumerate() {
