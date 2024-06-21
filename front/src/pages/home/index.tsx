@@ -1,13 +1,12 @@
-import Head from "next/head";
-import { useRouter } from "next/router";
 import React, { useMemo } from "react";
-import { FiPlus } from "react-icons/fi";
 import { Box, Text, VStack, HStack, Avatar, Circle } from "@chakra-ui/react";
+import { FiPlus } from "react-icons/fi";
+import { useRouter } from "next/router";
+import { useQuery } from "react-query";
 
 import { Layout } from "@/components";
 import { AppApi } from "@/apis";
 import { CachePrefixKeys, DEFAULT_AVATAR } from "@/consts";
-import { useQuery } from "react-query";
 import { derivBase64 } from "@/utils";
 
 export default function Home() {
@@ -23,7 +22,7 @@ export default function Home() {
   }, [listProfilesQuery.data?.length]);
 
   return (
-    <Layout title="Home">
+    <Layout header title="Home">
       <VStack textAlign="center" p="10px 16px" h="100%">
         <VStack
           w="100%"

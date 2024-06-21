@@ -9,6 +9,7 @@ interface IListStateChain {
   deriv: string;
   data: StateCoinDto[];
 }
+
 export const ListStateChain: FC<IListStateChain> = (props) => {
   const { deriv, data, isLoading, isError } = props;
   if (isLoading)

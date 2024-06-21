@@ -5,3 +5,4 @@ export * from "./navbar";
 export * from "./coinjoin";
 export * from "./profile";
 export * from "./utxo-card";
+export * from "./copier";

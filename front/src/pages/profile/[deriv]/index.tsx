@@ -11,7 +11,7 @@ import { TiMinus } from "react-icons/ti";
 import { FaPlus } from "react-icons/fa";
 import { IoMdSwap } from "react-icons/io";
 
-import { Layout, ProfilePannel } from "@/components";
+import { Copier, Layout, ProfilePannel } from "@/components";
 import { useProfilePage } from "@/hooks";
 
 export default function ProfilePage() {
@@ -57,7 +57,7 @@ export default function ProfilePage() {
   ];
 
   return (
-    <Layout title={"Account " + deriv.slice(0, deriv.indexOf("/"))}>
+    <Layout header back>
       <VStack spacing="8px" h="100vh" w="100%" p="20px 16px">
         <VStack spacing="36px" w="90%">
           <VStack
@@ -69,31 +69,28 @@ export default function ProfilePage() {
             spacing="80px"
             w="full"
           >
-            <Flex w="full" alignItems={"center"} justifyContent={"center"}>
-              <HStack>
-                <Link
-                  href={`https://blockstream.info/testnet/address/${addr}`}
-                  rel="noopener noreferrer"
-                  target="_blank"
-                >
-                  <Image
-                    borderRadius="full"
-                    boxSize="50px"
-                    src="https://bit.ly/dan-abramov"
-                  />
-                </Link>
-                <Button
-                  onClick={onCopy}
-                  bgColor={"cyan.200"}
-                  rightIcon={hasCopied ? <FiCheck /> : <FiCopy />}
-                  borderRadius={"16"}
-                >
-                  <Text isTruncated maxW={"320px"} p="5px">
-                    {addr}
+            <Flex w="full" alignItems="center" justifyContent="space-between">
+              <HStack align="top" h="full">
+                <Image
+                  borderRadius="full"
+                  boxSize="50px"
+                  src="https://bit.ly/dan-abramov"
+                />
+                <VStack align="start" pl="5px">
+                  <Text fontWeight="700" fontSize="20px">
+                    Account {deriv.slice(0, deriv.indexOf("/"))}
                   </Text>
-                </Button>
+                  <Copier content={addr} />
+                  <Link
+                    display="block"
+                    href={`https://blockstream.info/testnet/address/${addr}`}
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
+                    View on explorer
+                  </Link>
+                </VStack>
               </HStack>
-              <Spacer />
 
               <VStack
                 bg={"gray.600"}
