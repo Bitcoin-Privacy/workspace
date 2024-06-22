@@ -1,3 +1,4 @@
+use anyhow::{anyhow, Result};
 use bitcoin::bip32::{ChildNumber, Xpub};
 use bitcoin::hashes::{hash160, Hash};
 use bitcoin::script::PushBytesBuf;
@@ -9,6 +10,7 @@ use bitcoin::{
     OutPoint, Transaction,
 };
 use bitcoin::{EcdsaSighashType, Network, PrivateKey, ScriptBuf};
+use shared::{api, model::Utxo};
 use std::sync::Arc;
 
 use crate::error::Error;
@@ -77,6 +79,10 @@ impl Account {
             look_ahead,
             network,
         }
+    }
+
+    fn get_addr(&self) -> String {
+        return self.get_key(0).unwrap().address.to_string();
     }
 
     pub fn address_type(&self) -> AddrType {
@@ -220,6 +226,34 @@ impl Account {
             Ok(priv_key)
         } else {
             Err(Error::Unsupported("Cannot find suitable subaccount"))
+        }
+    }
+
+    pub async fn get_utxo(&self, amount: u64) -> Result<Vec<Utxo>> {
+        let utxos = api::get_utxo(&self.get_addr()).await?;
+        let mut selected_utxos = Vec::new();
+        let mut total_value = 0;
+
+        // Sort UTXOs in descending order by value
+        let mut sorted_utxos = utxos.to_vec();
+        sorted_utxos.sort_by(|a, b| b.value.cmp(&a.value));
+
+        for utxo in sorted_utxos {
+            if total_value >= amount {
+                break;
+            }
+            selected_utxos.push(utxo.clone());
+            total_value += utxo.value;
+        }
+
+        if total_value < amount {
+            Err(anyhow!(
+                "Do not have compatible UTXOs for amount {}, {:?}",
+                amount,
+                utxos
+            ))
+        } else {
+            Ok(selected_utxos)
         }
     }
 

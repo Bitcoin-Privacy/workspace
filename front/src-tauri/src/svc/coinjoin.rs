@@ -8,9 +8,7 @@ use bitcoin::{
 use shared::intf::coinjoin::{GetStatusRes, RoomDto};
 use tokio::time::{sleep, Duration};
 
-use shared::api;
 use shared::blindsign::WiredUnblindedSigData;
-use shared::model::Utxo;
 
 use crate::connector::NodeConnector;
 use crate::db::PoolWrapper;
@@ -28,18 +26,13 @@ pub async fn register(
     dest: &str,
 ) -> Result<(String, String)> {
     let acct = account::get_internal_account(deriv)?;
-    let utxos = api::get_utxo(&acct.get_addr()).await?;
-    let utxo = utxos
-        .iter()
-        .find(|x: &&Utxo| x.value > amount)
-        .ok_or_else(|| anyhow!("Donot have compatible utxo {}, {:?}", amount, utxos))?
-        .to_owned();
+    let utxos = acct.get_utxo(amount).await?;
 
     let (blinded_address, unblinder) = blindsign::blind_message(conn, dest).await?;
 
     let register_res = coinjoin::register(
         conn,
-        vec![utxo],
+        utxos,
         &hex::encode(blinded_address),
         &acct.get_addr(),
         amount,
@@ -66,7 +59,7 @@ pub async fn register(
 
     tokio::spawn(async move {
         // Generate a random number of seconds
-        let random_delay = rand::random::<u64>() % 60; // for example, 0 to 59 seconds
+        let random_delay = rand::random::<u64>() % 60;
         sleep(Duration::from_secs(random_delay)).await;
 
         if let Err(e) = coinjoin::set_output(&room_id, &address, &sig_cloned).await {

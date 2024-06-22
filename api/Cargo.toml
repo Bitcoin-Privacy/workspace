@@ -58,5 +58,5 @@ sqlx = { workspace = true, features = [
 ] }
 musig2 = "0.0.11"
 
-shuttle-actix-web = "0.44"
-shuttle-runtime = "0.44"
+shuttle-actix-web = "0.46"
+shuttle-runtime = "0.46"

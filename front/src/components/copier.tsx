@@ -23,7 +23,7 @@ export const Copier: FC<ICopier> = (props) => {
       rightIcon={hasCopied ? <FiCheck /> : <FiCopy />}
       colorScheme="white"
     >
-      <Text isTruncated maxW="320px" p="5px">
+      <Text isTruncated maxW="320px">
         {content}
       </Text>
     </Button>
