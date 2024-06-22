@@ -187,7 +187,7 @@ export default function Send() {
                 <Spacer />
                 <Text>
                   {(balanceQuery.data !== undefined
-                    ? balanceQuery.data / 10000000
+                    ? balanceQuery.data / 100000000
                     : "-") + " BTC"}
                 </Text>
               </HStack>

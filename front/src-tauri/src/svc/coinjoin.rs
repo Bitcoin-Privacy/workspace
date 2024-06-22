@@ -90,7 +90,7 @@ pub async fn sign_txn(deriv: &str, room_id: &str) -> Result<()> {
     let parsed_tx = consensus::deserialize::<Transaction>(&hex::decode(res.tx.clone())?)?;
     let mut unsigned_tx = parsed_tx.clone();
 
-    let room = coinjoin::get_room(deriv, room_id).await?;
+    let room = coinjoin::get_room(&account.get_addr(), room_id).await?;
 
     let secp = Secp256k1::new();
     let sighash_type = EcdsaSighashType::All;

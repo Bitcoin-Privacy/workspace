@@ -47,3 +47,19 @@ pub async fn get_balance(address: &str) -> Result<u64> {
     let utxos = get_utxo(address).await?;
     Ok(utxos.iter().map(|utxo| utxo.value).sum())
 }
+
+pub async fn broadcast_tx(tx_hex: String) -> Result<String> {
+    let url = "https://blockstream.info/testnet/api/tx";
+    let client = reqwest::Client::new();
+    let res = client
+        .post(url)
+        .header("Content-Type", "text/plain")
+        .body(tx_hex)
+        .send()
+        .await?;
+    if res.status().is_success() {
+        Ok(res.text().await?)
+    } else {
+        Err(anyhow::anyhow!("Broadcast error: {}", res.text().await?))
+    }
+}

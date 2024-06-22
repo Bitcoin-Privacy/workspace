@@ -185,6 +185,7 @@ impl CoinjoinService {
     ) -> Result<(RoomEntity, Vec<Input>)> {
         let room = self.repo.get_room_by_id(id).await?;
         let utxo = self.repo.get_inputs_by_addr(id, addr).await?;
+        print!("utxo of {}, {}: {:?}", id, addr, utxo);
         Ok((room, utxo))
     }
 

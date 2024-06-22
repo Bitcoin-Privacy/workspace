@@ -1,33 +1,26 @@
 use anyhow::anyhow;
 use anyhow::Result;
-use bitcoin::TapSighash;
 use bitcoin::{
-    absolute::{self, LockTime},
-    consensus,
+    absolute, consensus,
     hex::DisplayHex,
-    secp256k1::{rand, Keypair, PublicKey, Secp256k1, SecretKey},
-    sighash::{Prevouts, SighashCache},
-    transaction::{self, Version},
-    Address, Amount, EcdsaSighashType, Network, OutPoint, ScriptBuf, Sequence, TapSighashType,
-    Transaction, TxIn, TxOut, Txid, Witness, XOnlyPublicKey,
+    secp256k1::{PublicKey, Secp256k1},
+    sighash::SighashCache,
+    transaction::Version,
+    Address, Amount, EcdsaSighashType, Network, OutPoint, ScriptBuf, Sequence, Transaction, TxIn,
+    TxOut, Witness,
 };
-use musig2::{AggNonce, BinaryEncoding, KeyAggContext, PartialSignature, PubNonce, SecNonce};
-
-use rand::RngCore;
-use secp256k1::Message;
 
 use std::{ops::ControlFlow, str::FromStr};
 
-use crate::api::statechain::broadcast_tx;
+use crate::connector::NodeConnector;
 use crate::model::Statecoin;
 use crate::svc::statechain::aggregate_pubkeys;
 use crate::svc::statechain::generate_auth_owner_keypairs;
 use crate::svc::statechain::sign_message;
 use crate::svc::statechain_sender::create_bk_tx_for_receiver;
-use crate::{api::statechain, cfg::BASE_TX_FEE, db::PoolWrapper, model::AccountActions};
+use crate::{cfg::BASE_TX_FEE, db::PoolWrapper, model::AccountActions};
+use shared::api::broadcast_tx;
 use shared::intf::statechain::{DepositInfo, DepositReq, DepositRes};
-
-use crate::connector::NodeConnector;
 
 use super::account;
 
@@ -68,13 +61,10 @@ pub async fn execute(
             PublicKey::from_str(&se_pubkey).unwrap(),
         );
 
-    println!(
-        "agg pub key {}",
-        aggregated_pubkey_tw.x_only_public_key().0.to_string()
-    );
+    println!("agg pub key {}", aggregated_pubkey_tw.x_only_public_key().0);
 
     let (funding_txid, vout, deposit_tx) =
-        create_deposit_transaction(&deriv, amount, &aggregated_pubkey).await?;
+        create_deposit_transaction(deriv, amount, &aggregated_pubkey).await?;
     let output_address = Address::from_str(&account_address).unwrap();
     let checked_output_address = output_address.require_network(Network::Testnet).unwrap();
     // seckey: &SecretKey,
@@ -181,7 +171,8 @@ pub async fn create_deposit_transaction(
     aggregated_pubkey: &PublicKey,
 ) -> Result<(String, u64, String)> {
     let (account, mut unlocker) = account::get_account(deriv).unwrap();
-    let selected_utxos = account::get_utxos_set(&account.get_addr(), amount + BASE_TX_FEE).await?;
+    let selected_utxos = account.get_utxo(amount + BASE_TX_FEE).await?;
+
     let secp = Secp256k1::new();
     let mut fee: u64 = 0;
     let input: Vec<TxIn> = selected_utxos
@@ -219,8 +210,8 @@ pub async fn create_deposit_transaction(
     let deposit_tx = Transaction {
         version: Version::TWO,
         lock_time: absolute::LockTime::ZERO,
-        input: input,
-        output: output,
+        input,
+        output,
     };
 
     let mut unsigned_deposit_tx = deposit_tx.clone();
@@ -266,7 +257,7 @@ pub async fn create_deposit_transaction(
 
     let tx_hex = consensus::encode::serialize_hex(&unsigned_deposit_tx);
     let funding_txid = unsigned_deposit_tx.txid().to_string();
-    let funding_vout = 0 as u64;
+    let funding_vout = 0_u64;
     Ok((funding_txid, funding_vout, tx_hex.to_string()))
 }
 

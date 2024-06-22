@@ -7,6 +7,7 @@ use bitcoin::{
     Sequence, Transaction, TxIn, TxOut, Witness,
 };
 use secp256k1::hashes::Hash;
+use shared::api::broadcast_tx;
 use shared::model::Utxo;
 use wallet::core::{Account, MasterKeyEntropy, Mnemonic};
 
@@ -77,8 +78,7 @@ pub async fn add_account() {
 
 pub async fn create_txn(deriv: &str, receiver: &str, amount: u64) -> Result<()> {
     let (account, mut unlocker) = account::get_account(deriv).unwrap();
-
-    let selected_utxos = account::get_utxos_set(&account.get_addr(), amount).await?;
+    let selected_utxos = account.get_utxo(amount + BASE_TX_FEE).await?;
 
     let mut fee: u64 = 0;
     let input: Vec<TxIn> = selected_utxos
@@ -166,6 +166,8 @@ pub async fn create_txn(deriv: &str, receiver: &str, amount: u64) -> Result<()> 
     let tx_hex = consensus::encode::serialize_hex(&unsigned_tx);
     println!("hash: {:?}", tx_hex);
     println!("{:#?}", unsigned_tx);
+    let broadcast_tx_res = broadcast_tx(tx_hex).await;
+    println!("Broadcast transaction response {:#?}", broadcast_tx_res);
 
     Ok(())
 }

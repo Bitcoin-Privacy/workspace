@@ -231,29 +231,26 @@ impl Account {
 
     pub async fn get_utxo(&self, amount: u64) -> Result<Vec<Utxo>> {
         let utxos = api::get_utxo(&self.get_addr()).await?;
-        let mut selected_utxos = Vec::new();
-        let mut total_value = 0;
+        let mut utxos: Vec<&Utxo> = utxos.iter().filter(|utxo| utxo.status.confirmed).collect();
 
         // Sort UTXOs in descending order by value
-        let mut sorted_utxos = utxos.to_vec();
-        sorted_utxos.sort_by(|a, b| b.value.cmp(&a.value));
+        utxos.sort_by(|a, b| b.value.cmp(&a.value));
 
-        for utxo in sorted_utxos {
-            if total_value >= amount {
+        let mut selected_utxos: Vec<Utxo> = Vec::new();
+        let mut total: u64 = 0;
+
+        for utxo in utxos {
+            if total >= amount {
                 break;
             }
             selected_utxos.push(utxo.clone());
-            total_value += utxo.value;
+            total += utxo.value;
         }
 
-        if total_value < amount {
-            Err(anyhow!(
-                "Do not have compatible UTXOs for amount {}, {:?}",
-                amount,
-                utxos
-            ))
-        } else {
+        if total >= amount {
             Ok(selected_utxos)
+        } else {
+            Err(anyhow!("Do not have compatible UTXOs")) // Not enough funds
         }
     }
 

@@ -103,23 +103,6 @@ pub async fn get_partial_signature_for_bk(
     Ok(json)
 }
 
-pub async fn broadcast_tx(tx_hex: String) -> Result<String> {
-    let url = "https://blockstream.info/testnet/api/tx";
-    let client = reqwest::Client::new();
-    let res = client
-        .post(url)
-        .header("Content-Type", "text/plain")
-        .body(tx_hex)
-        .send()
-        .await?;
-    if res.status().is_success() {
-        Ok(res.text().await?)
-    } else {
-        //println!("broadcast error: {}", res.text().await?);
-        Err(anyhow::anyhow!("Broadcast error: {}", res.text().await?))
-    }
-}
-
 pub async fn register_new_owner(
     conn: &NodeConnector,
     statechain_id: &str,
