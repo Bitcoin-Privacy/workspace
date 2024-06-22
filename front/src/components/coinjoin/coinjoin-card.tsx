@@ -24,14 +24,15 @@ export const CoinjoinCard: FC<ICoinjoinCard> = (props) => {
   return (
     <HStack
       key={key}
+      w="100%"
+      bg="gray.900"
+      borderRadius="8px"
+      p="16px"
+      justify="space-between"
+      alignItems="center"
+      minW="300px"
       color="white"
       textAlign="start"
-      w="100%"
-      bg="#3a3a3a"
-      p="8px 16px"
-      borderRadius="8px"
-      minW="300px"
-      justifyContent="space-between"
     >
       <Box>
         <Text fontSize="16px" fontWeight="700" w="100%">

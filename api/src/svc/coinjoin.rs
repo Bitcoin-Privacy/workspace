@@ -208,22 +208,4 @@ impl CoinjoinService {
 
         Ok(origin_tx)
     }
-
-    // Function to encapsulate signature processing and error handling
-    fn validate_signature(
-        &self,
-        _hex_sig: &str,
-        _public_key: RistrettoPoint, // Assuming you have some PublicKey type
-        _output_address: &str,
-    ) -> Result<bool> {
-        // let sig = WiredUnblindedSigData::try_from(hex_sig)?
-        //     .to_internal_format()
-        //     .map_err(|_| "Invalid signature type".to_string())?;
-        //
-        // if !sig.msg_authenticate::<sha3::Sha3_512, &[u8]>(public_key, output_address.as_bytes()) {
-        //     return Ok(false);
-        // }
-
-        Ok(true)
-    }
 }
