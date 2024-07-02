@@ -43,6 +43,9 @@ create table if not exists proof (
 	foreign key (room_id) references room (id)
 );
 
+create table if not exists spent_sig (
+	signature varchar not null constraint proofs_pkey primary key,
+);
 
 create table if not exists statechain (
 	id uuid default uuid_generate_v1() not null constraint statechain_pkey primary key,

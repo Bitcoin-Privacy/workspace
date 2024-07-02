@@ -136,3 +136,20 @@ pub struct RoomListQuery {
 pub struct AddressQuery {
     pub address: String,
 }
+
+// ---------------------------
+// Validate signature
+// ---------------------------
+#[cfg_attr(feature = "backend", derive(Deserialize))]
+#[cfg_attr(feature = "frontend", derive(Serialize))]
+#[derive(Debug, Clone)]
+pub struct ValidateSignatureReq {
+    pub signature: String,
+}
+
+#[cfg_attr(feature = "backend", derive(Serialize))]
+#[cfg_attr(feature = "frontend", derive(Deserialize))]
+#[derive(Debug, Clone)]
+pub struct ValidateSignatureRes {
+    pub status: u8,
+}

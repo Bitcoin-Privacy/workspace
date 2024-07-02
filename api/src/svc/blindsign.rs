@@ -25,7 +25,7 @@ pub fn blind_sign(msg: &str) -> Result<String> {
     }
 }
 
-pub fn verifiy_sig(hex_sig: &str, msg: &str) -> Result<bool> {
+pub fn msg_authenticate(hex_sig: &str, msg: &str) -> Result<bool> {
     let keypair = CFG.blind_keypair;
     let sig = WiredUnblindedSigData::try_from(hex_sig)
         .map_err(|e| anyhow!(e))?
@@ -33,6 +33,20 @@ pub fn verifiy_sig(hex_sig: &str, msg: &str) -> Result<bool> {
         .map_err(|_| anyhow!("Invalid signature type"))?;
 
     if !sig.msg_authenticate::<sha3::Sha3_512, &[u8]>(keypair.public(), msg.as_bytes()) {
+        Ok(false)
+    } else {
+        Ok(true)
+    }
+}
+
+pub fn authenticate(hex_sig: &str) -> Result<bool> {
+    let keypair = CFG.blind_keypair;
+    let sig = WiredUnblindedSigData::try_from(hex_sig)
+        .map_err(|e| anyhow!(e))?
+        .to_internal_format()
+        .map_err(|_| anyhow!("Invalid signature type"))?;
+
+    if !sig.authenticate(keypair.public()) {
         Ok(false)
     } else {
         Ok(true)

@@ -105,3 +105,11 @@ pub struct Proof {
     pub script: String,
     pub created_at: chrono::DateTime<chrono::Utc>,
 }
+
+// ---------------------------
+// Spent Signature table
+// ---------------------------
+#[derive(sqlx::FromRow, Debug, Clone)]
+pub struct SpentSig {
+    pub signature: String,
+}

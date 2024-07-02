@@ -5,7 +5,6 @@ use bitcoin::{
     absolute, consensus, transaction::Version, Address, Amount, Network, OutPoint, ScriptBuf,
     Sequence, Transaction, TxIn, TxOut, Witness,
 };
-use curve25519_dalek::RistrettoPoint;
 
 use crate::{
     constance::COINJOIN_FEE,
@@ -66,19 +65,14 @@ impl CoinjoinService {
         let room = self.repo.get_room_by_id(room_id).await?;
 
         // Attempt to add output and handle any potential error
+        self.repo.set_spent_sig(sig).await?;
         self.repo
             .add_output(room_id, output_addr, room.base_amount)
             .await?;
 
         // Verify signature
-        let valid = super::blindsign::verifiy_sig(sig, output_addr)?;
-
-        if valid {
-            // TODO: check if signature used or not
-            Ok(0)
-        } else {
-            Err(anyhow!("Invalid signature"))
-        }
+        self.unspent_sig(sig, Some(output_addr)).await?;
+        Ok(0)
     }
 
     pub async fn set_sig(&self, room_id: &str, vins: &[u16], txn: &str) -> Result<u8> {
@@ -207,5 +201,23 @@ impl CoinjoinService {
         }
 
         Ok(origin_tx)
+    }
+
+    pub async fn unspent_sig(&self, sig: &str, msg: Option<&str>) -> Result<()> {
+        let valid = match msg {
+            Some(msg) => super::blindsign::msg_authenticate(sig, msg)?,
+            None => super::blindsign::authenticate(sig)?,
+        };
+        let is_unspent = self.repo.get_spent_sig(sig).await?;
+
+        if valid {
+            if is_unspent {
+                Ok(())
+            } else {
+                Err(anyhow!("Signature was spent"))
+            }
+        } else {
+            Err(anyhow!("Invalid signature"))
+        }
     }
 }

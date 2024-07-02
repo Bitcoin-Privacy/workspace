@@ -3,7 +3,7 @@ use sqlx::Executor;
 
 use crate::{
     db::Database,
-    model::entity::coinjoin::{Input, Output, Proof, RoomEntity},
+    model::entity::coinjoin::{Input, Output, Proof, RoomEntity, SpentSig},
     CFG,
 };
 use uuid::Uuid;
@@ -155,7 +155,7 @@ impl CoinjoinRepo {
         .bind(parsed_room_id)
         .bind(address)
         .bind(amount as i64);
-        let _ = self.pool.pool.execute(query).await;
+        let _ = self.pool.pool.execute(query).await?;
         Ok(())
     }
 
@@ -178,5 +178,21 @@ impl CoinjoinRepo {
         .bind(script);
         let _ = self.pool.pool.execute(query).await;
         Ok(())
+    }
+
+    pub async fn set_spent_sig(&self, sig: &str) -> Result<()> {
+        let query =
+            sqlx::query_as::<_, SpentSig>(r#"insert into spent_sig (signature) values ($1)"#)
+                .bind(sig);
+        let _ = self.pool.pool.execute(query).await?;
+        Ok(())
+    }
+
+    pub async fn get_spent_sig(&self, sig: &str) -> Result<bool> {
+        let res = sqlx::query_as::<_, SpentSig>(r#"select * from spent_sig where signature = $1"#)
+            .bind(sig)
+            .fetch_all(&self.pool.pool)
+            .await?;
+        Ok(res.is_empty())
     }
 }

@@ -9,7 +9,7 @@ use actix_web::{
 use shared::intf::coinjoin::{
     AddressQuery, CoinjoinRegisterReq, CoinjoinRegisterRes, GetRoomByIdRes, GetStatusRes,
     GetUnsignedTxnRes, RoomDto, RoomListQuery, RoomQueryReq, SetOutputReq, SetOutputRes,
-    SignTxnReq, SignTxnRes,
+    SignTxnReq, SignTxnRes, ValidateSignatureReq, ValidateSignatureRes,
 };
 
 /// Register to CoinJoin Room
@@ -132,6 +132,17 @@ pub async fn get_txn(
     let service = coinjoin_service.get_ref();
     match service.get_txn_hex(&path.id).await {
         Ok(tx) => response::success(GetUnsignedTxnRes { tx }),
+        Err(e) => response::error(e.to_string()),
+    }
+}
+
+pub async fn check_spent(
+    coinjoin_service: Data<CoinjoinService>,
+    payload: Json<ValidateSignatureReq>,
+) -> HttpResponse {
+    let service = coinjoin_service.get_ref();
+    match service.unspent_sig(&payload.signature, None).await {
+        Ok(_) => response::success(ValidateSignatureRes { status: 0 }),
         Err(e) => response::error(e.to_string()),
     }
 }
