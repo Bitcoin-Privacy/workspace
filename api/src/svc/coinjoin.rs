@@ -78,6 +78,8 @@ impl CoinjoinService {
     pub async fn set_sig(&self, room_id: &str, vins: &[u16], txn: &str) -> Result<u8> {
         let parsed_tx = consensus::deserialize::<Transaction>(&hex::decode(txn)?)?;
 
+        self.update_room_status(room_id, 1, Some(0)).await?;
+
         for vin in vins.iter() {
             let signed_input = parsed_tx.input.get(*vin as usize);
             let signed_input = signed_input.ok_or(anyhow!("Cannot get signed input"))?;
@@ -219,5 +221,21 @@ impl CoinjoinService {
         } else {
             Err(anyhow!("Invalid signature"))
         }
+    }
+
+    async fn update_room_status(
+        &self,
+        room_id: &str,
+        status: u8,
+        require_status: Option<u8>,
+    ) -> Result<()> {
+        let room = self.repo.get_room_by_id(room_id).await?;
+        if require_status.is_some_and(|r| r != room.status) {
+            return Err(anyhow!("Invalid status"));
+        }
+        if room.status != status {
+            self.repo.set_room_status(room_id, status).await?;
+        };
+        Ok(())
     }
 }

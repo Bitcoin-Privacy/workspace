@@ -1,9 +1,12 @@
 import { Box, Button, Text } from "@chakra-ui/react";
 
 import { CoinJoinApi } from "@/apis";
-import { FC } from "react";
+import { FC, useEffect } from "react";
 import moment from "moment";
 import TimeAgo from "timeago-react";
+import { useMutation } from "react-query";
+
+import { listen } from "@tauri-apps/api/event";
 
 interface ICoinjoinStatus {
   deriv: string;
@@ -15,6 +18,27 @@ interface ICoinjoinStatus {
 export const CoinjoinStatus: FC<ICoinjoinStatus> = (props) => {
   const { deriv, roomId, endOfDue1, endOfDue2 } = props;
   const now = moment().unix() * 1000;
+
+  const { mutateAsync: onSignBtnClick, isLoading: isSigning } = useMutation(
+    async (data: { deriv: string; roomId: string }) => {
+      await CoinJoinApi.signTxn(data.deriv, data.roomId);
+    },
+  );
+
+  useEffect(() => {
+    console.log("startlisten");
+    const unlisten = listen("coinjoin-setoutput", (event) => {
+      console.log(2025117, "event", event);
+    });
+
+    return () => {
+      unlisten
+        .then((a) => a())
+        .catch((e) => {
+          console.log("UnListen Event failed:", e);
+        });
+    };
+  }, []);
 
   // TODO: Check status of the room
   // Signed?
@@ -35,8 +59,10 @@ export const CoinjoinStatus: FC<ICoinjoinStatus> = (props) => {
     return (
       <Box textAlign="right">
         <Button
+          isLoading={isSigning}
+          isDisabled={isSigning}
           onClick={() => {
-            CoinJoinApi.signTxn(deriv, roomId);
+            onSignBtnClick({ deriv, roomId });
           }}
         >
           Sign

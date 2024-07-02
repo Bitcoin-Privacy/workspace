@@ -232,9 +232,7 @@ impl Account {
     pub async fn get_utxo(&self, amount: u64) -> Result<Vec<Utxo>> {
         let utxos = api::get_utxo(&self.get_addr()).await?;
         let mut utxos: Vec<&Utxo> = utxos.iter().filter(|utxo| utxo.status.confirmed).collect();
-
-        // Sort UTXOs in descending order by value
-        utxos.sort_by(|a, b| b.value.cmp(&a.value));
+        utxos.sort_by(|a, b| a.value.cmp(&b.value));
 
         let mut selected_utxos: Vec<Utxo> = Vec::new();
         let mut total: u64 = 0;

@@ -34,13 +34,6 @@ impl CoinjoinRepo {
         Ok(res)
     }
 
-    // pub async fn get_rooms(&self) -> Result<Vec<RoomEntity>> {
-    //     let res = sqlx::query_as::<_, RoomEntity>(r#"select * from room"#)
-    //         .fetch_all(&self.pool.pool)
-    //         .await?;
-    //     Ok(res)
-    // }
-
     pub async fn get_compatible_room(&self, base_amount: u32) -> Result<RoomEntity> {
         let rooms = sqlx::query_as::<_, RoomEntity>(
             r#"
@@ -155,6 +148,15 @@ impl CoinjoinRepo {
         .bind(parsed_room_id)
         .bind(address)
         .bind(amount as i64);
+        let _ = self.pool.pool.execute(query).await?;
+        Ok(())
+    }
+
+    pub async fn set_room_status(&self, room_id: &str, status: u8) -> Result<()> {
+        let query =
+            sqlx::query_as::<_, RoomEntity>(r#"update room set status=$2 where id = $1::uuid"#)
+                .bind(room_id)
+                .bind(status as i8);
         let _ = self.pool.pool.execute(query).await?;
         Ok(())
     }

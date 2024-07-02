@@ -66,14 +66,14 @@ pub async fn register(
             println!("Set output got error {}", e);
             tauri::Window::emit(
                 &window,
-                "coinjoin-register-complete",
+                "coinjoin-setoutput",
                 Some(event::CoinJoinRegisterCompleteEvent { room_id, status: 0 }),
             )
             .expect("Failed to emit event");
         } else {
             tauri::Window::emit(
                 &window,
-                "coinjoin-register-complete",
+                "coinjoin-setoutput",
                 Some(event::CoinJoinRegisterCompleteEvent { room_id, status: 1 }),
             )
             .expect("Failed to emit event");
