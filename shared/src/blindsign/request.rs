@@ -120,7 +120,6 @@ impl BlindRequest {
 // Implementation internal functions, not exposed to crate users -->
 
 /// Internal code for all new variants (ie: with random or specific msg)
-#[allow(many_single_char_names)]
 fn initiate<H, M>(rp: &[u8; 32], m: M) -> Result<([u8; 32], BlindRequest)>
 where
     H: Digest<OutputSize = U64> + Default,

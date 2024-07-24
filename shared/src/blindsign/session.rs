@@ -28,8 +28,7 @@ impl BlindSession {
     }
 
     pub fn get_rp(&self) -> [u8; 32] {
-        let rp = (self.k * RISTRETTO_BASEPOINT_POINT).compress().to_bytes();
-        rp
+        (self.k * RISTRETTO_BASEPOINT_POINT).compress().to_bytes()
     }
 
     /// Initiate a new signer side session to create a blind signature for

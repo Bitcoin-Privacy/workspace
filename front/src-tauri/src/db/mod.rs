@@ -137,15 +137,6 @@ impl PoolWrapper {
         // Ok(rooms)
         Ok(vec![])
     }
-    pub fn get_room(&self, deriv: &str, room_id: &str) -> Result<RoomEntity> {
-        // let rooms_tree = self.sled.open_tree("rooms-".to_owned() + derivation_path)?;
-        // if let Ok(Some(room)) = rooms_tree.get(room_id) {
-        //     let room: RoomEntity = bincode::deserialize(&room)?;
-        //     Ok(room)
-        // } else {
-        Err(anyhow!("Cannot find room"))
-        // }
-    }
     pub async fn create_statecoin(
         &self,
         statechain_id: &str,

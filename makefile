@@ -2,7 +2,7 @@ frontend-setup:
 	@cd front && yarn
 
 fe:
-	@cd front && cargo tauri dev
+	@export WEBKIT_DISABLE_COMPOSITING_MODE=1 && cd front && cargo tauri dev
 
 be:
 	@cargo watch -qcx "shuttle run" -p node-service 

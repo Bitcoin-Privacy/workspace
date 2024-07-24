@@ -1,17 +1,12 @@
 use anyhow::Result;
-use bitcoin::script;
-use reqwest::{Client, Response};
-use serde::Serialize;
 use shared::{
     intf::statechain::{
-        self, CreateBkTxnReq, CreateBkTxnRes, GetNonceReq, GetNonceRes, GetPartialSignatureReq,
-        GetPartialSignatureRes, GetTransferMessageReq, GetTransferMessageRes, KeyRegisterReq,
-        KeyRegisterRes, ListStatecoinsReq, TransferMessage, TransferMessageReq, UpdateKeyReq,
-        UpdateKeyRes, VerifyStatecoinReq, VerifyStatecoinRes,
+        CreateBkTxnReq, CreateBkTxnRes, GetNonceReq, GetNonceRes, GetPartialSignatureReq,
+        GetPartialSignatureRes, GetTransferMessageRes, KeyRegisterReq, KeyRegisterRes,
+        TransferMessageReq, UpdateKeyReq, UpdateKeyRes, VerifyStatecoinReq, VerifyStatecoinRes,
     },
     model::Status,
 };
-use tauri::http::Uri;
 
 extern crate reqwest;
 
@@ -106,23 +101,6 @@ pub async fn get_partial_signature_for_bk(
     let json: GetPartialSignatureRes = serde_json::from_value(res)?;
 
     Ok(json)
-}
-
-pub async fn broadcast_tx(tx_hex: String) -> Result<String> {
-    let url = "https://blockstream.info/testnet/api/tx";
-    let client = reqwest::Client::new();
-    let res = client
-        .post(url)
-        .header("Content-Type", "text/plain")
-        .body(tx_hex)
-        .send()
-        .await?;
-    if res.status().is_success() {
-        Ok(res.text().await?)
-    } else {
-        //println!("broadcast error: {}", res.text().await?);
-        Err(anyhow::anyhow!("Broadcast error: {}", res.text().await?))
-    }
 }
 
 pub async fn register_new_owner(

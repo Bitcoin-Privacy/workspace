@@ -8,10 +8,10 @@ use std::{
     task::{Context, Poll},
 };
 
-// Define your middleware struct. It can contain configurations or shared data.
+// Define your middle-ware struct. It can contain configurations or shared data.
 pub struct LoggingMiddleware;
 
-// Implement Transform trait for your middleware
+// Implement Transform trait for your middle-ware
 impl<S, B> Transform<S, ServiceRequest> for LoggingMiddleware
 where
     S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error> + 'static,
@@ -28,7 +28,7 @@ where
     }
 }
 
-// Define the service that is transformed by your middleware
+// Define the service that is transformed by your middle-ware
 pub struct LoggingMiddlewareService<S> {
     service: S,
 }

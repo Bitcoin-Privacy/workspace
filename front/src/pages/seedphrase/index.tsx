@@ -1,5 +1,4 @@
 import React from "react";
-import Head from "next/head";
 import {
   Text,
   VStack,
@@ -28,74 +27,69 @@ export default function SeedPhrase() {
   } = useSeedPhrasePage();
 
   return (
-    <React.Fragment>
-      <Head>
-        <title>Generate Seed Phrases</title>
-      </Head>
-      <Layout title="Generate Seed Phrases">
-        <VStack p="30px 16px" textColor={"whiteAlpha.800"}>
-          <Stack justify="start">
-            <List spacing={2}>
-              <Text>Tips</Text>
-              <ListItem>
-                <ListIcon as={MdCheckCircle} color="green.500" />
-                Save in password manager
-              </ListItem>
-              <ListItem>
-                <ListIcon as={MdCheckCircle} color="green.500" />
-                Store in a safe deposit box
-              </ListItem>
-              <ListItem>
-                <ListIcon as={MdCheckCircle} color="green.500" />
-                Write down and store in multiple secret places
-              </ListItem>
-            </List>
-          </Stack>
-          {!mnemonicPhrases?.length && (
-            <Center h="100%" w="100%">
-              <Spinner />
-            </Center>
-          )}
-          {mnemonicPhrases?.length && (
-            <>
-              <Grid
-                borderWidth={"1px"}
-                borderRadius={"16px"}
-                templateColumns="repeat(4, 1fr)"
-                gap={6}
-                p={"16px"}
-              >
-                {mnemonicPhrases.split(" ").map((word, id) => {
-                  return (
-                    <GridItem key={id}>
-                      <HStack
-                        borderWidth={"1px"}
-                        width={"120px"}
-                        p={"6px"}
-                        m={"4px"}
-                        alignItems={"center"}
-                      >
-                        <Text>{id + 1}.</Text>
-                        <Text> {word}</Text>
-                      </HStack>
-                    </GridItem>
-                  );
-                })}
-              </Grid>
+    <Layout title="Generate Seed Phrases">
+      <VStack p="30px 16px" textColor={"whiteAlpha.800"}>
+        <Stack justify="start">
+          <List spacing={2}>
+            <Text>Tips</Text>
+            <ListItem>
+              <ListIcon as={MdCheckCircle} color="green.500" />
+              Save in password manager
+            </ListItem>
+            <ListItem>
+              <ListIcon as={MdCheckCircle} color="green.500" />
+              Store in a safe deposit box
+            </ListItem>
+            <ListItem>
+              <ListIcon as={MdCheckCircle} color="green.500" />
+              Write down and store in multiple secret places
+            </ListItem>
+          </List>
+        </Stack>
+        {!mnemonicPhrases?.length && (
+          <Center h="100%" w="100%">
+            <Spinner />
+          </Center>
+        )}
+        {mnemonicPhrases?.length && (
+          <>
+            <Grid
+              borderWidth={"1px"}
+              borderRadius={"16px"}
+              templateColumns="repeat(4, 1fr)"
+              gap={6}
+              p={"16px"}
+            >
+              {mnemonicPhrases.split(" ").map((word, id) => {
+                return (
+                  <GridItem key={id}>
+                    <HStack
+                      borderWidth={"1px"}
+                      width={"120px"}
+                      p={"6px"}
+                      m={"4px"}
+                      alignItems={"center"}
+                    >
+                      <Text>{id + 1}.</Text>
+                      <Text> {word}</Text>
+                    </HStack>
+                  </GridItem>
+                );
+              })}
+            </Grid>
 
-              <Button
-                onClick={onCopy}
-                bgColor={"cyan.100"}
-                rightIcon={hasCopied ? <TiTick /> : <BiCopy />}
-                borderRadius={"16"}
-              >
-                <Text> Copy to clipboard</Text>
-              </Button>
-              <Button onClick={onNextBtnClick}>Next</Button>
-            </>
-          )}
-        </VStack>
-      </Layout>
-    </React.Fragment>
+            <Button
+              onClick={onCopy}
+              bgColor={"cyan.100"}
+              rightIcon={hasCopied ? <TiTick /> : <BiCopy />}
+              borderRadius={"16"}
+            >
+              <Text> Copy to clipboard</Text>
+            </Button>
+            <Button onClick={onNextBtnClick}>Next</Button>
+          </>
+        )}
+      </VStack>
+    </Layout>
   );
 }

@@ -3,9 +3,8 @@ use actix_web::{
     HttpResponse,
 };
 use shared::intf::statechain::{
-    CreateBkTxnReq, CreateTokenReq, DepositReq, GetNonceReq, GetPartialSignatureReq,
-    KeyRegisterReq, ListStatecoinsReq, TransferMessageReq, TransferReq, UpdateKeyReq,
-    VerifyStatecoinReq,
+    CreateTokenReq, DepositReq, GetNonceReq, GetPartialSignatureReq, KeyRegisterReq,
+    ListStatecoinsReq, TransferMessageReq, TransferReq, UpdateKeyReq, VerifyStatecoinReq,
 };
 
 use crate::{repo::statechain::StatechainRepo, svc::statechain, util::response};
@@ -14,8 +13,7 @@ pub async fn register_key(
     statechain_repo: Data<StatechainRepo>,
     payload: Json<KeyRegisterReq>,
 ) -> HttpResponse {
-    //check signature corresponding to Authkey
-
+    // Check signature corresponding to Authkey
     match statechain::register_key(
         &statechain_repo,
         &payload.statechain_id,
@@ -31,7 +29,7 @@ pub async fn register_key(
     }
 }
 
-pub async fn create_token(payload: Json<CreateTokenReq>) -> HttpResponse {
+pub async fn create_token(_payload: Json<CreateTokenReq>) -> HttpResponse {
     response::success("hello from statechain endpoint")
 }
 
@@ -219,10 +217,10 @@ pub async fn update_key(
     }
 }
 
-pub async fn transfer(payload: Json<TransferReq>) -> HttpResponse {
+pub async fn transfer(_payload: Json<TransferReq>) -> HttpResponse {
     response::success("hello from statechain endpoint")
 }
 
-pub async fn list_statecoins(payload: Json<ListStatecoinsReq>) -> HttpResponse {
+pub async fn list_statecoins(_payload: Json<ListStatecoinsReq>) -> HttpResponse {
     response::success("hello from statechain endpoint")
 }

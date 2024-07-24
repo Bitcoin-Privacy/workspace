@@ -21,7 +21,7 @@ pub struct AccountDTO {
 
 impl AccountActions for AccountDTO {
     fn get_derivation_path(&self) -> (u32, u32) {
-        return (self.account_number, self.sub_account_number);
+        (self.account_number, self.sub_account_number)
     }
 
     fn get_addr(&self) -> String {
@@ -36,7 +36,7 @@ impl AccountActions for AccountDTO {
 
 impl AccountActions for Account {
     fn get_derivation_path(&self) -> (u32, u32) {
-        return (self.account_number, self.sub_account_number);
+        (self.account_number, self.sub_account_number)
     }
 
     fn get_addr(&self) -> String {

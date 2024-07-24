@@ -4,10 +4,7 @@ use bitcoin::{
     sighash::SighashCache,
     Amount, EcdsaSighashType, ScriptBuf, Transaction, TxIn, Witness,
 };
-use shared::{
-    api,
-    model::{Txn, Utxo},
-};
+use shared::{api, model::Txn};
 use wallet::core::{Account, MasterAccount, Unlocker};
 
 use crate::{cfg::PASSPHRASE, store::master_account::get_master};
@@ -47,31 +44,6 @@ pub fn parse_derivation_path(deriv: &str) -> Result<(u32, u32)> {
         Err(anyhow!(
             "Derivation path must be exactly two components separated by '/'"
         ))
-    }
-}
-
-pub async fn get_utxos_set(addr: &str, amount: u64) -> Result<Vec<Utxo>> {
-    let utxos = api::get_utxo(addr).await?;
-    let mut utxos: Vec<&Utxo> = utxos.iter().filter(|utxo| utxo.status.confirmed).collect();
-
-    // Sort UTXOs in descending order by value
-    utxos.sort_by(|a, b| b.value.cmp(&a.value));
-
-    let mut selected_utxos: Vec<Utxo> = Vec::new();
-    let mut total: u64 = 0;
-
-    for utxo in utxos {
-        if total >= amount {
-            break;
-        }
-        selected_utxos.push(utxo.clone());
-        total += utxo.value;
-    }
-
-    if total >= amount {
-        Ok(selected_utxos)
-    } else {
-        Err(anyhow!("Do not have compatible UTXOs")) // Not enough funds
     }
 }
 

@@ -1,8 +1,8 @@
 use anyhow::Result;
 use shared::{
     intf::coinjoin::{
-        GetStatusRes, GetUnsignedTxnRes, RegisterReq, RegisterRes, SetOutputReq, SetOutputRes,
-        SignTxnReq, SignTxnRes,
+        CoinjoinRegisterReq, CoinjoinRegisterRes, GetRoomByIdRes, GetStatusRes, GetUnsignedTxnRes,
+        RoomDto, SetOutputReq, SetOutputRes, SignTxnReq, SignTxnRes,
     },
     model::Utxo,
 };
@@ -15,8 +15,8 @@ pub async fn register(
     blinded_output_address: &str,
     change_address: &str,
     amount: u64,
-) -> Result<RegisterRes> {
-    let req = RegisterReq {
+) -> Result<CoinjoinRegisterRes> {
+    let req = CoinjoinRegisterReq {
         utxos: input_coins,
         proofs: vec![],
         blinded_out_addr: blinded_output_address.to_string(),
@@ -25,7 +25,7 @@ pub async fn register(
     };
     let body = serde_json::to_value(req).unwrap();
     let res = conn.post("coinjoin/register", &body).await?;
-    Ok(serde_json::from_value::<RegisterRes>(res)?)
+    Ok(serde_json::from_value::<CoinjoinRegisterRes>(res)?)
 }
 
 pub async fn set_output(room_id: &str, out_addr: &str, sig: &str) -> Result<SetOutputRes> {
@@ -40,10 +40,11 @@ pub async fn set_output(room_id: &str, out_addr: &str, sig: &str) -> Result<SetO
     Ok(serde_json::from_value::<SetOutputRes>(res)?)
 }
 
-pub async fn sign(room_id: &str, vins: Vec<u16>, txn: &str) -> Result<SignTxnRes> {
+pub async fn sign(room_id: &str, address: &str, vins: Vec<u16>, txn: &str) -> Result<SignTxnRes> {
     let conn = NodeConnector::new(CFG.service_url.clone());
     let req = SignTxnReq {
         room_id: room_id.to_string(),
+        address: address.to_string(),
         vins,
         txn: txn.to_string(),
     };
@@ -68,10 +69,28 @@ pub async fn get_status(room_id: &str) -> Result<GetStatusRes> {
     Ok(serde_json::from_value::<GetStatusRes>(res)?)
 }
 
-pub async fn get_room_list() -> Result<GetStatusRes> {
+pub async fn get_room_list(address: &str) -> Result<Vec<RoomDto>> {
     let conn = NodeConnector::new(CFG.service_url.clone());
     let res = conn
-        .get(format!("coinjoin/room/{id}/status", id = ""), None)
+        .get(
+            format!("coinjoin/room/list?address={address}", address = address),
+            None,
+        )
         .await?;
-    Ok(serde_json::from_value::<GetStatusRes>(res)?)
+    Ok(serde_json::from_value::<Vec<RoomDto>>(res)?)
+}
+
+pub async fn get_room(address: &str, room_id: &str) -> Result<GetRoomByIdRes> {
+    let conn = NodeConnector::new(CFG.service_url.clone());
+    let res = conn
+        .get(
+            format!(
+                "coinjoin/room/{room_id}?address={address}",
+                room_id = room_id,
+                address = address
+            ),
+            None,
+        )
+        .await?;
+    Ok(serde_json::from_value::<GetRoomByIdRes>(res)?)
 }

@@ -1,24 +1,15 @@
-import { AppApi } from "@/apis";
-import { UtxoDto } from "@/dtos";
 import { StateCoinDto } from "@/dtos/statechain.dto";
-import { b64EncodeUnicode } from "@/utils";
 import {
   Box,
   Text,
   Image,
   VStack,
   Flex,
-  HStack,
-  Spacer,
   Button,
-  Progress,
   Badge,
 } from "@chakra-ui/react";
 import { useClipboard } from "@chakra-ui/react";
-import Link from "next/link";
-import { NextRouter, useRouter } from "next/router";
-import { useEffect, useState } from "react";
-import { FaCheckCircle, FaClock } from "react-icons/fa";
+import { useRouter } from "next/router";
 import { FiCheck, FiCopy } from "react-icons/fi";
 import { IoIosArrowForward } from "react-icons/io";
 
@@ -31,9 +22,7 @@ interface StateChainCardProps {
 export function StateChainCard(props: StateChainCardProps) {
   const { val, key, deriv } = props;
   const router = useRouter();
-  const { onCopy, value, setValue, hasCopied } = useClipboard(
-    val.statechain_id
-  );
+  const { onCopy, hasCopied } = useClipboard(val.statechain_id);
   const handleDetailButtonClick = () => {
     console.log(val.statechain_id);
     router.push(`${router.asPath}/statecoins/${val.statechain_id}`);

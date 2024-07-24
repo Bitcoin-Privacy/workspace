@@ -1,4 +1,3 @@
-use anyhow::anyhow;
 use anyhow::Result;
 use bitcoin::absolute::LockTime;
 use bitcoin::consensus;
@@ -34,7 +33,6 @@ use secp256k1::Parity;
 use secp256k1::{schnorr::Signature, Message, Scalar};
 
 use std::str::FromStr;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::cfg::BASE_TX_FEE;
 use crate::model::StatechainKeypairs;
@@ -49,14 +47,13 @@ use crate::{
 use crate::connector::NodeConnector;
 
 use super::account;
+use shared::api::broadcast_tx;
 
 pub fn sign_message(msg: &str, seckey: &SecretKey) -> Signature {
     let secp = Secp256k1::new();
     let message = Message::from_hashed_data::<sha256::Hash>(msg.to_string().as_bytes());
     let keypair = Keypair::from_seckey_slice(&secp, seckey.as_ref()).unwrap();
-    let signed_message = secp.sign_schnorr(&message, &keypair);
-
-    signed_message
+    secp.sign_schnorr(&message, &keypair)
 }
 
 pub fn aggregate_pubkeys(
@@ -64,9 +61,7 @@ pub fn aggregate_pubkeys(
     se_pubkey: PublicKey,
 ) -> (PublicKey, PublicKey, Address, KeyAggContext) {
     let secp = Secp256k1::new();
-    let mut pubkeys: Vec<PublicKey> = vec![];
-    pubkeys.push(owner_pubkey);
-    pubkeys.push(se_pubkey);
+    let pubkeys: Vec<PublicKey> = vec![owner_pubkey, se_pubkey];
     let key_agg_ctx_tw = KeyAggContext::new(pubkeys.clone())
         .unwrap()
         .with_unspendable_taproot_tweak()
@@ -91,8 +86,7 @@ pub fn aggregate_pubkeys(
 }
 
 pub fn compute_t1(owner_seckey: &SecretKey, random_key: &Scalar) -> SecretKey {
-    let res = owner_seckey.add_tweak(random_key).unwrap();
-    res
+    owner_seckey.add_tweak(random_key).unwrap()
 }
 
 pub async fn list_statecoins(pool: &PoolWrapper, deriv: &str) -> Result<Vec<StatecoinCard>> {
@@ -197,9 +191,10 @@ pub async fn withdraw_statecoin(
 
     println!("withdraw tx: {}", withdraw_tx);
 
-    let res = statechain::broadcast_tx(withdraw_tx).await?;
+    let res = broadcast_tx(withdraw_tx).await?;
     println!("broad cast transaction tx: {:?}", res);
-    pool.delete_statecoin_by_statechain_id(statechain_id).await?;
+    pool.delete_statecoin_by_statechain_id(statechain_id)
+        .await?;
     Ok(res)
 }
 

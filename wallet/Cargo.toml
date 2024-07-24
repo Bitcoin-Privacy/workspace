@@ -6,11 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-# utils
-serde_json = { workspace = true }
-serde = { workspace = true }
-
 # cryptography
+shared = { workspace = true, features = ["frontend", "backend"] }
 bitcoin = { workspace = true, features = [
   "serde",
   "rand-std",
@@ -19,3 +16,8 @@ bitcoin = { workspace = true, features = [
 ] }
 rust-crypto = { workspace = true }
 secp256k1 = { workspace = true }
+
+# utils
+anyhow = { workspace = true }
+serde_json = { workspace = true }
+serde = { workspace = true }

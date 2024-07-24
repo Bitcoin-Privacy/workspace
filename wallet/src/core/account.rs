@@ -1,3 +1,4 @@
+use anyhow::{anyhow, Result};
 use bitcoin::bip32::{ChildNumber, Xpub};
 use bitcoin::hashes::{hash160, Hash};
 use bitcoin::script::PushBytesBuf;
@@ -9,6 +10,7 @@ use bitcoin::{
     OutPoint, Transaction,
 };
 use bitcoin::{EcdsaSighashType, Network, PrivateKey, ScriptBuf};
+use shared::{api, model::Utxo};
 use std::sync::Arc;
 
 use crate::error::Error;
@@ -79,6 +81,10 @@ impl Account {
         }
     }
 
+    fn get_addr(&self) -> String {
+        return self.get_key(0).unwrap().address.to_string();
+    }
+
     pub fn address_type(&self) -> AddrType {
         self.address_type
     }
@@ -111,7 +117,7 @@ impl Account {
         &self.instantiated
     }
 
-    /// look ahead from last seen
+    /// Look ahead from last seen
     pub fn do_look_ahead(&mut self, seen: Option<u32>) -> Result<Vec<(u32, ScriptBuf)>, Error> {
         use std::cmp::max;
 
@@ -136,13 +142,6 @@ impl Account {
         let kix = self.instantiated.len() as u32;
 
         let scripter = |public: &PublicKey, _| match self.address_type {
-            // AddrType::P2SHWPKH => Builder::new()
-            //     .push_opcode(all::OP_DUP)
-            //     .push_opcode(all::OP_HASH160)
-            //     .push_slice(hash160::Hash::hash(&public.serialize()).to_byte_array())
-            //     .push_opcode(all::OP_EQUALVERIFY)
-            //     .push_opcode(all::OP_CHECKSIG)
-            //     .into_script(),
             AddrType::P2WPKH => Builder::new()
                 .push_opcode(all::OP_DUP)
                 .push_opcode(all::OP_HASH160)
@@ -192,7 +191,7 @@ impl Account {
         self.next as usize
     }
 
-    // get all pubkey scripts of this account
+    // Get all pubkey scripts of this account
     pub fn get_scripts(
         &self,
     ) -> impl Iterator<Item = (u32, ScriptBuf, Option<Vec<u8>>, Option<u16>)> + '_ {
@@ -230,7 +229,30 @@ impl Account {
         }
     }
 
-    /// sign a transaction with keys in this account works for types except P2WSH
+    pub async fn get_utxo(&self, amount: u64) -> Result<Vec<Utxo>> {
+        let utxos = api::get_utxo(&self.get_addr()).await?;
+        let mut utxos: Vec<&Utxo> = utxos.iter().filter(|utxo| utxo.status.confirmed).collect();
+        utxos.sort_by(|a, b| a.value.cmp(&b.value));
+
+        let mut selected_utxos: Vec<Utxo> = Vec::new();
+        let mut total: u64 = 0;
+
+        for utxo in utxos {
+            if total >= amount {
+                break;
+            }
+            selected_utxos.push(utxo.clone());
+            total += utxo.value;
+        }
+
+        if total >= amount {
+            Ok(selected_utxos)
+        } else {
+            Err(anyhow!("Do not have compatible UTXOs")) // Not enough funds
+        }
+    }
+
+    /// Sign a transaction with keys in this account works for types except P2WSH
     pub fn sign<R>(
         &self,
         transaction: &mut Transaction,
@@ -242,7 +264,7 @@ impl Account {
         R: Fn(&OutPoint) -> Option<TxOut>,
     {
         let mut signed = 0;
-        //TODO(stevenroose) try to prevent this clone here
+        // TODO: try to prevent this clone here
         let mut txclone = transaction.clone();
         let mut bip143hasher = SighashCache::new(&mut txclone);
         for (ix, input) in transaction.input.iter_mut().enumerate() {

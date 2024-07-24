@@ -1,5 +1,3 @@
-use bitcoin::hex::parse;
-use reqwest::Response;
 use shared::intf::statechain::{DepositInfo, StatechainAddress};
 use tauri::{
     command,
@@ -43,9 +41,11 @@ pub async fn deposit(
     amount: u64,
 ) -> TResult<DepositInfo> {
     if amount < BASE_TX_FEE {
-        return Err(util::to_string("Amount is less than the base transaction fee").into());
+        return Err(util::to_string(
+            "Amount is less than the base transaction fee",
+        ));
     }
-    statechain_deposit::execute(&pool, &conn, &deriv, amount)
+    statechain_deposit::execute(&pool, &conn, deriv, amount)
         .await
         .map_err(util::to_string)
 }
@@ -55,7 +55,7 @@ pub async fn list_statecoins(
     pool: State<'_, PoolWrapper>,
     deriv: &str,
 ) -> TResult<Vec<StatecoinCard>> {
-    statechain::list_statecoins(&pool, &deriv)
+    statechain::list_statecoins(&pool, deriv)
         .await
         .map_err(util::to_string)
 }
@@ -92,7 +92,7 @@ pub async fn list_transfer_statecoins(
     conn: State<'_, NodeConnector>,
     deriv: &str,
 ) -> TResult<Vec<TransferStateCoinInfo>> {
-    statechain::list_transfer_statecoins(&conn, &pool, &deriv)
+    statechain::list_transfer_statecoins(&conn, &pool, deriv)
         .await
         .map_err(util::to_string)
 }

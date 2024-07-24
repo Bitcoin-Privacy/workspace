@@ -2,7 +2,6 @@ use db::TraitDatabase;
 
 mod app;
 mod config;
-mod constance;
 mod controller;
 mod db;
 mod middleware;

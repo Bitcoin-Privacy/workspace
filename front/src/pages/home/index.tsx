@@ -1,20 +1,19 @@
-import Head from "next/head";
-import { useRouter } from "next/router";
 import React, { useMemo } from "react";
-import { FiPlus } from "react-icons/fi";
 import { Box, Text, VStack, HStack, Avatar, Circle } from "@chakra-ui/react";
+import { FiPlus } from "react-icons/fi";
+import { useRouter } from "next/router";
+import { useQuery } from "react-query";
 
 import { Layout } from "@/components";
 import { AppApi } from "@/apis";
 import { CachePrefixKeys, DEFAULT_AVATAR } from "@/consts";
-import { useQuery } from "react-query";
 import { derivBase64 } from "@/utils";
 
 export default function Home() {
   const router = useRouter();
 
   const listProfilesQuery = useQuery([CachePrefixKeys.Profiles], () =>
-    AppApi.getAccounts()
+    AppApi.getAccounts(),
   );
 
   const listProfiles = useMemo(() => {
@@ -23,44 +22,18 @@ export default function Home() {
   }, [listProfilesQuery.data?.length]);
 
   return (
-    <React.Fragment>
-      <Head>
-        <title>Home</title>
-      </Head>
-      <Layout title="Home">
-        <VStack textAlign="center" p="10px 16px" h="100%">
-          <VStack
-            w="100%"
-            justify="stretch"
-            maxW="500px"
-            h="100%"
-            overflowY="auto"
-          >
-            {listProfiles.map((prof, index) => (
-              <HStack
-                key={index}
-                w="100%"
-                borderRadius="10px"
-                justify="start"
-                cursor="pointer"
-                p="10px"
-                _hover={{ bg: "#aaa5" }}
-                onClick={() => {
-                  router.push(`/profile/${derivBase64(prof)}`);
-                }}
-              >
-                <Avatar h="36px" w="36px" src={DEFAULT_AVATAR} />
-                <Box textAlign="start">
-                  <Text color="#fff" fontWeight="600">
-                    Account {prof.account_number}
-                  </Text>
-                  <Text fontSize="12px" fontWeight="400" color="#aaa">
-                    Address: {prof.address}
-                  </Text>
-                </Box>
-              </HStack>
-            ))}
+    <Layout header title="Home">
+      <VStack textAlign="center" p="10px 16px" h="100%">
+        <VStack
+          w="100%"
+          justify="stretch"
+          maxW="500px"
+          h="100%"
+          overflowY="auto"
+        >
+          {listProfiles.map((prof, index) => (
             <HStack
+              key={index}
               w="100%"
               borderRadius="10px"
               justify="start"
@@ -68,17 +41,39 @@ export default function Home() {
               p="10px"
               _hover={{ bg: "#aaa5" }}
               onClick={() => {
-                router.push("/seedphrase");
+                router.push(`/profile/${derivBase64(prof)}`);
               }}
             >
-              <Circle size="36px" bg="white">
-                <FiPlus />
-              </Circle>
-              <Text color="white">Create new wallet</Text>
+              <Avatar h="42px" w="42px" src="/avatar.jpeg" />
+
+              <Box textAlign="start">
+                <Text color="#fff" fontWeight="600" fontSize="16px">
+                  Account {prof.account_number}
+                </Text>
+                <Text fontSize="14px" fontWeight="400" color="#aaa">
+                  Address: {prof.address}
+                </Text>
+              </Box>
             </HStack>
-          </VStack>
+          ))}
+          <HStack
+            w="100%"
+            borderRadius="10px"
+            justify="start"
+            cursor="pointer"
+            p="10px"
+            _hover={{ bg: "#aaa5" }}
+            onClick={() => {
+              router.push("/seedphrase");
+            }}
+          >
+            <Circle size="36px" bg="white">
+              <FiPlus />
+            </Circle>
+            <Text color="white">Create new wallet</Text>
+          </HStack>
         </VStack>
-      </Layout>
-    </React.Fragment>
+      </VStack>
+    </Layout>
   );
 }

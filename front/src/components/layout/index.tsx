@@ -1,7 +1,7 @@
-import { useApp, useLogout } from "@/hooks";
+import { useLogout } from "@/hooks";
 import {
   Box,
-  Flex,
+  Button,
   HStack,
   Menu,
   MenuButton,
@@ -12,15 +12,22 @@ import {
 } from "@chakra-ui/react";
 import { useRouter } from "next/router";
 import React from "react";
-import { FiMenu } from "react-icons/fi";
+import { FiArrowLeft, FiMenu } from "react-icons/fi";
 
 interface ILayout {
+  header?: boolean;
   title?: string;
+  back?: boolean;
   type?: string;
   children: React.ReactNode;
 }
 
-export const Layout: React.FC<ILayout> = ({ title, children }) => {
+export const Layout: React.FC<ILayout> = ({
+  header = false,
+  title,
+  back = false,
+  children,
+}) => {
   const router = useRouter();
   const {
     method: { logout },
@@ -35,7 +42,6 @@ export const Layout: React.FC<ILayout> = ({ title, children }) => {
       alignItems="start"
       position="relative"
       textColor={"white"}
-     
     >
       <Box
         top="-50px"
@@ -47,7 +53,7 @@ export const Layout: React.FC<ILayout> = ({ title, children }) => {
         position="fixed"
       />
       {/* Header */}
-      {title && (
+      {header && (
         <HStack
           fontSize="10"
           color="white"
@@ -58,9 +64,21 @@ export const Layout: React.FC<ILayout> = ({ title, children }) => {
           position="sticky"
           top="0"
         >
-          <Text fontSize="18px" fontWeight="700">
-            {title}
-          </Text>
+          {back && (
+            <Button
+              variant="link"
+              colorScheme="white"
+              leftIcon={<FiArrowLeft />}
+              onClick={() => router.push("/home")}
+            >
+              Back
+            </Button>
+          )}
+          {title && (
+            <Text fontSize="18px" fontWeight="700">
+              {title}
+            </Text>
+          )}
           <Menu>
             <MenuButton>
               <FiMenu size="20px" />

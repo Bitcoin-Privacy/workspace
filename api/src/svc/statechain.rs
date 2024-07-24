@@ -10,20 +10,19 @@ use bitcoin::{
     consensus,
     hashes::sha256,
     hex::{Case, DisplayHex},
-    key::{Keypair, TapTweak, TweakedKeypair},
     secp256k1::{rand, PublicKey, Secp256k1, SecretKey},
     sighash::{Prevouts, SighashCache},
-    Amount, ScriptBuf, TapSighash, TapSighashType, Transaction, TxOut, XOnlyPublicKey,
+    Amount, ScriptBuf, TapSighashType, Transaction, TxOut, XOnlyPublicKey,
 };
 use musig2::{AggNonce, BinaryEncoding, KeyAggContext, PartialSignature, SecNonce};
 use rand::RngCore;
-use secp256k1::{schnorr::Signature, Message, Parity, Scalar};
+use secp256k1::{schnorr::Signature, Message, Parity};
 
 use crate::repo::statechain::{StatechainRepo, TraitStatechainRepo};
 use shared::{
     intf::statechain::{
-        CreateBkTxnRes, DepositRes, GetNonceRes, GetPartialSignatureRes, GetTransferMessageRes,
-        KeyRegisterRes, UpdateKeyRes, VerifyStatecoinRes,
+        DepositRes, GetNonceRes, GetPartialSignatureRes, GetTransferMessageRes, KeyRegisterRes,
+        UpdateKeyRes, VerifyStatecoinRes,
     },
     model::Status,
 };
@@ -82,7 +81,7 @@ pub async fn get_nonce(repo: &Data<StatechainRepo>, statechain_id: &str) -> Resu
     rand::rngs::OsRng.fill_bytes(&mut nonce_seed);
     let secnonce = musig2::SecNonceBuilder::new(nonce_seed).build();
     let pubnonce = secnonce.public_nonce();
-    repo.update_nonce(&secnonce.to_bytes().to_lower_hex_string(), &statechain_id)
+    repo.update_nonce(&secnonce.to_bytes().to_lower_hex_string(), statechain_id)
         .await?;
 
     Ok(GetNonceRes {
@@ -108,7 +107,7 @@ pub async fn get_sig(
     let n_lock_time = statecoin.n_lock_time;
     let txn = statecoin.txn as u64;
 
-    let new_lock_time = n_lock_time - txn * 60 * 60 * 24 * 1;
+    let new_lock_time = n_lock_time - txn * 60 * 60 * 24;
 
     let tx = consensus::deserialize::<Transaction>(&hex::decode(parsed_tx)?)?;
     let mut unsigned_txn = tx.clone();
@@ -188,7 +187,7 @@ pub async fn withdraw(
     Ok(GetPartialSignatureRes {
         sighash: sighash_str,
         partial_sig: final_sig,
-        n_lock_time: 0 as u64,
+        n_lock_time: 0_u64,
     })
 }
 
@@ -251,7 +250,7 @@ pub async fn verify_signature(
     signature: &str,
     statechain_id: &str,
 ) -> Result<bool> {
-    let auth_key = repo.get_auth_key_by_statechain_id(&statechain_id).await?;
+    let auth_key = repo.get_auth_key_by_statechain_id(statechain_id).await?;
 
     let pub_key = XOnlyPublicKey::from_str(&auth_key)?;
     let signed_message = Signature::from_str(signature).unwrap();
@@ -267,7 +266,7 @@ pub async fn verify_receiver(
     statechain_id: &str,
 ) -> Result<bool, anyhow::Error> {
     let auth_key = repo
-        .get_auth_key_transfer_by_statechain_id(&statechain_id)
+        .get_auth_key_transfer_by_statechain_id(statechain_id)
         .await?;
 
     let pub_key = XOnlyPublicKey::from_str(&auth_key.authkey)?;

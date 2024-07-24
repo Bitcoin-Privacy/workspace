@@ -1,4 +1,4 @@
-import { CoinJoinApi } from "@/apis";
+import { AppApi, CoinJoinApi } from "@/apis";
 import { TxStrategyEnum } from "@/dtos";
 import { convertBtcToSats as convertBtcToSat } from "@/utils";
 import { useMemo, useState } from "react";
@@ -11,7 +11,7 @@ type CreateTxFormInput = {
 };
 
 export const useCreateTxForm = (derivationPath: string) => {
-  const form = useForm<CreateTxFormInput>();
+  const form = useForm<CreateTxFormInput>({ defaultValues: { amount: 0 } });
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const handleFormSubmit = useMemo(
@@ -21,7 +21,12 @@ export const useCreateTxForm = (derivationPath: string) => {
         try {
           switch (data.strategy) {
             case TxStrategyEnum.Base:
-              throw "Not support yet";
+              await AppApi.createTxn(
+                derivationPath,
+                data.address,
+                convertBtcToSat(data.amount),
+              );
+              break;
             case TxStrategyEnum.CoinJoin:
               await CoinJoinApi.register(
                 derivationPath,
@@ -38,7 +43,7 @@ export const useCreateTxForm = (derivationPath: string) => {
           setIsLoading(false);
         }
       }),
-    [derivationPath],
+    [derivationPath, form],
   );
 
   return {

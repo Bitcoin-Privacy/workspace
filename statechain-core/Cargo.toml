@@ -26,5 +26,5 @@ secp256k1-zkp = { git = "https://github.com/tinguyen1107/rust-secp256k1-zkp.git"
 ] }
 bip39 = "2.0.0"
 bech32 = { version = "0.9.1", default-features = false }
-ecies = { version = "0.2", default-features = false, features = ["pure"] }
+ecies = { version = "0.2", default-features = false }
 hex = { workspace = true }

@@ -7,7 +7,7 @@ use crate::error::Error;
 
 use super::{AddrType, SecpContext};
 
-/// instantiated key of an account
+/// Instantiated key of an account
 #[derive(Clone, Debug)]
 pub struct InstantiatedKey {
     pub public: PublicKey,

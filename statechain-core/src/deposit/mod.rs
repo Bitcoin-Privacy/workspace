@@ -87,7 +87,7 @@ pub fn create_aggregated_address(coin: &Coin, network: String) -> Result<Aggrega
     let secp = Secp256k1::new();
 
     let user_pubkey_share = PublicKey::from_str(&coin.user_pubkey)?;
-    let server_pubkey_share = PublicKey::from_str(&coin.server_pubkey.as_ref().unwrap())?;
+    let server_pubkey_share = PublicKey::from_str(coin.server_pubkey.as_ref().unwrap())?;
 
     let aggregate_pubkey = user_pubkey_share.combine(&server_pubkey_share)?;
 
@@ -100,4 +100,3 @@ pub fn create_aggregated_address(coin: &Coin, network: String) -> Result<Aggrega
         aggregate_address: aggregate_address.to_string(),
     })
 }
-
