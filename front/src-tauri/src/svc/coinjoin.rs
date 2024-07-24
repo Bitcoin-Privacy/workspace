@@ -10,6 +10,7 @@ use tokio::time::{sleep, Duration};
 
 use shared::blindsign::WiredUnblindedSigData;
 
+use crate::cfg::CFG;
 use crate::connector::NodeConnector;
 use crate::db::PoolWrapper;
 use crate::model::{AccountActions, RoomEntity};
@@ -26,7 +27,7 @@ pub async fn register(
     dest: &str,
 ) -> Result<(String, String)> {
     let acct = account::get_internal_account(deriv)?;
-    let utxos = acct.get_utxo(amount).await?;
+    let utxos = acct.get_utxo(amount + CFG.coinjoin_fee).await?;
 
     let (blinded_address, unblinder) = blindsign::blind_message(conn, dest).await?;
 

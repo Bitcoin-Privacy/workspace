@@ -11,7 +11,7 @@ type CreateTxFormInput = {
 };
 
 export const useCreateTxForm = (derivationPath: string) => {
-  const form = useForm<CreateTxFormInput>();
+  const form = useForm<CreateTxFormInput>({ defaultValues: { amount: 0 } });
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const handleFormSubmit = useMemo(
@@ -43,7 +43,7 @@ export const useCreateTxForm = (derivationPath: string) => {
           setIsLoading(false);
         }
       }),
-    [derivationPath],
+    [derivationPath, form],
   );
 
   return {

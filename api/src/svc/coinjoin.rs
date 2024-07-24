@@ -7,11 +7,11 @@ use bitcoin::{
 };
 
 use crate::{
-    constance::COINJOIN_FEE,
+    config::CFG,
     model::entity::coinjoin::{Input, RoomEntity},
     repo::coinjoin::CoinjoinRepo,
 };
-use shared::model::Utxo;
+use shared::{api, model::Utxo};
 
 pub struct CoinjoinService {
     repo: CoinjoinRepo,
@@ -33,7 +33,7 @@ impl CoinjoinService {
         let room = self.repo.get_compatible_room(amount).await?;
 
         let total: u64 = utxo.iter().map(|utxo| utxo.value).sum();
-        let est = (amount + COINJOIN_FEE) as u64;
+        let est = (amount + CFG.coinjoin_fee) as u64;
         let change = if total > est {
             total - est
         } else {
@@ -112,8 +112,7 @@ impl CoinjoinService {
             return match result {
                 Ok(_) => continue,
                 Err(e) => Err(anyhow!(
-                    "Failed to update the signature to database! Detail {:?}",
-                    e
+                    "Failed to update the signature to database! Detail {e:?}"
                 )),
             };
         }
@@ -124,10 +123,14 @@ impl CoinjoinService {
                 let tx_hex = consensus::encode::serialize_hex(&tx);
                 println!("TX: {:#?}", tx);
                 println!("TX completed: {}", tx_hex);
+
+                let res = api::broadcast_tx(tx_hex)
+                    .await
+                    .map_err(|e| anyhow!("Broadcast txn error: {e:#?}"))?;
                 Ok(1)
             }
             Err(e) => {
-                println!("Check completed got error: {}", e);
+                println!("Check completed got error: {e}");
                 Ok(0)
             }
         }

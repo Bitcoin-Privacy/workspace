@@ -15,6 +15,7 @@ lazy_static! {
 pub struct Config {
     pub database_url: String,
     pub service_url: String,
+    pub coinjoin_fee: u64,
 }
 
 impl Config {
@@ -22,10 +23,11 @@ impl Config {
         dotenv().ok();
         let database_url = get_env::<String>("SQLITE_URL", None);
         let service_url = get_env::<String>("SERVICE_URL", None);
-        let coinjoin_fee = get_env::<u32>("COINJOIN_FEE", None);
+        let coinjoin_fee = get_env::<u64>("COINJOIN_FEE", None);
         Config {
             database_url,
             service_url,
+            coinjoin_fee,
         }
     }
 }
