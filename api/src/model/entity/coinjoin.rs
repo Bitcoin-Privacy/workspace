@@ -113,3 +113,15 @@ pub struct Proof {
 pub struct SpentSig {
     pub signature: String,
 }
+
+// ---------------------------
+// Spent Signature table
+// ---------------------------
+#[derive(sqlx::FromRow, Debug, Clone)]
+pub struct Signed {
+    pub id: uuid::Uuid,
+    pub room_id: uuid::Uuid,
+    pub address: String,
+    #[sqlx(try_from = "i16")]
+    pub status: u8, // WaitForNewParticipant=0, WaitForSignature=1, Submitting=2, Success=3, Failed=4
+}
