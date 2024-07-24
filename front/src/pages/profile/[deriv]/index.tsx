@@ -65,11 +65,7 @@ export default function ProfilePage() {
           >
             <Flex w="full" alignItems="start" justifyContent="space-between">
               <HStack w="100%" alignItems="start" flex="1">
-                <Image
-                  borderRadius="full"
-                  boxSize="50px"
-                  src="https://bit.ly/dan-abramov"
-                />
+                <Image borderRadius="full" boxSize="54px" src="/avatar.jpeg" />
                 <VStack align="start" pl="5px" w="100%" flex="1">
                   <Text fontWeight="700" fontSize="20px">
                     Account {deriv.slice(0, deriv.indexOf("/"))}
@@ -100,8 +96,9 @@ export default function ProfilePage() {
                 <Text fontSize="16px"> 0 Statecoin in the wallet</Text>
               </VStack>
             </Flex>
-
             <HStack
+              justify="center"
+              w="100%"
               direction={{ base: "column", md: "row" }}
               spacing={{ base: 4, md: 2 }}
               wrap="wrap"

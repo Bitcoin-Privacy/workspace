@@ -80,7 +80,11 @@ export default function Deposit() {
                           },
                         })}
                       />
-                      <InputRightAddon w="82px" justifyContent="center">
+                      <InputRightAddon
+                        w="82px"
+                        justifyContent="center"
+                        textColor="black"
+                      >
                         BTC
                       </InputRightAddon>
                     </InputGroup>

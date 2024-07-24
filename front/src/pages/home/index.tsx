@@ -44,12 +44,13 @@ export default function Home() {
                 router.push(`/profile/${derivBase64(prof)}`);
               }}
             >
-              <Avatar h="36px" w="36px" src={DEFAULT_AVATAR} />
+              <Avatar h="42px" w="42px" src="/avatar.jpeg" />
+
               <Box textAlign="start">
-                <Text color="#fff" fontWeight="600">
+                <Text color="#fff" fontWeight="600" fontSize="16px">
                   Account {prof.account_number}
                 </Text>
-                <Text fontSize="12px" fontWeight="400" color="#aaa">
+                <Text fontSize="14px" fontWeight="400" color="#aaa">
                   Address: {prof.address}
                 </Text>
               </Box>
