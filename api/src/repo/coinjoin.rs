@@ -182,15 +182,14 @@ impl CoinjoinRepo {
         Ok(())
     }
 
-    pub async fn set_signed(&self, room_id: &str, address: &str, status: u8) -> Result<()> {
-        let query = sqlx::query_as::<_, Output>(
-            r#"insert into signed (room_id, address, status) values ($1::uuid, $2, $3)"#,
+    pub async fn set_signed(&self, room_id: &str, address: &str, status: u8) -> Result<Signed> {
+        let res = sqlx::query_as::<_, Signed>(
+            r#"insert into signed (room_id, address, status) values ($1::uuid, $2, $3) returning *"#,
         )
         .bind(room_id)
         .bind(address)
-        .bind(status as i16);
-        let _ = self.pool.pool.execute(query).await;
-        Ok(())
+        .bind(status as i16).fetch_one(&self.pool.pool).await?;
+        Ok(res)
     }
 
     pub async fn get_signed(&self, room_id: &str, address: &str) -> Result<Option<Signed>> {
