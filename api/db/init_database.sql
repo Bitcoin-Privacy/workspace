@@ -17,7 +17,8 @@ create table if not exists room (
 create table if not exists signed (
     id uuid default uuid_generate_v1() not null constraint signeds_pkey primary key,
     room_id uuid,
-    address varchar(64)
+    address varchar(64),
+    status int2 default 0 not null
 );
 
 create table if not exists txin (
