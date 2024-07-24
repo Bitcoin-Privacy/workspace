@@ -9,6 +9,7 @@ create table if not exists room (
     base_amount int8 not null,
     due1 int8 not null,
     due2 int8 not null,
+    txid varchar(64) default null,
     created_at timestamp with time zone default current_timestamp,
     updated_at timestamp with time zone default current_timestamp,
     constraint chk_status check (status in (0, 1, 2, 3, 4))

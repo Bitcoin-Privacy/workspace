@@ -127,6 +127,9 @@ impl CoinjoinService {
                 let res = api::broadcast_tx(tx_hex)
                     .await
                     .map_err(|e| anyhow!("Broadcast txn error: {e:#?}"))?;
+                println!("Broadcast transaction: {res:#?}");
+                let _room = self.repo.set_room_txid(room_id, &res).await?;
+
                 Ok(1)
             }
             Err(e) => {

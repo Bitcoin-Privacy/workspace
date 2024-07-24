@@ -13,6 +13,7 @@ pub struct RoomDto {
     pub status: u8, // WaitForNewParticipant=0, WaitForSignature=1, Submitting=2, Success=3, Failed=4
     pub due1: u32,  // 3h -> 3*24*60*1000
     pub due2: u32,  // 3h -> 3*24*60*1000 calc from due01 -> total time = due01 + due02
+    pub txid: Option<String>,
     pub created_at: u64,
     pub updated_at: u64,
 }

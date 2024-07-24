@@ -161,6 +161,17 @@ impl CoinjoinRepo {
         Ok(())
     }
 
+    pub async fn set_room_txid(&self, room_id: &str, txid: &str) -> Result<RoomEntity> {
+        let res = sqlx::query_as::<_, RoomEntity>(
+            r#"update room set status = 3, txid = $1 where id = $2::uuid returning *"#,
+        )
+        .bind(txid)
+        .bind(room_id)
+        .fetch_one(&self.pool.pool)
+        .await?;
+        Ok(res)
+    }
+
     pub async fn get_proofs(&self, room_id: &str) -> Result<Vec<Proof>> {
         let res = sqlx::query_as::<_, Proof>(
             r#"select * from proof where room_id = $1::uuid order by vin"#,
