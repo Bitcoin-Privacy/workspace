@@ -6,18 +6,22 @@ import {
   Button,
   Input,
   HStack,
-  Spacer,
   InputGroup,
   InputRightAddon,
   FormControl,
   FormErrorMessage,
+  Divider,
+  Spinner,
 } from "@chakra-ui/react";
 import { useRouter } from "next/router";
 import { useSendPage } from "@/hooks";
-import { ChakraStylesConfig, Select } from "chakra-react-select";
+import { Select } from "chakra-react-select";
 
 import { Layout, NavBar } from "@/components";
 import { TxStrategyEnum } from "@/dtos";
+import { COINJOIN_FEE } from "@/consts";
+import { convertBtcToSats, convertSatsToBtc } from "@/utils";
+import { selectStyles } from "@/styles/components";
 
 const INPUT_WIDTH = "75%";
 
@@ -33,52 +37,6 @@ export default function Send() {
     methods: { handleFormSubmit },
   } = useSendPage();
 
-  const chakraStyles: ChakraStylesConfig = useMemo(
-    () => ({
-      menuList: (provided) => ({
-        ...provided,
-        // ...bgThemeListSearch,
-      }),
-      menu: (provided) => ({
-        ...provided,
-        // ...bgThemeListSearch,
-      }),
-      inputContainer: (provided) => ({
-        ...provided,
-        fontSize: "14px",
-        color: "white",
-        textAlign: "start",
-      }),
-      dropdownIndicator: (provided) => ({
-        ...provided,
-        w: "80px",
-      }),
-      control: (provided) => ({
-        ...provided,
-        background: "transparent",
-        fontSize: "12px",
-        color: "textSloganHomepage",
-      }),
-      container: (provided) => ({
-        ...provided,
-        width: INPUT_WIDTH,
-      }),
-      singleValue: (provided) => ({
-        ...provided,
-        fontSize: "14px",
-        color: "white",
-        textAlign: "start",
-      }),
-      placeholder: (provided) => ({
-        ...provided,
-        color: "#a6a6a6",
-        fontSize: "14px",
-        textAlign: "start",
-      }),
-    }),
-    [],
-  );
-
   const options: TransactionOption[] = useMemo(
     () => [
       {
@@ -92,6 +50,31 @@ export default function Send() {
     ],
     [],
   );
+
+  if (balanceQuery.isLoading) {
+    return (
+      <Layout>
+        <VStack textAlign="center" p="0px 16px" spacing="20px">
+          <Spinner />
+          <Text color="white" fontWeight="700" fontSize="18px">
+            Fetching your balance...
+          </Text>
+        </VStack>
+      </Layout>
+    );
+  }
+
+  if (!balanceQuery.data) {
+    return (
+      <Layout>
+        <VStack textAlign="center" p="0px 16px" spacing="20px">
+          <Text color="white" fontWeight="700" fontSize="18px">
+            Cannot fetch your balance!
+          </Text>
+        </VStack>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -133,6 +116,7 @@ export default function Send() {
                 <InputGroup w={INPUT_WIDTH}>
                   <Input
                     placeholder="0.12"
+                    type="number"
                     color={"white"}
                     {...form.register("amount", {
                       required: "Amount is required",
@@ -142,9 +126,9 @@ export default function Send() {
                           "Amount should be a floating-point number with at most 8 decimal places.",
                       },
                       max: {
-                        value: balanceQuery.data
-                          ? balanceQuery.data / 10000000
-                          : Number.MAX_VALUE,
+                        value: convertSatsToBtc(
+                          balanceQuery.data - COINJOIN_FEE,
+                        ),
                         message: "Balance is not enough",
                       },
                       min: {
@@ -167,7 +151,7 @@ export default function Send() {
             <HStack w="full" justify="space-between">
               <Text color="white">Strategy:</Text>
               <Select
-                chakraStyles={chakraStyles}
+                chakraStyles={selectStyles(INPUT_WIDTH)}
                 colorScheme="purple"
                 options={options}
                 defaultValue={options[0]}
@@ -182,24 +166,22 @@ export default function Send() {
               />
             </HStack>
             <Box width="full" textColor="white">
-              <HStack>
-                <Text>Current balance</Text>
-                <Spacer />
+              <HStack justify="space-between">
+                <Text>Current balance:</Text>
+                <Text>{`${convertSatsToBtc(balanceQuery.data)} BTC`}</Text>
+              </HStack>
+              <HStack justify="space-between">
+                <Text>Fee:</Text>
+                <Text>{convertSatsToBtc(COINJOIN_FEE)} BTC</Text>
+              </HStack>
+              <Divider my="10px" />
+              <HStack justify="space-between">
+                <Text>Spend:</Text>
                 <Text>
-                  {(balanceQuery.data !== undefined
-                    ? balanceQuery.data / 100000000
-                    : "-") + " BTC"}
+                  {`${convertSatsToBtc(
+                    convertBtcToSats(form.watch("amount")) + COINJOIN_FEE,
+                  )} BTC`}
                 </Text>
-              </HStack>
-              <HStack>
-                <Text>Gas</Text>
-                <Spacer />
-                <Text>0.0003 BTC</Text>
-              </HStack>
-              <HStack>
-                <Text>Likely in 30 seconds</Text>
-                <Spacer />
-                <Text>Max fee: BTC</Text>
               </HStack>
             </Box>
           </VStack>

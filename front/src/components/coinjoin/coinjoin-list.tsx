@@ -11,7 +11,7 @@ interface IListCoinjoinRoom {
   data: RoomDto[];
 }
 export const CoinjoinList: FC<IListCoinjoinRoom> = (props) => {
-  const [hideEnded, setHideEnded] = useState<boolean>(false);
+  const [hideEnded, setHideEnded] = useState<boolean>(true);
   const { deriv, data, isLoading, isError } = props;
   if (isLoading)
     return (
@@ -37,7 +37,7 @@ export const CoinjoinList: FC<IListCoinjoinRoom> = (props) => {
               setHideEnded((value) => !value);
             }}
           />
-          <Text>Hide ended rooms</Text>
+          <Text>{hideEnded ? "Show all" : "Hide ended rooms"}</Text>
         </HStack>
       </Box>
       {data

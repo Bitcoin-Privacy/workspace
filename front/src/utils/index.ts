@@ -54,3 +54,7 @@ export function convertBtcToSats(btcAmount: number): number {
 
   return nsats;
 }
+
+export function convertSatsToBtc(satsAmount: number): number {
+  return satsAmount / 100000000;
+}
