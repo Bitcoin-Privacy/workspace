@@ -1,5 +1,5 @@
--- drop table if exists statechain_data;
--- drop table if exists room, txin, txout, proof; 
+-- drop table if exists room, signed, txin, txout, proof, spent_sig; 
+
 create extension if not exists "uuid-ossp";
 
 create table if not exists room (
@@ -12,6 +12,12 @@ create table if not exists room (
     created_at timestamp with time zone default current_timestamp,
     updated_at timestamp with time zone default current_timestamp,
     constraint chk_status check (status in (0, 1, 2, 3, 4))
+);
+
+create table if not exists signed (
+    id uuid default uuid_generate_v1() not null constraint signeds_pkey primary key,
+    room_id uuid,
+    address varchar(64)
 );
 
 create table if not exists txin (
@@ -44,8 +50,10 @@ create table if not exists proof (
 );
 
 create table if not exists spent_sig (
-	signature varchar not null constraint proofs_pkey primary key,
+	signature varchar not null constraint sent_sigs_pkey primary key
 );
+
+-- Statechain DB
 
 create table if not exists statechain (
 	id uuid default uuid_generate_v1() not null constraint statechain_pkey primary key,
