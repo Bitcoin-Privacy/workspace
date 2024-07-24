@@ -75,6 +75,7 @@ pub struct SetOutputRes {
 #[derive(Debug, Clone)]
 pub struct SignTxnReq {
     pub room_id: String,
+    pub address: String,
     pub vins: Vec<u16>,
     pub txn: String, // transaction hex
 }
@@ -151,5 +152,12 @@ pub struct ValidateSignatureReq {
 #[cfg_attr(feature = "frontend", derive(Deserialize))]
 #[derive(Debug, Clone)]
 pub struct ValidateSignatureRes {
+    pub status: u8,
+}
+
+#[cfg_attr(feature = "backend", derive(Serialize))]
+#[cfg_attr(feature = "frontend", derive(Deserialize))]
+#[derive(Debug, Clone)]
+pub struct CheckSignatureRes {
     pub status: u8,
 }

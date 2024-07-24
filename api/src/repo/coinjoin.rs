@@ -3,7 +3,7 @@ use sqlx::Executor;
 
 use crate::{
     db::Database,
-    model::entity::coinjoin::{Input, Output, Proof, RoomEntity, SpentSig},
+    model::entity::coinjoin::{Input, Output, Proof, RoomEntity, Signed, SpentSig},
     CFG,
 };
 use uuid::Uuid;
@@ -39,7 +39,7 @@ impl CoinjoinRepo {
             r#"
             select * 
             from room
-            where base_amount = 10
+            where base_amount = $1
               and status = 0
               and created_at + interval '1 second' * (room.due1 / 1000) > now();
             "#,
@@ -108,7 +108,7 @@ impl CoinjoinRepo {
 
     pub async fn get_inputs(&self, room_id: &str) -> Result<Vec<Input>> {
         let res = sqlx::query_as::<_, Input>(
-            r#"select * from txin where room_id = $1::uuid order by txid"#,
+            r#"select * from txin where room_id = $1::uuid order by id"#,
         )
         .bind(room_id)
         .fetch_all(&self.pool.pool)
@@ -118,7 +118,7 @@ impl CoinjoinRepo {
 
     pub async fn get_inputs_by_addr(&self, room_id: &str, address: &str) -> Result<Vec<Input>> {
         let res = sqlx::query_as::<_, Input>(
-            r#"select * from txin where room_id = $1::uuid and address = $2 order by txid"#,
+            r#"select * from txin where room_id = $1::uuid and address = $2 order by id"#,
         )
         .bind(room_id)
         .bind(address)
@@ -154,9 +154,9 @@ impl CoinjoinRepo {
 
     pub async fn set_room_status(&self, room_id: &str, status: u8) -> Result<()> {
         let query =
-            sqlx::query_as::<_, RoomEntity>(r#"update room set status=$2 where id = $1::uuid"#)
-                .bind(room_id)
-                .bind(status as i8);
+            sqlx::query_as::<_, RoomEntity>(r#"update room set status = $1 where id = $2::uuid"#)
+                .bind(status as i16)
+                .bind(room_id);
         let _ = self.pool.pool.execute(query).await?;
         Ok(())
     }
@@ -180,6 +180,28 @@ impl CoinjoinRepo {
         .bind(script);
         let _ = self.pool.pool.execute(query).await;
         Ok(())
+    }
+
+    pub async fn set_signed(&self, room_id: &str, address: &str, status: u8) -> Result<()> {
+        let query = sqlx::query_as::<_, Output>(
+            r#"insert into signed (room_id, address, status) values ($1::uuid, $2, $3)"#,
+        )
+        .bind(room_id)
+        .bind(address)
+        .bind(status as i16);
+        let _ = self.pool.pool.execute(query).await;
+        Ok(())
+    }
+
+    pub async fn get_signed(&self, room_id: &str, address: &str) -> Result<Option<Signed>> {
+        let res = sqlx::query_as::<_, Signed>(
+            r#"select * from signed where room_id = $1::uuid and address = $2"#,
+        )
+        .bind(room_id)
+        .bind(address)
+        .fetch_optional(&self.pool.pool)
+        .await?;
+        Ok(res)
     }
 
     pub async fn set_spent_sig(&self, sig: &str) -> Result<()> {

@@ -39,5 +39,6 @@ pub fn config(cfg: &mut web::ServiceConfig) {
     cfg.route("/room/{id}", web::get().to(coinjoin::get_room_by_id));
     cfg.route("/room/{id}/status", web::get().to(coinjoin::get_status));
     cfg.route("/room/{id}/txn", web::get().to(coinjoin::get_txn));
+    cfg.route("/room/{id}/signed", web::get().to(coinjoin::signed));
     cfg.route("/check-spent", web::post().to(coinjoin::check_spent));
 }

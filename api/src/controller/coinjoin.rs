@@ -7,9 +7,9 @@ use actix_web::{
     HttpResponse,
 };
 use shared::intf::coinjoin::{
-    AddressQuery, CoinjoinRegisterReq, CoinjoinRegisterRes, GetRoomByIdRes, GetStatusRes,
-    GetUnsignedTxnRes, RoomDto, RoomListQuery, RoomQueryReq, SetOutputReq, SetOutputRes,
-    SignTxnReq, SignTxnRes, ValidateSignatureReq, ValidateSignatureRes,
+    AddressQuery, CheckSignatureRes, CoinjoinRegisterReq, CoinjoinRegisterRes, GetRoomByIdRes,
+    GetStatusRes, GetUnsignedTxnRes, RoomDto, RoomListQuery, RoomQueryReq, SetOutputReq,
+    SetOutputRes, SignTxnReq, SignTxnRes, ValidateSignatureReq, ValidateSignatureRes,
 };
 
 /// Register to CoinJoin Room
@@ -76,7 +76,12 @@ pub async fn set_signature(
 ) -> HttpResponse {
     let service = coinjoin_service.get_ref();
     match service
-        .set_sig(&payload.room_id, &payload.vins, &payload.txn)
+        .set_sig(
+            &payload.room_id,
+            &payload.address,
+            &payload.vins,
+            &payload.txn,
+        )
         .await
     {
         Ok(status) => response::success(SignTxnRes { status }),
@@ -132,6 +137,18 @@ pub async fn get_txn(
     let service = coinjoin_service.get_ref();
     match service.get_txn_hex(&path.id).await {
         Ok(tx) => response::success(GetUnsignedTxnRes { tx }),
+        Err(e) => response::error(e.to_string()),
+    }
+}
+
+pub async fn signed(
+    coinjoin_service: Data<CoinjoinService>,
+    path: web::Path<RoomQueryReq>,
+    query: web::Query<AddressQuery>,
+) -> HttpResponse {
+    let service = coinjoin_service.get_ref();
+    match service.get_signed(&path.id, &query.address).await {
+        Ok(status) => response::success(CheckSignatureRes { status }),
         Err(e) => response::error(e.to_string()),
     }
 }

@@ -136,7 +136,7 @@ pub async fn sign_txn(deriv: &str, room_id: &str) -> Result<()> {
 
     let tx_hex = consensus::encode::serialize_hex(&unsigned_tx);
 
-    let res = coinjoin::sign(room_id, vins, &tx_hex).await;
+    let res = coinjoin::sign(room_id, &account.get_addr(), vins, &tx_hex).await;
     match res {
         Ok(response) => {
             println!("RES {:#?}", response);

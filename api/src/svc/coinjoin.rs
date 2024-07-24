@@ -64,21 +64,33 @@ impl CoinjoinService {
         // Attempt to get the room and handle the error if it doesn't exist
         let room = self.repo.get_room_by_id(room_id).await?;
 
+        // Verify signature
+        self.unspent_sig(sig, Some(output_addr)).await?;
+
         // Attempt to add output and handle any potential error
         self.repo.set_spent_sig(sig).await?;
         self.repo
             .add_output(room_id, output_addr, room.base_amount)
             .await?;
-
-        // Verify signature
-        self.unspent_sig(sig, Some(output_addr)).await?;
         Ok(0)
     }
 
-    pub async fn set_sig(&self, room_id: &str, vins: &[u16], txn: &str) -> Result<u8> {
+    pub async fn set_sig(
+        &self,
+        room_id: &str,
+        address: &str,
+        vins: &[u16],
+        txn: &str,
+    ) -> Result<u8> {
         let parsed_tx = consensus::deserialize::<Transaction>(&hex::decode(txn)?)?;
 
-        self.update_room_status(room_id, 1, Some(0)).await?;
+        self.update_room_status(room_id, 1, None)
+            .await
+            .map_err(|e| anyhow!("Update room status error: {e}"))?;
+        self.repo
+            .set_signed(room_id, address, 1)
+            .await
+            .map_err(|e| anyhow!("Set signed error: {e}"))?;
 
         for vin in vins.iter() {
             let signed_input = parsed_tx.input.get(*vin as usize);
@@ -124,6 +136,14 @@ impl CoinjoinService {
     pub async fn get_txn_hex(&self, room_id: &str) -> Result<String> {
         let txn = self.get_txn(room_id).await?;
         Ok(consensus::encode::serialize_hex(&txn))
+    }
+
+    pub async fn get_signed(&self, room_id: &str, address: &str) -> Result<u8> {
+        let optional_signed = self.repo.get_signed(room_id, address).await?;
+        match optional_signed {
+            Some(signed) => Ok(signed.status),
+            None => Ok(0),
+        }
     }
 
     async fn get_txn(&self, room_id: &str) -> Result<bitcoin::Transaction> {

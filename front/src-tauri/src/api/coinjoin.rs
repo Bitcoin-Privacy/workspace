@@ -40,10 +40,11 @@ pub async fn set_output(room_id: &str, out_addr: &str, sig: &str) -> Result<SetO
     Ok(serde_json::from_value::<SetOutputRes>(res)?)
 }
 
-pub async fn sign(room_id: &str, vins: Vec<u16>, txn: &str) -> Result<SignTxnRes> {
+pub async fn sign(room_id: &str, address: &str, vins: Vec<u16>, txn: &str) -> Result<SignTxnRes> {
     let conn = NodeConnector::new(CFG.service_url.clone());
     let req = SignTxnReq {
         room_id: room_id.to_string(),
+        address: address.to_string(),
         vins,
         txn: txn.to_string(),
     };
