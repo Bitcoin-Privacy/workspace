@@ -32,7 +32,7 @@
     "react-icons": "^4.12.0",
     "react-qr-code": "^2.0.12",
     "react-query": "^3.39.3",
-    "tauri-plugin-sql-api": "github:tauri-apps/tauri-plugin-sql#v1",
+    "tauri-plugin-sql-api": "https://github.com/tauri-apps/tauri-plugin-sql.git#v1",
     "timeago-react": "^3.0.6"
   },
   "devDependencies": {
