@@ -42,18 +42,18 @@ pub async fn register(
 
     let signed_msg: [u8; 32] = hex::decode(&register_res.signed_blined_output)?
         .try_into()
-        .map_err(|e| anyhow!("Internal error: {:?}", e))?;
+        .map_err(|e| anyhow!("Internal error: {e:?}"))?;
 
     let unblinded_sig = unblinder
         .gen_signed_msg(&signed_msg)
-        .map_err(|e| anyhow!("Cannot unblind the sig: {:?}", e))?;
+        .map_err(|e| anyhow!("Cannot unblind the sig: {e:?}"))?;
     let wired = WiredUnblindedSigData::from(unblinded_sig);
     let sig = wired.as_bytes().to_hex_string(Case::Lower);
 
     let room_entity: RoomEntity = register_res.clone().into();
 
     pool.add_or_update_room(deriv, &room_entity)
-        .map_err(|e| anyhow!("Failed to update room {:?}", e))?;
+        .map_err(|e| anyhow!("Failed to update room {e:?}"))?;
 
     let (room_id, address, sig_cloned) =
         (register_res.room.id.clone(), dest.to_string(), sig.clone());
@@ -64,7 +64,7 @@ pub async fn register(
         sleep(Duration::from_secs(random_delay)).await;
 
         if let Err(e) = coinjoin::set_output(&room_id, &address, &sig_cloned).await {
-            println!("Set output got error {}", e);
+            println!("Set output got error {e}");
             tauri::Window::emit(
                 &window,
                 "coinjoin-setoutput",
@@ -141,10 +141,10 @@ pub async fn sign_txn(deriv: &str, room_id: &str) -> Result<()> {
     let res = coinjoin::sign(room_id, &account.get_addr(), vins, &tx_hex).await;
     match res {
         Ok(response) => {
-            println!("RES {:#?}", response);
+            println!("CoinJoin Sign transaction response: {response:#?}");
             Ok(())
         }
-        Err(e) => Err(anyhow!("Error: {}", e)),
+        Err(e) => Err(anyhow!("CoinJoin Sign transaction error: {e}")),
     }
 }
 

@@ -1,14 +1,11 @@
 use anyhow::{anyhow, Result};
 
-use bitcoin::hex::parse;
-use bitcoin::{consensus, Address, Network, Transaction, XOnlyPublicKey};
+use bitcoin::{consensus, Address, Network, Transaction};
 use bitcoin::{hex::DisplayHex, secp256k1::SecretKey};
 
-use musig2::KeyAggContext;
 use openssl::sha::Sha256;
-use secp256k1::{Keypair, PublicKey, Scalar, Secp256k1};
-use shared::api::{self, get_transaction_existence};
-use statechain_core::transfer;
+use secp256k1::{PublicKey, Secp256k1};
+use shared::api::get_transaction_existence;
 use std::str::FromStr;
 
 use crate::model::Statecoin;

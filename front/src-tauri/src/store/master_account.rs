@@ -27,8 +27,12 @@ pub fn initialize_master_account(
 
         let account_0 = Account::new(&mut unlocker, AddrType::P2WPKH, 0, 0, 10).unwrap();
         let account_1 = Account::new(&mut unlocker, AddrType::P2WPKH, 1, 0, 10).unwrap();
+        let account_2 = Account::new(&mut unlocker, AddrType::P2WPKH, 2, 0, 10).unwrap();
+        let account_3 = Account::new(&mut unlocker, AddrType::P2WPKH, 3, 0, 10).unwrap();
         master.add_account(account_0);
         master.add_account(account_1);
+        master.add_account(account_2);
+        master.add_account(account_3);
         *singleton = Some(master);
     }
 }

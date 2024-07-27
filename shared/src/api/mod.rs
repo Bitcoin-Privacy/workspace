@@ -3,12 +3,15 @@ use serde_json::Value;
 
 use crate::model::{Status, Txn, Utxo};
 
-pub fn uri(endpoint: &str) -> String {
-    format!("https://blockstream.info/testnet/api/{}", endpoint)
+macro_rules! rpc_url {
+    ($($arg:tt)*) => {{
+        let res = format!("https://blockstream.info/testnet/api/{}", format_args!($($arg)*));
+        res
+    }}
 }
 
 pub async fn get_onchain_tx(txid: &str) -> Result<Txn> {
-    let url = uri(&format!("tx/{}", txid));
+    let url = rpc_url!("tx/{txid}");
 
     let response: Txn = reqwest::get(&url).await?.json().await?;
 
@@ -16,7 +19,7 @@ pub async fn get_onchain_tx(txid: &str) -> Result<Txn> {
 }
 
 pub async fn get_tx_outspend(txid: &str, vout: u16) -> Result<()> {
-    let url = uri(&format!("tx/{}/outspend/{}", txid, vout));
+    let url = rpc_url!("tx/{txid}/outspend/{vout}");
 
     let res = reqwest::get(&url).await?.json::<Value>().await?;
     println!("Tx outspend result: {res}");
@@ -25,19 +28,16 @@ pub async fn get_tx_outspend(txid: &str, vout: u16) -> Result<()> {
 }
 
 pub async fn get_utxo(address: &str) -> Result<Vec<Utxo>> {
-    let url = format!(
-        "https://blockstream.info/testnet/api/address/{}/utxo",
-        address
-    );
-    println!("utxo, {}", address);
+    let url = rpc_url!("address/{address}/utxo");
+    println!("utxo, {address}");
 
     let response: Vec<Utxo> = reqwest::get(&url).await.unwrap().json().await.unwrap();
 
     Ok(response)
 }
 pub async fn get_status(txid: &str) -> Result<bool> {
-    let url = format!("https://blockstream.info/testnet/api/tx/{}/status", txid);
-    println!("txid, {}", txid);
+    let url = rpc_url!("tx/{txid}/status");
+    println!("txid, {txid}");
 
     let response = reqwest::get(&url).await?.json::<Status>().await?;
     println!("status, {:?}", response);
@@ -46,7 +46,7 @@ pub async fn get_status(txid: &str) -> Result<bool> {
 }
 
 pub async fn get_transaction_existence(txid: &str) -> Result<bool> {
-    let url = format!("https://blockstream.info/testnet/api/tx/{}", txid);
+    let url = rpc_url!("tx/{txid}");
     println!("txid, {}", txid);
     let response = reqwest::get(&url).await;
     match response {
@@ -55,7 +55,7 @@ pub async fn get_transaction_existence(txid: &str) -> Result<bool> {
             Ok(false)
         }
         Err(err) => {
-            println!("Error: {:?}", err);
+            println!("Error: {err:?}");
             Ok(true)
         }
     }
@@ -67,7 +67,7 @@ pub async fn get_balance(address: &str) -> Result<u64> {
 }
 
 pub async fn broadcast_tx(tx_hex: String) -> Result<String> {
-    let url = "https://blockstream.info/testnet/api/tx";
+    let url = rpc_url!("tx");
     let client = reqwest::Client::new();
     let res = client
         .post(url)

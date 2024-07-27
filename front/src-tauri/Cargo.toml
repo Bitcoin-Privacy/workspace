@@ -15,7 +15,12 @@ rust-version = "1.60"
 tauri-build = { version = "1.5.0", features = [] }
 
 [dependencies]
-tauri = { version = "1.5.3", features = [ "shell-open", "fs-all", "path-all", "wry"] }
+tauri = { version = "1.5.3", features = [
+  "shell-open",
+  "fs-all",
+  "path-all",
+  "wry",
+] }
 
 secp256k1-zkp = { git = "https://github.com/tinguyen1107/rust-secp256k1-zkp.git", branch = "blinded-musig-scheme", features = [
   "rand-std",
