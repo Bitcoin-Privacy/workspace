@@ -1,4 +1,5 @@
 use anyhow::Result;
+use serde_json::Value;
 
 use crate::model::{Status, Txn, Utxo};
 
@@ -17,7 +18,8 @@ pub async fn get_onchain_tx(txid: &str) -> Result<Txn> {
 pub async fn get_tx_outspend(txid: &str, vout: u16) -> Result<()> {
     let url = uri(&format!("tx/{}/outspend/{}", txid, vout));
 
-    let _ = reqwest::get(&url).await?.json().await?;
+    let res = reqwest::get(&url).await?.json::<Value>().await?;
+    println!("Tx outspend result: {res}");
 
     Ok(())
 }

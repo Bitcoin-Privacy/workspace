@@ -4,9 +4,10 @@ import { CoinJoinApi } from "@/apis";
 import { FC, useEffect } from "react";
 import moment from "moment";
 import TimeAgo from "timeago-react";
-import { useMutation } from "react-query";
+import { useMutation, useQuery } from "react-query";
 
 import { listen } from "@tauri-apps/api/event";
+import { CachePrefixKeys } from "@/consts";
 
 interface ICoinjoinStatus {
   deriv: string;
@@ -23,6 +24,11 @@ export const CoinjoinStatus: FC<ICoinjoinStatus> = (props) => {
     async (data: { deriv: string; roomId: string }) => {
       await CoinJoinApi.signTxn(data.deriv, data.roomId);
     },
+  );
+
+  const signedQuery = useQuery(
+    [CachePrefixKeys.RoomStatus, deriv, roomId],
+    () => CoinJoinApi.getSigned(deriv, roomId),
   );
 
   useEffect(() => {

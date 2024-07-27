@@ -1,4 +1,4 @@
-use shared::intf::coinjoin::{GetStatusRes, GetUnsignedTxnRes, RoomDto};
+use shared::intf::coinjoin::{CheckSignatureRes, GetStatusRes, RoomDto};
 use tauri::{
     command,
     plugin::{Builder, TauriPlugin},
@@ -14,7 +14,7 @@ pub fn init() -> TauriPlugin<Wry> {
         .invoke_handler(tauri::generate_handler![
             // Modifier
             register, sign_txn, // Accessors
-            get_rooms, get_txn, get_status,
+            get_rooms, get_status, get_signed
         ])
         .build()
 }
@@ -52,13 +52,13 @@ async fn get_rooms(deriv: &str) -> TResult<Vec<RoomDto>> {
 }
 
 #[command]
-async fn get_txn(room_id: &str) -> TResult<GetUnsignedTxnRes> {
-    crate::api::coinjoin::get_txn(room_id)
-        .await
-        .map_err(util::to_string)
+async fn get_status(room_id: &str) -> TResult<GetStatusRes> {
+    coinjoin::get_status(room_id).await.map_err(util::to_string)
 }
 
 #[command]
-async fn get_status(room_id: &str) -> TResult<GetStatusRes> {
-    coinjoin::get_status(room_id).await.map_err(util::to_string)
+async fn get_signed(deriv: &str, room_id: &str) -> TResult<CheckSignatureRes> {
+    coinjoin::get_signed(deriv, room_id)
+        .await
+        .map_err(util::to_string)
 }

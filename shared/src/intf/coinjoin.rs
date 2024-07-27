@@ -104,6 +104,7 @@ pub struct RoomQueryReq {
 pub struct GetRoomByIdRes {
     pub room: RoomDto,
     pub utxo: Vec<Utxo>,
+    pub signed: u8,
 }
 
 // ---------------------------
