@@ -39,7 +39,7 @@ jobs:
         with:
           node-version: lts/*
           cache: "yarn" # Set this to npm, yarn or pnpm.
-          cache-dependency-path: front/yarn.lock
+          cache-dependency-path: ./front/yarn.lock
 
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
@@ -53,9 +53,8 @@ jobs:
           workspaces: "./front/src-tauri -> target"
 
       - name: install frontend dependencies
-        working-directory: ./front
         # If you don't have `beforeBuildCommand` configured you may want to build your frontend here too.
-        run: yarn install # change this to npm or pnpm depending on which one you use.
+        run: cd front && yarn install # change this to npm or pnpm depending on which one you use.
 
       - uses: tauri-apps/tauri-action@v0
         env:

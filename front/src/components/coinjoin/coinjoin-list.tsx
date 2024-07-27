@@ -22,7 +22,7 @@ export const CoinjoinList: FC<IListCoinjoinRoom> = (props) => {
   if (isError)
     return (
       <VStack h="100%" w="100%">
-        <Text>Failed to fetch list of state chain</Text>
+        <Text>Failed to fetch list of coinjoin rooms</Text>
       </VStack>
     );
   return (
