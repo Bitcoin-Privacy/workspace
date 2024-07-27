@@ -39,7 +39,7 @@ jobs:
         with:
           node-version: lts/*
           cache: "yarn" # Set this to npm, yarn or pnpm.
-          cache-dependency-path: front/yarn-lock.json
+          cache-dependency-path: front/yarn.lock
 
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
