@@ -38,13 +38,14 @@ export const CoinJoinApi = Object.freeze({
       deriv,
     });
   },
-  async getTxn(roomId: string): Promise<object> {
-    return await TauriConnection.callAPI<object>(this.name("get_txn"), {
+  async getStatus(roomId: string): Promise<object> {
+    return await TauriConnection.callAPI<object>(this.name("get_status"), {
       roomId,
     });
   },
-  async getStatus(roomId: string): Promise<object> {
-    return await TauriConnection.callAPI<object>(this.name("get_status"), {
+  async getSigned(deriv: string, roomId: string): Promise<object> {
+    return await TauriConnection.callAPI<object>(this.name("get_signed"), {
+      deriv,
       roomId,
     });
   },

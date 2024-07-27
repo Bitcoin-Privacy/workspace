@@ -5,7 +5,7 @@ use bitcoin::hex::{Case, DisplayHex};
 use bitcoin::{
     consensus, secp256k1::Secp256k1, sighash::SighashCache, EcdsaSighashType, Transaction,
 };
-use shared::intf::coinjoin::{GetStatusRes, RoomDto};
+use shared::intf::coinjoin::{CheckSignatureRes, GetStatusRes, RoomDto};
 use tokio::time::{sleep, Duration};
 
 use shared::blindsign::WiredUnblindedSigData;
@@ -91,7 +91,7 @@ pub async fn sign_txn(deriv: &str, room_id: &str) -> Result<()> {
     let parsed_tx = consensus::deserialize::<Transaction>(&hex::decode(res.tx.clone())?)?;
     let mut unsigned_tx = parsed_tx.clone();
 
-    let room = coinjoin::get_room(&account.get_addr(), room_id).await?;
+    let room_detail = coinjoin::get_room(&account.get_addr(), room_id).await?;
 
     let secp = Secp256k1::new();
     let sighash_type = EcdsaSighashType::All;
@@ -102,7 +102,8 @@ pub async fn sign_txn(deriv: &str, room_id: &str) -> Result<()> {
         .iter()
         .enumerate()
         .filter(|(_, input)| {
-            room.utxo
+            room_detail
+                .utxo
                 .iter()
                 .any(|utxo| input.previous_output.txid.to_string() == utxo.txid)
         })
@@ -149,6 +150,11 @@ pub async fn sign_txn(deriv: &str, room_id: &str) -> Result<()> {
 
 pub async fn get_status(room_id: &str) -> Result<GetStatusRes> {
     crate::api::coinjoin::get_status(room_id).await
+}
+
+pub async fn get_signed(deriv: &str, room_id: &str) -> Result<CheckSignatureRes> {
+    let acct = account::get_internal_account(deriv)?;
+    crate::api::coinjoin::get_signed(&acct.get_addr(), room_id).await
 }
 
 pub async fn get_rooms(deriv: &str) -> Result<Vec<RoomDto>> {

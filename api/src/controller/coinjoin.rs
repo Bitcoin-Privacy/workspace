@@ -106,7 +106,7 @@ pub async fn get_room_by_id(
     query: web::Query<AddressQuery>,
 ) -> HttpResponse {
     let service = coinjoin_service.get_ref();
-    let (room, utxo) = service
+    let (room, utxo, signed) = service
         .get_room_detail_by_id(&path.id, &query.address)
         .await
         .unwrap();
@@ -114,6 +114,7 @@ pub async fn get_room_by_id(
     response::success(GetRoomByIdRes {
         room: room.into(),
         utxo: utxo.iter().map(|input| input.into()).collect(),
+        signed,
     })
 }
 

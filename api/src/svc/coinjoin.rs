@@ -41,7 +41,7 @@ impl CoinjoinService {
         };
 
         let des_addr = super::account::parse_addr_from_str(change_addr, Network::Testnet)
-            .map_err(|e| anyhow!("Invalid address: {}", e))?;
+            .map_err(|e| anyhow!("Invalid address: {e}"))?;
 
         // Update room
         self.repo
@@ -127,6 +127,9 @@ impl CoinjoinService {
                 let res = api::broadcast_tx(tx_hex)
                     .await
                     .map_err(|e| anyhow!("Broadcast txn error: {e:#?}"))?;
+                println!("Broadcast transaction: {res:#?}");
+                let _room = self.repo.set_room_txid(room_id, &res).await?;
+
                 Ok(1)
             }
             Err(e) => {
@@ -201,11 +204,12 @@ impl CoinjoinService {
         &self,
         id: &str,
         addr: &str,
-    ) -> Result<(RoomEntity, Vec<Input>)> {
+    ) -> Result<(RoomEntity, Vec<Input>, u8)> {
         let room = self.repo.get_room_by_id(id).await?;
         let utxo = self.repo.get_inputs_by_addr(id, addr).await?;
-        print!("utxo of {}, {}: {:?}", id, addr, utxo);
-        Ok((room, utxo))
+        let signed = self.get_signed(id, addr).await?;
+        print!("utxo of {id}, {addr}, {signed}: {utxo:?}");
+        Ok((room, utxo, signed))
     }
 
     pub async fn check_tx_completed(&self, room_id: &str) -> Result<bitcoin::Transaction> {

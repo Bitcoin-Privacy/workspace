@@ -19,6 +19,7 @@ pub struct RoomEntity {
     pub due1: u32, // 3h -> 3*24*60*1000
     #[sqlx(try_from = "i64")]
     pub due2: u32, // 3h -> 3*24*60*1000 calc from due01 -> total time = due01 + due02
+    pub txid: Option<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
@@ -32,6 +33,7 @@ impl From<RoomEntity> for RoomDto {
             status: value.status,
             due1: value.due1,
             due2: value.due2,
+            txid: value.txid,
             created_at: value.created_at.timestamp_millis() as u64,
             updated_at: value.updated_at.timestamp_millis() as u64,
         }
@@ -47,6 +49,7 @@ impl From<&RoomEntity> for RoomDto {
             status: value.status,
             due1: value.due1,
             due2: value.due2,
+            txid: value.txid.clone(),
             created_at: value.created_at.timestamp_millis() as u64,
             updated_at: value.updated_at.timestamp_millis() as u64,
         }
