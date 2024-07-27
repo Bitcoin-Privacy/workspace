@@ -1,5 +1,9 @@
 import { TauriConnection } from "./core";
-import { RegisterResDto, RoomDto } from "@/dtos";
+import {
+  GetSignedResponse as GetSignedRes,
+  RegisterResDto,
+  RoomDto,
+} from "@/dtos";
 
 export const CoinJoinApi = Object.freeze({
   /* Utils */
@@ -43,10 +47,13 @@ export const CoinJoinApi = Object.freeze({
       roomId,
     });
   },
-  async getSigned(deriv: string, roomId: string): Promise<object> {
-    return await TauriConnection.callAPI<object>(this.name("get_signed"), {
-      deriv,
-      roomId,
-    });
+  async getSigned(deriv: string, roomId: string): Promise<GetSignedRes> {
+    return await TauriConnection.callAPI<GetSignedRes>(
+      this.name("get_signed"),
+      {
+        deriv,
+        roomId,
+      },
+    );
   },
 });

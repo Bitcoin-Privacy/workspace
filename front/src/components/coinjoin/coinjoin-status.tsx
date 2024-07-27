@@ -1,4 +1,4 @@
-import { Box, Button, Text } from "@chakra-ui/react";
+import { Box, Button, Text, Link } from "@chakra-ui/react";
 
 import { CoinJoinApi } from "@/apis";
 import { FC, useEffect } from "react";
@@ -12,12 +12,14 @@ import { CachePrefixKeys } from "@/consts";
 interface ICoinjoinStatus {
   deriv: string;
   roomId: string;
+  status: number;
+  txid: string | undefined;
   endOfDue1: number;
   endOfDue2: number;
 }
 
 export const CoinjoinStatus: FC<ICoinjoinStatus> = (props) => {
-  const { deriv, roomId, endOfDue1, endOfDue2 } = props;
+  const { deriv, roomId, endOfDue1, endOfDue2, status, txid } = props;
   const now = moment().unix() * 1000;
 
   const { mutateAsync: onSignBtnClick, isLoading: isSigning } = useMutation(
@@ -61,7 +63,37 @@ export const CoinjoinStatus: FC<ICoinjoinStatus> = (props) => {
         </Text>
       </Box>
     );
-  else if (now < endOfDue2)
+
+  if (status === 3 && txid) {
+    return (
+      <Box textAlign="right">
+        <Link
+          href={`https://blockstream.info/testnet/tx/${txid}`}
+          rel="noopener noreferrer"
+          target="_blank"
+        >
+          View transaction on explorer
+        </Link>
+      </Box>
+    );
+  }
+
+  if (now < endOfDue2) {
+    if (signedQuery.data && signedQuery.data.status) {
+      return (
+        <Box textAlign="right">
+          <Button
+            isLoading={isSigning}
+            isDisabled={isSigning}
+            onClick={() => {
+              onSignBtnClick({ deriv, roomId });
+            }}
+          >
+            signed
+          </Button>
+        </Box>
+      );
+    }
     return (
       <Box textAlign="right">
         <Button
@@ -75,12 +107,16 @@ export const CoinjoinStatus: FC<ICoinjoinStatus> = (props) => {
         </Button>
       </Box>
     );
-  else
-    return (
-      <Box textAlign="right">
-        <Text fontSize="16px" fontWeight="700" w="100%">
-          Ended
-        </Text>
-      </Box>
-    );
+  }
+
+  return (
+    <Box textAlign="right">
+      <Text fontSize="16px" fontWeight="700" w="100%">
+        Failed!
+      </Text>
+      <Text fontSize="14px" fontWeight="500" w="100%">
+        caused by missing signature(s)
+      </Text>
+    </Box>
+  );
 };

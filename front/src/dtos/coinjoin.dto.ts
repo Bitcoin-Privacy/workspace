@@ -10,6 +10,7 @@ export type RoomDto = {
   status: number;
   due1: number;
   due2: number;
+  txid: string | undefined;
   created_at: number;
   updated_at: number;
 };
@@ -23,4 +24,8 @@ export type UtxoDto = {
 
 export type UtxoStatus = {
   confirmed: boolean;
+};
+
+export type GetSignedResponse = {
+  status: number;
 };

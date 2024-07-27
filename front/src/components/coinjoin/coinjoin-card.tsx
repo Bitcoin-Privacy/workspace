@@ -53,6 +53,8 @@ export const CoinjoinCard: FC<ICoinjoinCard> = (props) => {
       <CoinjoinStatus
         deriv={deriv}
         roomId={data.id}
+        status={data.status}
+        txid={data.txid}
         endOfDue1={data.created_at + data.due1}
         endOfDue2={data.created_at + data.due1 + data.due2}
       />

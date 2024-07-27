@@ -6,6 +6,7 @@ import {
   Text,
   Button,
   HStack,
+  Box,
   // Menu,
   // MenuButton,
   // MenuList,
@@ -58,6 +59,15 @@ export const NavBar = memo((props: NavBarProps) => {
       justifyContent="center"
       pos="relative"
     >
+      <Box
+        top="-50px"
+        bottom="-50px"
+        left="-50px"
+        right="-50px"
+        bg="bg.secondary"
+        zIndex="-1"
+        position="fixed"
+      />
       <Button
         variant="link"
         leftIcon={<FiArrowLeft />}

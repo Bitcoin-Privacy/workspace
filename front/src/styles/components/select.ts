@@ -18,6 +18,7 @@ export const selectStyles = (width: string): ChakraStylesConfig => ({
   dropdownIndicator: (provided) => ({
     ...provided,
     w: "80px",
+    color: "black",
   }),
   control: (provided) => ({
     ...provided,

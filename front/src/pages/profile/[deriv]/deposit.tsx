@@ -17,12 +17,16 @@ import {
   ModalHeader,
   ModalBody,
   ModalFooter,
+  Box,
+  Divider,
 } from "@chakra-ui/react";
 import { useRouter } from "next/router";
 import { FaLongArrowAltRight } from "react-icons/fa";
-import { Layout, NavBar } from "@/components";
+import { Error, Layout, Loading } from "@/components";
 import { useDepositPage } from "@/hooks/pages/use-deposit-page";
 import QRCodeGenerator from "@/components/qr-code-generator";
+import { convertBtcToSats, convertSatsToBtc } from "@/utils";
+import { STATECOIN_FEE, STATECOIN_MIN } from "@/consts";
 
 const INPUT_WIDTH = "75%";
 
@@ -37,8 +41,23 @@ export default function Deposit() {
 
   const [amount, setAmount] = useState<number>(0);
 
+  if (balanceQuery.isLoading)
+    return (
+      <Layout header title={"Account " + deriv.slice(0, deriv.indexOf("/"))}>
+        <Loading content="Fetching your balance..." />
+      </Layout>
+    );
+
+  if (!balanceQuery.data) {
+    return (
+      <Layout header title={"Account " + deriv.slice(0, deriv.indexOf("/"))}>
+        <Error content="Failed to fetch your balance." />
+      </Layout>
+    );
+  }
+
   return (
-    <Layout>
+    <Layout header title={"Account " + deriv.slice(0, deriv.indexOf("/"))}>
       <form onSubmit={handleFormSubmit}>
         <Modal closeOnOverlayClick={false} isOpen={isError} onClose={onClose}>
           <ModalOverlay />
@@ -60,15 +79,12 @@ export default function Deposit() {
           </ModalContent>
         </Modal>
         <VStack p="0px 16px" spacing="20px">
-          <HStack justify="start" w="100%">
-            <NavBar title={"Account " + deriv.slice(0, deriv.indexOf("/"))} />
-          </HStack>
           <Text color="white" fontWeight="700" fontSize="18px">
             Deposit statecoin
           </Text>
           <VStack width="100%" maxW="500px" spacing="16px">
-            <FormControl isInvalid={!!form.formState.errors.amount}>
-              <VStack spacing="24px">
+            <VStack spacing="24px">
+              <FormControl isInvalid={!!form.formState.errors.amount}>
                 <HStack w="full" justify="space-between">
                   <Text color={"white"}>Amount:</Text>
                   <InputGroup w={INPUT_WIDTH}>
@@ -83,14 +99,14 @@ export default function Deposit() {
                             "Amount should be a floating-point number with at most 8 decimal places.",
                         },
                         max: {
-                          value: balanceQuery.data
-                            ? balanceQuery.data / 10000000
-                            : Number.MAX_VALUE,
+                          value: convertSatsToBtc(
+                            balanceQuery.data - STATECOIN_FEE,
+                          ),
                           message: "Balance is not enough",
                         },
                         min: {
-                          value: 0.00000001,
-                          message: "Amount must larget than or equal to 1 sat",
+                          value: convertSatsToBtc(STATECOIN_MIN),
+                          message: `Amount must larget than or equal to ${STATECOIN_MIN} sats`,
                         },
                       })}
                     />
@@ -103,7 +119,49 @@ export default function Deposit() {
                     </InputRightAddon>
                   </InputGroup>
                 </HStack>
+                {form.formState.errors.amount && (
+                  <FormErrorMessage justifyContent="end">
+                    {form.formState.errors.amount.message}
+                  </FormErrorMessage>
+                )}
+              </FormControl>
+              <Box width="full" textColor="white">
+                <HStack justify="space-between">
+                  <Text>Current balance:</Text>
+                  <Text>{`${convertSatsToBtc(balanceQuery.data)} BTC`}</Text>
+                </HStack>
+                <HStack justify="space-between">
+                  <Text>Fee:</Text>
+                  <Text>{convertSatsToBtc(STATECOIN_FEE)} BTC</Text>
+                </HStack>
+                <Divider my="10px" />
+                <HStack justify="space-between">
+                  <Text>Spend:</Text>
+                  <Text>
+                    {`${convertSatsToBtc(
+                      convertBtcToSats(form.watch("amount")) + STATECOIN_FEE,
+                    )} BTC`}
+                  </Text>
+                </HStack>
+              </Box>
+
+              <HStack>
                 <Button
+                  p="10px 50px"
+                  borderRadius="full"
+                  colorScheme="blackAlpha"
+                  flex="1"
+                  onClick={() => {
+                    router.back();
+                  }}
+                  isDisabled={isLoading}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  p="10px 50px"
+                  borderRadius="full"
+                  flex="1"
                   type="submit"
                   onClick={() => {
                     onOpen;
@@ -118,13 +176,8 @@ export default function Deposit() {
                 >
                   Confirm
                 </Button>
-                {form.formState.errors.amount && (
-                  <FormErrorMessage justifyContent="end">
-                    {form.formState.errors.amount.message}
-                  </FormErrorMessage>
-                )}
-              </VStack>
-            </FormControl>
+              </HStack>
+            </VStack>
           </VStack>
           {depositInfo && (
             <VStack

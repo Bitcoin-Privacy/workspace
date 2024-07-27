@@ -11,23 +11,23 @@ import {
 } from "@chakra-ui/react";
 import { useSendPage } from "@/hooks";
 
-import { Layout, NavBar } from "@/components";
+import { Layout } from "@/components";
+import { STATECOIN_FEE } from "@/consts";
+import { useRouter } from "next/router";
 
 const INPUT_WIDTH = "90%";
 
 export default function Withdraw() {
+  const router = useRouter();
   const {
-    states: { deriv, form },
+    states: { deriv, form, isLoading },
     methods: { handleFormSubmit },
   } = useSendPage();
 
   return (
-    <Layout>
+    <Layout header title={"Account " + deriv.slice(0, deriv.indexOf("/"))}>
       <form onSubmit={handleFormSubmit}>
         <VStack textAlign="center" p="0px 16px" spacing="20px">
-          <HStack justify="start" w="100%">
-            <NavBar title={"Account " + deriv.slice(0, deriv.indexOf("/"))} />
-          </HStack>
           <Text color="white" fontWeight="700" fontSize="18px">
             Withdraw Statecoin
           </Text>
@@ -51,7 +51,7 @@ export default function Withdraw() {
               spacing="16px"
             >
               <Flex w="100%" alignItems={"center"}>
-                <Text> Transaction Details</Text>
+                <Text>Transaction Details</Text>
                 <Spacer />
                 <Box
                   borderWidth={"1px"}
@@ -59,7 +59,7 @@ export default function Withdraw() {
                   p="4px 8px"
                   borderRadius={"8px"}
                 >
-                  <Text> Fee : 10000</Text>
+                  <Text>Fee: {STATECOIN_FEE} stats</Text>
                 </Box>
               </Flex>
 
@@ -82,7 +82,34 @@ export default function Withdraw() {
                 />
               </HStack>
 
-              <Button alignSelf={"center"}> Send to this address</Button>
+              <HStack marginY={"36px"}>
+                <Button
+                  p="10px 50px"
+                  borderRadius="full"
+                  colorScheme="blackAlpha"
+                  flex="1"
+                  onClick={() => {
+                    router.back();
+                  }}
+                  isDisabled={isLoading}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  alignSelf={"center"}
+                  p="10px 50px"
+                  borderRadius="full"
+                  flex="1"
+                  type="submit"
+                  isLoading={isLoading}
+                  isDisabled={(() => {
+                    let formc = form.watch();
+                    return !formc.amount || !formc.address;
+                  })()}
+                >
+                  Send to this address
+                </Button>
+              </HStack>
             </VStack>
           </HStack>
         </VStack>

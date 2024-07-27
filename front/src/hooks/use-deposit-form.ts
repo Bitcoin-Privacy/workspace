@@ -10,6 +10,7 @@ type CreateDepositFormInput = {
 
 export const useDepositForm = (deriv: string) => {
   const form = useForm<CreateDepositFormInput>({
+    defaultValues: { amount: 0 },
     criteriaMode: "all",
   });
 

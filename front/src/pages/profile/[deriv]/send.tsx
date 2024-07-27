@@ -17,7 +17,7 @@ import { useRouter } from "next/router";
 import { useSendPage } from "@/hooks";
 import { Select } from "chakra-react-select";
 
-import { Layout, NavBar } from "@/components";
+import { Error, Layout, Loading } from "@/components";
 import { TxStrategyEnum } from "@/dtos";
 import { COINJOIN_FEE } from "@/consts";
 import { convertBtcToSats, convertSatsToBtc } from "@/utils";
@@ -51,38 +51,25 @@ export default function Send() {
     [],
   );
 
-  if (balanceQuery.isLoading) {
+  if (balanceQuery.isLoading)
     return (
-      <Layout>
-        <VStack textAlign="center" p="0px 16px" spacing="20px">
-          <Spinner />
-          <Text color="white" fontWeight="700" fontSize="18px">
-            Fetching your balance...
-          </Text>
-        </VStack>
+      <Layout header title={"Account " + deriv.slice(0, deriv.indexOf("/"))}>
+        <Loading content="Fetching your balance..." />
       </Layout>
     );
-  }
 
   if (!balanceQuery.data) {
     return (
-      <Layout>
-        <VStack textAlign="center" p="0px 16px" spacing="20px">
-          <Text color="white" fontWeight="700" fontSize="18px">
-            Cannot fetch your balance!
-          </Text>
-        </VStack>
+      <Layout header title={"Account " + deriv.slice(0, deriv.indexOf("/"))}>
+        <Error content="Failed to fetch your balance." />
       </Layout>
     );
   }
 
   return (
-    <Layout>
+    <Layout header title={"Account " + deriv.slice(0, deriv.indexOf("/"))}>
       <form onSubmit={handleFormSubmit}>
         <VStack textAlign="center" p="0px 16px" spacing="20px">
-          <HStack justify="start" w="100%">
-            <NavBar title={"Account " + deriv.slice(0, deriv.indexOf("/"))} />
-          </HStack>
           <Text color="white" fontWeight="700" fontSize="18px">
             Create transaction
           </Text>
@@ -116,8 +103,7 @@ export default function Send() {
                 <InputGroup w={INPUT_WIDTH}>
                   <Input
                     placeholder="0.12"
-                    type="number"
-                    color={"white"}
+                    color="white"
                     {...form.register("amount", {
                       required: "Amount is required",
                       pattern: {
@@ -137,7 +123,11 @@ export default function Send() {
                       },
                     })}
                   />
-                  <InputRightAddon w="82px" justifyContent="center">
+                  <InputRightAddon
+                    w="82px"
+                    justifyContent="center"
+                    color="black"
+                  >
                     BTC
                   </InputRightAddon>
                 </InputGroup>
