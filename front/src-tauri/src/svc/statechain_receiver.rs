@@ -1,10 +1,14 @@
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 
 use bitcoin::hex::parse;
+use bitcoin::{consensus, Address, Network, Transaction, XOnlyPublicKey};
 use bitcoin::{hex::DisplayHex, secp256k1::SecretKey};
-use bitcoin::{Address, Network, XOnlyPublicKey};
 
+use musig2::KeyAggContext;
+use openssl::sha::Sha256;
 use secp256k1::{Keypair, PublicKey, Scalar, Secp256k1};
+use shared::api::{self, get_transaction_existence};
+use statechain_core::transfer;
 use std::str::FromStr;
 
 use crate::model::Statecoin;
@@ -38,30 +42,35 @@ pub async fn execute(
 
     let parsed_transfer_msg = decrypt_transfer_msg(transfer_message, &auth_seckey)?;
     println!("transfer_message {:#?}", parsed_transfer_msg);
+    let auth_seckey = SecretKey::from_str(&auth_seckey)?;
+
     let statechain_id = parsed_transfer_msg.statechain_id.clone();
 
-    match verify_transfer_statecoin(&conn, &pool, &parsed_transfer_msg).await {
+    let signed_id = sign_message(&statechain_id, &auth_seckey).to_string();
+
+    match verify_transfer_statecoin(conn, pool, &parsed_transfer_msg, &signed_id).await {
         Ok(s) => println!("{}", s),
         Err(e) => panic!("Invalid transfer message: {}", e),
     }
 
-    //  let o2 = SecretKey::from_str(&o2)?;
-    let auth_seckey = SecretKey::from_str(&auth_seckey)?;
-    // let negated_o2 = o2.negate();
-    let x1 = parsed_transfer_msg.x1;
+    // //  let o2 = SecretKey::from_str(&o2)?;
+    // let auth_seckey = SecretKey::from_str(&auth_seckey)?;
+    // // let negated_o2 = o2.negate();
+    // let x1 = parsed_transfer_msg.x1;
 
     // let t1 = hex::decode(t1)?;
     // let t1: [u8; 32] = t1.try_into().unwrap();
     // let t1_scalar = Scalar::from_be_bytes(t1)?;
     // let t2 = negated_o2.add_tweak(&t1_scalar)?;
     // let t2_str = t2.secret_bytes().to_lower_hex_string();
+    let x1 = parsed_transfer_msg.x1;
 
     // println!("t2 : {}", t2_str);
     //let signed_msg = sign_message(&t2_str, &o2).to_string();
     let signed_msg = sign_message(&x1, &auth_seckey).to_string();
 
     let updatekey_res =
-        statechain::update_new_key(&conn, &x1, &signed_msg, &statechain_id, &authkey).await?;
+        statechain::update_new_key(conn, &x1, &signed_msg, &statechain_id, authkey).await?;
     //let auth_secret_key = SecretKey::from_str(&auth_seckey)?;
 
     let signed_statechain_id = sign_message(&statechain_id, &auth_seckey);
@@ -120,7 +129,7 @@ pub async fn execute(
         &statechain_id,
         &statecoin,
         &bk,
-        &authkey,
+        authkey,
         &aggregated_address.to_string(),
     )
     .await?;
@@ -132,8 +141,42 @@ pub async fn verify_transfer_statecoin(
     conn: &NodeConnector,
     pool: &PoolWrapper,
     transfer_message: &TransferMessage,
-) -> Result<String, anyhow::Error> {
+    signed_id: &str,
+) -> Result<String> {
     let bk_txs = &transfer_message.backup_txs;
+
+    let previous_tx = consensus::deserialize::<Transaction>(&hex::decode(bk_txs)?)?;
+    let statechain_id = &transfer_message.statechain_id;
+
+    let txn = transfer_message.txn;
+    let n_lock_time = previous_tx.lock_time.to_consensus_u32();
+    println!("Reversed characters: {}", n_lock_time);
+    let txn_n_lock_time = txn.to_string() + &n_lock_time.to_string();
+    let mut hasher = Sha256::new();
+    hasher.update(txn_n_lock_time.as_bytes());
+    let client_commitment = hasher.finish().to_lower_hex_string();
+
+    println!("client commitment : {:#?}", client_commitment);
+    let res = statechain::get_verification_statecoin(conn, statechain_id, signed_id).await?;
+
+    //check the previous transaction is valid and not spent
+    if client_commitment != res.txn_n_lock_time_commitment {
+        return Err(anyhow!(
+            "Incompatiple commitment, txn and n_lock_time are inconsistent"
+        ));
+    }
+
+    //check the funding transaction is not spent
+
+    let txid = previous_tx.txid().to_string();
+    let is_broadcasted = get_transaction_existence(&txid).await?;
+    if is_broadcasted {
+        return Err(anyhow!("Previous backup transaction is broadcasted"));
+    }
+
+    //check the spend key is valid
+
+    // send confirm for the server to update the new
 
     Ok("Message : verify ok".to_string())
 }

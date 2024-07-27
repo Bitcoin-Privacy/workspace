@@ -4,15 +4,14 @@ use bitcoin::{
     consensus,
     hex::DisplayHex,
     secp256k1::{rand, PublicKey, Secp256k1, SecretKey},
-    sighash::{Prevouts, SighashCache},
     transaction, Address, Amount, Network, OutPoint, ScriptBuf, Sequence, TapSighash,
-    TapSighashType, Transaction, TxIn, TxOut, Txid, Witness, XOnlyPublicKey,
+    TapSighashType, Transaction, TxIn, TxOut, Txid, Witness,
 };
 use ecies;
 use musig2::{AggNonce, BinaryEncoding, KeyAggContext, PartialSignature, PubNonce, SecNonce};
 use rand::RngCore;
-use secp256k1::{Message, Scalar};
-use serde_json::{json, to_string};
+use secp256k1::Message;
+use serde_json::json;
 
 use std::str::FromStr;
 
@@ -32,7 +31,7 @@ pub async fn execute(
 
     let b_pubkey = bitcoin::PublicKey::from_str(pubkey)?;
     let receiver_address = Address::p2wpkh(&b_pubkey, Network::Testnet)?;
-    let statecoin = pool.get_statecoin_by_id(&statechain_id).await?;
+    let statecoin = pool.get_statecoin_by_id(statechain_id).await?;
     let authkey = &auth_publickey[2..];
     // let tx =
     //     create_bk_tx_for_receiver(&conn, &statechain_id, &statecoin, &receiver_address).await?;
@@ -40,8 +39,8 @@ pub async fn execute(
     //2. send register new owner
 
     let register_new_owner_res = statechain::register_new_owner(
-        &conn,
-        &statechain_id,
+        conn,
+        statechain_id,
         &statecoin.signed_statechain_id,
         authkey,
     )
@@ -58,9 +57,9 @@ pub async fn execute(
 
     //3. create transfer message
     let transfer_message = TransferMessage {
-        txn: statecoin.tx_n as u64 + 1,
+        txn: statecoin.tx_n as u64,
         backup_txs: statecoin.bk_tx,
-        x1: x1, 
+        x1,
         statechain_id: statechain_id.to_string(),
         agg_pubkey: statecoin.aggregated_pubkey.to_string(),
         key_agg_ctx: statecoin.key_agg_ctx.to_string(),
@@ -71,10 +70,9 @@ pub async fn execute(
     };
 
     let encrypted_msg_string = encrypt_transfer_message(&transfer_message, auth_publickey)?;
-    let _res = statechain::create_transfer_msg(&conn, &encrypted_msg_string, authkey).await?;
+    statechain::create_transfer_msg(conn, &encrypted_msg_string, authkey).await?;
     println!("delete id : {}", statechain_id);
-    let _del = pool
-        .delete_statecoin_by_statechain_id(statechain_id)
+    pool.delete_statecoin_by_statechain_id(statechain_id)
         .await?;
     Ok("send success".to_string())
 }
@@ -87,7 +85,7 @@ pub async fn create_bk_tx_for_receiver(
 ) -> Result<String> {
     let amount = statecoin.amount as u64;
     let agg_pubkey = PublicKey::from_str(&statecoin.aggregated_pubkey)?;
-    let vout = 0 as i64;
+    let vout = 0_i64;
     let key_agg_ctx = KeyAggContext::from_hex(&statecoin.key_agg_ctx).unwrap();
     let secp = Secp256k1::new();
     let seckey = &statecoin.spend_key;
@@ -121,7 +119,7 @@ pub async fn create_bk_tx_for_receiver(
 
     let sighash_type = TapSighashType::Default;
     let get_nonce_res =
-        statechain::get_nonce(&conn, statechain_id, &statecoin.signed_statechain_id).await?;
+        statechain::get_nonce(conn, statechain_id, &statecoin.signed_statechain_id).await?;
     let server_pubnonce = get_nonce_res.server_nonce;
     let mut nonce_seed = [0u8; 32];
     rand::rngs::OsRng.fill_bytes(&mut nonce_seed);
@@ -146,9 +144,9 @@ pub async fn create_bk_tx_for_receiver(
     let unsigned_tx_hex = consensus::encode::serialize_hex(&unsigned_tx);
 
     let get_sign_res = statechain::get_partial_signature(
-        &conn,
+        conn,
         &serialized_key_agg_ctx,
-        &statechain_id,
+        statechain_id,
         &statecoin.signed_statechain_id,
         &unsigned_tx_hex,
         &agg_pubnonce_str,
@@ -174,7 +172,7 @@ pub async fn create_bk_tx_for_receiver(
     ];
 
     let agg_pubkey_tw: PublicKey = key_agg_ctx.aggregated_pubkey();
-    println!("tx tweaked public key : {}", agg_pubkey_tw.to_string());
+    println!("tx tweaked public key : {}", agg_pubkey_tw);
 
     for (i, partial_signature) in partial_signatures.into_iter().enumerate() {
         if i == 0 {
@@ -232,7 +230,7 @@ pub fn encrypt_transfer_message(
     let serialized_new_auth_pubkey = auth_pubkey.serialize();
     let encrypted_msg = ecies::encrypt(&serialized_new_auth_pubkey, msg).unwrap();
 
-    let encrypted_msg_string = hex::encode(&encrypted_msg);
+    let encrypted_msg_string = hex::encode(encrypted_msg);
 
     println!("encrypted transfer message : {}", encrypted_msg_string);
     Ok(encrypted_msg_string)
