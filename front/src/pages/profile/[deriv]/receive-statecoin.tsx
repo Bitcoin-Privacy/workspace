@@ -4,12 +4,10 @@ import QRCodeGenerator from "@/components/qr-code-generator";
 import { useDeriv } from "@/hooks";
 
 import { Button, HStack, Text, useClipboard, VStack } from "@chakra-ui/react";
-import { useRouter } from "next/router";
 import React, { useState } from "react";
 import { FiCheck, FiCopy } from "react-icons/fi";
 
 export default function ReceiveStatecoin() {
-  const router = useRouter();
   const { deriv } = useDeriv();
   const { onCopy, value, setValue, hasCopied } = useClipboard("");
   const [isLoading, setIsLoading] = useState<boolean>(false);

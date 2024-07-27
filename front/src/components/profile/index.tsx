@@ -15,7 +15,7 @@ import {
   StateChainTransferList,
 } from "..";
 
-interface IProfilePanel {}
+interface IProfilePanel { }
 
 export const ProfilePannel: FC<IProfilePanel> = (props) => {
   const {

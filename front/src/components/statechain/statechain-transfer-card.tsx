@@ -1,7 +1,16 @@
+import { StatechainApi } from "@/apis";
 import { StateCoinTransferDto } from "@/dtos";
 import { useProfilePage } from "@/hooks";
-import { Button, Flex, HStack, Image, Text, VStack } from "@chakra-ui/react";
-import { FC } from "react";
+import {
+  Button,
+  Flex,
+  HStack,
+  Image,
+  Text,
+  VStack,
+  useDisclosure,
+} from "@chakra-ui/react";
+import { FC, useState } from "react";
 
 interface IStateChainTransferCard {
   key: number;
@@ -14,6 +23,10 @@ export const StateChainTransferCard: FC<IStateChainTransferCard> = (props) => {
   const {
     methods: { onVerifyTransferStatecoinClick },
   } = useProfilePage();
+
+  const [isVerifying, setIsVerifying] = useState<boolean>(false);
+  const [verifyError, setVerifyError] = useState<string>();
+  const { isOpen, onOpen, onClose } = useDisclosure();
 
   return (
     <HStack
@@ -43,13 +56,22 @@ export const StateChainTransferCard: FC<IStateChainTransferCard> = (props) => {
 
         <VStack alignItems={"end"} spacing={"8px"} w="100%">
           <Button
-            onClick={() =>
-              onVerifyTransferStatecoinClick(
-                deriv,
-                data.transfer_message,
-                data.auth_key,
-              )
-            }
+            onClick={async () => {
+              setIsVerifying(true);
+              try {
+                let res = await StatechainApi.verifyTransferStatecoin(
+                  deriv,
+                  data.transfer_message,
+                  data.auth_key,
+                );
+                console.log("verify statecoin :", res);
+              } catch (e: any) {
+                console.error("Error when verify statecoin:", e);
+                setVerifyError(e);
+              } finally {
+                setIsVerifying(false);
+              }
+            }}
           >
             Verify
           </Button>

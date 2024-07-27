@@ -1,5 +1,5 @@
 import { useQuery } from "react-query";
-import { useCreateTxForm, useDeriv } from "@/hooks";
+import { useDeriv } from "@/hooks";
 
 import { AppApi, StatechainApi } from "@/apis";
 import { CachePrefixKeys } from "@/consts";
@@ -23,12 +23,12 @@ export const useSendStateCoinPage = () => {
   const listStatecoinsQuery = useQuery(
     [CachePrefixKeys.ListStatecoins],
     () => StatechainApi.listStatecoins(deriv),
-    { },
+    {},
   );
 
   const {
-    states: { form, isLoading },
-    methods: { handleFormSubmit },
+    states: { form, isLoading, isError },
+    methods: { handleFormSubmit, setIsError },
   } = useSendStateCoinForm(deriv);
 
   return {
@@ -39,7 +39,8 @@ export const useSendStateCoinPage = () => {
       profQuery,
       balanceQuery,
       listStatecoinsQuery,
+      isError,
     },
-    methods: { handleFormSubmit },
+    methods: { handleFormSubmit, setIsError },
   };
 };

@@ -20,8 +20,8 @@ export const useDepositPage = () => {
   );
 
   const {
-    states: {  depositInfo, form, isLoading,  isError },
-    methods: { handleFormSubmit },
+    states: { depositInfo, form, isLoading, isError },
+    methods: { handleFormSubmit, setIsError },
   } = useDepositForm(deriv);
 
   return {
@@ -34,6 +34,6 @@ export const useDepositPage = () => {
       profQuery,
       balanceQuery,
     },
-    methods: { handleFormSubmit },
+    methods: { handleFormSubmit, setIsError },
   };
 };

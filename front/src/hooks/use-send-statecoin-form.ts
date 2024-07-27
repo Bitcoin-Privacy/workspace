@@ -1,46 +1,50 @@
-import { CoinJoinApi, StatechainApi } from "@/apis";
-import { TxStrategyEnum } from "@/dtos";
-import { convertBtcToSats as convertBtcToSat } from "@/utils";
+import { StatechainApi } from "@/apis";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 
-
 type SendStatecoinFromInput = {
-    address : string;
-    statechain_id : string;
-}
+  address: string;
+  statechain_id: string;
+};
 
-export const useSendStateCoinForm = (derivationPath: string) => {
+export const useSendStateCoinForm = (deriv: string) => {
   const form = useForm<SendStatecoinFromInput>();
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isError, setIsError] = useState<boolean>(false);
 
   const handleFormSubmit = useMemo(
     () =>
       form.handleSubmit(async (data: SendStatecoinFromInput) => {
         setIsLoading(true);
         try {
-         
+          console.log("Send Statecoin form submit API", deriv);
           const res = await StatechainApi.sendStatecoin(
             data.address,
-            data.statechain_id
+            data.statechain_id,
           );
-          console.log("send statecoin ", res);
-        
-        } catch (e) {
+          console.log("Send Statecoin form submit API response:", res);
+        } catch (e: any) {
+          console.log("Send Statecoin form submit API error:", e);
+          form.setError("root", {
+            message: e,
+          });
+          setIsError(true);
         } finally {
           setIsLoading(false);
         }
       }),
-    [derivationPath],
+    [deriv, form],
   );
 
   return {
     states: {
       form,
       isLoading,
+      isError,
     },
     methods: {
       handleFormSubmit,
+      setIsError,
     },
   };
 };
