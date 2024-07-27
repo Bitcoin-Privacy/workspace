@@ -119,7 +119,7 @@ impl TraitStatechainRepo for StatechainRepo {
     }
 
     async fn update_transfer_message(&self, authkey: &str, transfer_msg: &str) -> Result<()> {
-        let query =
+        let _res =
             sqlx::query("update statechain_transfer set transfer_msg= $1 where authkey = $2")
                 .bind(transfer_msg)
                 .bind(authkey)
@@ -140,10 +140,9 @@ impl TraitStatechainRepo for StatechainRepo {
 
     async fn get_verify_statecoin(&self, statechain_id: &str) -> Result<StatecoinVerificationInfo> {
         let row = sqlx::query_as::<_, StatecoinVerificationInfo>(
-            r#"select txn, server_public_key, random_point 
-            from statechain s join statechain_transfer sf 
-            on s.statechain_id = sf.statechain_id 
-            where statechain_id  = $1::uuid"#,
+            r#"select txn, server_public_key, n_lock_time
+            from statechain
+            where id  = $1::uuid"#,
         )
         .bind(statechain_id)
         .fetch_one(&self.pool.pool)

@@ -3,7 +3,7 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-use actix_web::web::Data;
+use actix_web::{body::MessageBody, web::Data};
 use anyhow::Result;
 use bitcoin::{
     absolute::LockTime,
@@ -15,6 +15,8 @@ use bitcoin::{
     Amount, ScriptBuf, TapSighashType, Transaction, TxOut, XOnlyPublicKey,
 };
 use musig2::{AggNonce, BinaryEncoding, KeyAggContext, PartialSignature, SecNonce};
+use num_traits::ToBytes;
+use openssl::sha::Sha256;
 use rand::RngCore;
 use secp256k1::{schnorr::Signature, Message, Parity};
 
@@ -105,7 +107,7 @@ pub async fn get_sig(
     let agg_nonce = AggNonce::from_str(agg_pubnonce).unwrap();
     let sighash_type = TapSighashType::Default;
     let n_lock_time = statecoin.n_lock_time;
-    let txn = statecoin.txn as u64;
+    let txn = statecoin.txn;
 
     let new_lock_time = n_lock_time - txn * 60 * 60 * 24;
 
@@ -187,7 +189,7 @@ pub async fn withdraw(
     Ok(GetPartialSignatureRes {
         sighash: sighash_str,
         partial_sig: final_sig,
-        n_lock_time: 0_u64,
+        n_lock_time: 0_u32,
     })
 }
 
@@ -260,6 +262,22 @@ pub async fn verify_signature(
     Ok(secp.verify_schnorr(&signed_message, &msg, &pub_key).is_ok())
 }
 
+pub async fn verify_signature_transfer(
+    repo: &Data<StatechainRepo>,
+    signature: &str,
+    statechain_id: &str,
+) -> Result<bool> {
+    let auth_key = repo
+        .get_auth_key_transfer_by_statechain_id(statechain_id)
+        .await?;
+    let pub_key = XOnlyPublicKey::from_str(&auth_key.authkey)?;
+    let signed_message = Signature::from_str(signature).unwrap();
+    let msg = Message::from_hashed_data::<sha256::Hash>(statechain_id.to_string().as_bytes());
+
+    let secp = Secp256k1::new();
+    Ok(secp.verify_schnorr(&signed_message, &msg, &pub_key).is_ok())
+}
+
 pub async fn verify_receiver(
     repo: &Data<StatechainRepo>,
     signature: &str,
@@ -286,10 +304,20 @@ pub async fn verify_statecoin(
         .await
         .map_err(|e| format!("Failed to get transfer message: {}", e))?;
 
+    let current_n_lock_time = info.n_lock_time - &info.txn * 60 * 60 * 24 * 1;
+
+    let txn_str = info.txn.to_string();
+    let n_lock_time_str = current_n_lock_time.to_string();
+    let commitment = txn_str + &n_lock_time_str;
+    let mut hasher = Sha256::new();
+    hasher.update(commitment.as_bytes());
+    let result = hasher.finish();
+
+    println!("server commitment : {:#?}", result);
+
     Ok(VerifyStatecoinRes {
-        txn: info.txn,
         server_pubkey: info.server_public_key,
-        random_point: info.random_point,
+        txn_n_lock_time_commitment: result.to_lower_hex_string(),
     })
 }
 

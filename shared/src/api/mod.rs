@@ -45,6 +45,22 @@ pub async fn get_status(txid: &str) -> Result<bool> {
     Ok(response.confirmed)
 }
 
+pub async fn get_transaction_existence(txid: &str) -> Result<bool> {
+    let url = format!("https://blockstream.info/testnet/api/tx/{}", txid);
+    println!("txid, {}", txid);
+    let response = reqwest::get(&url).await;
+    match response {
+        Ok(res) => {
+            println!("status: {:?}", res.status());
+            Ok(false)
+        }
+        Err(err) => {
+            println!("Error: {:?}", err);
+            Ok(true)
+        }
+    }
+}
+
 pub async fn get_balance(address: &str) -> Result<u64> {
     let utxos = get_utxo(address).await?;
     Ok(utxos.iter().map(|utxo| utxo.value).sum())
