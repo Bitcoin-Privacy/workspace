@@ -34,6 +34,10 @@ export function getDeriv(accNum: number, sAccNum: number): string {
   return b64EncodeUnicode(deriv(accNum, sAccNum));
 }
 
+export function profilePath(deriv: string, expand: string = ""): string {
+  return `/profile/${b64EncodeUnicode(deriv)}/${expand}`;
+}
+
 export function convertBtcToSats(btcAmount: number): number {
   // Convert the amount to a string to avoid floating point arithmetic issues
   const btcAmountStr = btcAmount.toString();

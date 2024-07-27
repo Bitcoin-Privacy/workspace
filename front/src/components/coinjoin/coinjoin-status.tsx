@@ -48,13 +48,10 @@ export const CoinjoinStatus: FC<ICoinjoinStatus> = (props) => {
     };
   }, []);
 
-  // TODO: Check status of the room
-  // Signed?
-  // Completed?
   if (now < endOfDue1)
     return (
       <Box textAlign="right">
-        <Text fontSize="16px" fontWeight="700" w="100%">
+        <Text fontSize="16px" fontWeight="700" w="100%" color="yellow.100">
           Waiting for other peers...
         </Text>
         <Text fontSize="14px" fontWeight="500" w="100%">
@@ -71,8 +68,10 @@ export const CoinjoinStatus: FC<ICoinjoinStatus> = (props) => {
           href={`https://blockstream.info/testnet/tx/${txid}`}
           rel="noopener noreferrer"
           target="_blank"
+          color="cyan.200"
+          fontWeight="500"
         >
-          View transaction on explorer
+          View on explorer
         </Link>
       </Box>
     );
@@ -82,15 +81,12 @@ export const CoinjoinStatus: FC<ICoinjoinStatus> = (props) => {
     if (signedQuery.data && signedQuery.data.status) {
       return (
         <Box textAlign="right">
-          <Button
-            isLoading={isSigning}
-            isDisabled={isSigning}
-            onClick={() => {
-              onSignBtnClick({ deriv, roomId });
-            }}
-          >
-            signed
-          </Button>
+          <Text fontSize="16px" fontWeight="700" w="100%" color="green.300">
+            Signed successfully!
+          </Text>
+          <Text fontSize="14px" fontWeight="500" w="100%">
+            Please wait for other peers...
+          </Text>
         </Box>
       );
     }
@@ -111,11 +107,11 @@ export const CoinjoinStatus: FC<ICoinjoinStatus> = (props) => {
 
   return (
     <Box textAlign="right">
-      <Text fontSize="16px" fontWeight="700" w="100%">
+      <Text fontSize="16px" fontWeight="700" w="100%" color="#faa">
         Failed!
       </Text>
-      <Text fontSize="14px" fontWeight="500" w="100%">
-        caused by missing signature(s)
+      <Text fontSize="14px" fontWeight="500" w="100%" color="#aaa">
+        Caused by missing signature(s)
       </Text>
     </Box>
   );

@@ -62,6 +62,7 @@ export const Layout: React.FC<ILayout> = ({
           p="10px 20px"
           bg="bg.primary"
           position="sticky"
+          zIndex="2"
           top="0"
         >
           {back && (

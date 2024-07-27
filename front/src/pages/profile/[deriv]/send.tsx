@@ -11,7 +11,6 @@ import {
   FormControl,
   FormErrorMessage,
   Divider,
-  Spinner,
 } from "@chakra-ui/react";
 import { useRouter } from "next/router";
 import { useSendPage } from "@/hooks";

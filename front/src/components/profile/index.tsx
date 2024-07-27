@@ -1,4 +1,4 @@
-import React, { FC } from "react";
+import React, { FC, useEffect, useState } from "react";
 import {
   Tabs,
   TabList,
@@ -14,10 +14,20 @@ import {
   UtxoList,
   StateChainTransferList,
 } from "..";
+import { useRouter } from "next/router";
 
-interface IProfilePanel { }
+interface IProfilePanel {}
+
+enum ProfileTab {
+  STATECHAIN = 0,
+  STATECHAIN_TRANSFER = 1,
+  UTXO = 2,
+  COINJOIN = 3,
+}
 
 export const ProfilePannel: FC<IProfilePanel> = (props) => {
+  const router = useRouter();
+  const tab = (router.query.tab as string) ?? "UTXO";
   const {
     states: {
       deriv,
@@ -27,8 +37,25 @@ export const ProfilePannel: FC<IProfilePanel> = (props) => {
       listStatecoinsQuery,
     },
   } = useProfilePage();
+
+  const [tabIndex, setTabIndex] = useState(0);
+
+  const handleTabsChange = (index: number) => {
+    setTabIndex(index);
+  };
+
+  useEffect(() => {
+    setTabIndex(ProfileTab[tab as keyof typeof ProfileTab]);
+  }, [tab]);
+
   return (
-    <Tabs isFitted variant="unstyled" w="100%">
+    <Tabs
+      isFitted
+      variant="unstyled"
+      w="100%"
+      index={tabIndex}
+      onChange={handleTabsChange}
+    >
       <TabList>
         <Tab fontSize="18px" fontWeight="200" color="#aaa">
           Statechain

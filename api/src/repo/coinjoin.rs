@@ -26,7 +26,8 @@ impl CoinjoinRepo {
                 select distinct i.room_id as id
                 from txin i
                 where i.address = $1
-            ) as distinct_rooms on r.id = distinct_rooms.id"#,
+            ) as distinct_rooms on r.id = distinct_rooms.id
+            order by r.created_at desc"#,
         )
         .bind(addr)
         .fetch_all(&self.pool.pool)
