@@ -270,7 +270,6 @@ pub struct GetTransferMessageRes {
 pub struct VerifyStatecoinReq {
     pub statechain_id: String,
     pub signed_msg: String,
-    pub authkey: String,
 }
 
 #[cfg_attr(feature = "backend", derive(Serialize))]

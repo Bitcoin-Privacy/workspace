@@ -1,7 +1,6 @@
 pub const PASSPHRASE: &str = "correct horse battery staple";
 
-pub const BASE_TX_FEE: u64 = 100;
-// pub const COINJOIN_FEE: u64 = 150;
+pub const BASE_TX_FEE: u64 = 300;
 
 use dotenv::dotenv;
 use lazy_static::lazy_static;
