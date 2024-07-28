@@ -102,10 +102,10 @@ pub async fn sign_txn(deriv: &str, room_id: &str) -> Result<()> {
         .iter()
         .enumerate()
         .filter(|(_, input)| {
-            room_detail
-                .utxo
-                .iter()
-                .any(|utxo| input.previous_output.txid.to_string() == utxo.txid)
+            room_detail.utxo.iter().any(|utxo| {
+                input.previous_output.txid.to_string() == utxo.txid
+                    && input.previous_output.vout == utxo.vout as u32
+            })
         })
         .map(|(index, input)| tokio::spawn(account::find_and_join_txn(index, input.clone())))
         .collect();

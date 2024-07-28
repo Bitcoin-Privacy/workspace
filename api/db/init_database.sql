@@ -43,11 +43,11 @@ create table if not exists txout (
 );
 
 create table if not exists proof (
-	id uuid default uuid_generate_v1() not null constraint proofs_pkey primary key,
 	room_id uuid,
 	vin int4,
 	script varchar,
 	created_at timestamp with time zone not null default current_timestamp,
+    primary key (room_id, vin),
 	foreign key (room_id) references room (id)
 );
 

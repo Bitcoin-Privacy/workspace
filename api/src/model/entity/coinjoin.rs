@@ -101,7 +101,6 @@ pub struct Output {
 // ---------------------------
 #[derive(sqlx::FromRow, Debug, Clone)]
 pub struct Proof {
-    pub id: uuid::Uuid,
     pub room_id: uuid::Uuid,
     #[sqlx(try_from = "i32")]
     pub vin: u16,
