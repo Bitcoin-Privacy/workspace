@@ -210,7 +210,6 @@ export default function Deposit() {
                       bg="gray.700"
                       p="10px 15px"
                     >
-                      {" "}
                       {amount} BTC
                     </Center>
                     <Center>

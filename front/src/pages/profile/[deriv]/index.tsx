@@ -1,8 +1,7 @@
 import React from "react";
-import { Box, Link } from "@chakra-ui/react";
-import { Text, VStack, Button, HStack, Image, Flex } from "@chakra-ui/react";
+import { Avatar, Link } from "@chakra-ui/react";
+import { Text, VStack, Button, HStack, Flex } from "@chakra-ui/react";
 import { FiArrowDownLeft, FiArrowUpRight } from "react-icons/fi";
-import { TiMinus } from "react-icons/ti";
 import { FaPlus } from "react-icons/fa";
 import { IoMdSwap } from "react-icons/io";
 
@@ -13,25 +12,18 @@ export default function ProfilePage() {
   const {
     states: { deriv, addr, balanceQuery },
     methods: {
-      router,
       onSendBtnClick,
       onDepositBtnClick,
       onSendStatecoinBtnClick,
-      onWithdrawBtnClick,
       onReceiveStatecoinBtnClick,
     },
   } = useProfilePage();
 
   const featureButtons = [
     {
-      name: "Deposit",
+      name: "Deposit Statecoin",
       icon: <FaPlus />,
       onClick: onDepositBtnClick,
-    },
-    {
-      name: "Withdraw",
-      icon: <TiMinus />,
-      onClick: onWithdrawBtnClick,
     },
     {
       name: "Send Statecoin",
@@ -39,14 +31,14 @@ export default function ProfilePage() {
       onClick: onSendStatecoinBtnClick,
     },
     {
+      name: "Receive Statecoin",
+      icon: <FiArrowDownLeft />,
+      onClick: onReceiveStatecoinBtnClick,
+    },
+    {
       name: "Send",
       icon: <FiArrowUpRight />,
       onClick: onSendBtnClick,
-    },
-    {
-      name: "Receive",
-      icon: <FiArrowDownLeft />,
-      onClick: onReceiveStatecoinBtnClick,
     },
   ];
 
@@ -65,7 +57,7 @@ export default function ProfilePage() {
           >
             <Flex w="full" alignItems="start" justifyContent="space-between">
               <HStack w="100%" alignItems="start" flex="1">
-                <Image borderRadius="full" boxSize="54px" src="/avatar.jpeg" />
+                <Avatar borderRadius="full" boxSize="54px" src="/avatar.jpeg" />
                 <VStack align="start" pl="5px" w="100%" flex="1">
                   <Text fontWeight="700" fontSize="20px">
                     Account {deriv.slice(0, deriv.indexOf("/"))}
@@ -120,31 +112,6 @@ export default function ProfilePage() {
               })}
             </HStack>
           </VStack>
-
-          <HStack
-            w="100%"
-            color="white"
-            justifyContent={"space-between"}
-            direction={{ base: "column", md: "row" }}
-            spacing={{ base: 16, md: 4 }}
-            wrap="wrap"
-            p="0px 24px"
-          >
-            <Box bg="gray.900" p="12px 12px" borderRadius="8px">
-              <Text> Connect to server</Text>
-            </Box>
-            <Box bg="gray.900" p="12px 12px" borderRadius="8px">
-              <Text> Connect to CoinJoin</Text>
-            </Box>
-            <Box
-              bg="gray.900"
-              p="12px 12px"
-              borderRadius="8px"
-              onClick={router.reload}
-            >
-              <Text> Connect to Statecoin</Text>
-            </Box>
-          </HStack>
           <ProfilePannel />
         </VStack>
       </VStack>

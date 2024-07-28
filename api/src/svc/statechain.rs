@@ -54,7 +54,7 @@ pub async fn create_deposit(
 
     // Calculate the Unix time by subtracting the UNIX epoch time
     let current_unix_time = current_time.duration_since(UNIX_EPOCH).unwrap().as_secs();
-    let init_nlock_time = current_unix_time + 60 * 60 * 24 * 30 * 4;
+    let init_nlock_time = current_unix_time + 60 * 60 * 24 * 200;
     println!(
         "current time, nlocktime, {}, {}",
         current_unix_time, init_nlock_time
@@ -108,8 +108,8 @@ pub async fn get_sig(
     let sighash_type = TapSighashType::Default;
     let n_lock_time = statecoin.n_lock_time;
     let txn = statecoin.txn;
-
-    let new_lock_time = n_lock_time - txn * 60 * 60 * 24;
+    //let current_n_lock_time = info.n_lock_time - &info.txn * 60 * 60 * 24
+    let new_lock_time = n_lock_time - ( txn - 1 ) * 60 * 60 * 24 * 5;
 
     let tx = consensus::deserialize::<Transaction>(&hex::decode(parsed_tx)?)?;
     let mut unsigned_txn = tx.clone();
@@ -304,7 +304,7 @@ pub async fn verify_statecoin(
         .await
         .map_err(|e| format!("Failed to get transfer message: {}", e))?;
 
-    let current_n_lock_time = info.n_lock_time - &info.txn * 60 * 60 * 24 * 1;
+    let current_n_lock_time = info.n_lock_time - (&info.txn - 1) * 60 * 60 * 24 * 5;
 
     let txn_str = info.txn.to_string();
     let n_lock_time_str = current_n_lock_time.to_string();
@@ -327,30 +327,7 @@ pub async fn update_key(
     statechain_id: &str,
     t2: &str,
 ) -> Result<UpdateKeyRes> {
-    // let secrets = repo
-    //     .get_seckey_and_random_by_statechain_id(&statechain_id)
-    //     .await?;
-
-    // let s1 = SecretKey::from_str(&secrets.server_private_key)?;
-
-    // let t2 = hex::decode(t2)?;
-
-    // let t2: [u8; 32] = t2.try_into().unwrap();
-
-    // let t2 = Scalar::from_be_bytes(t2)?;
-
-    // let x1 = SecretKey::from_str(&secrets.random_key)?;
-
-    // let negated_x1 = x1.negate();
-
-    // let t2_negate_x1 = negated_x1.add_tweak(&t2)?.secret_bytes();
-
-    // let t2_negate_x1_scalar = Scalar::from_be_bytes(t2_negate_x1)?;
-
-    // let s2 = s1.add_tweak(&t2_negate_x1_scalar)?;
-    // let secp = Secp256k1::new();
-
-    // let new_owner_pubkey = PublicKey::from_secret_key(&secp, &s2);
+  
 
     repo.update_new_owner(
         statechain_id,

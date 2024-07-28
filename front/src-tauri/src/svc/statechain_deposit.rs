@@ -1,5 +1,5 @@
-use anyhow::anyhow;
-use anyhow::Result;
+use anyhow::{anyhow, Result};
+use bitcoin::absolute::LockTime;
 use bitcoin::{
     absolute, consensus,
     hex::DisplayHex,
@@ -102,7 +102,7 @@ pub async fn execute(
     let sign = signed_statechain_id.clone();
     let txid = funding_txid.clone();
     let statecoin = Statecoin {
-        tx_n: 0,
+        tx_n: 1,
         signed_statechain_id: sign,
         aggregated_pubkey: aggregated_pubkey.to_string(),
         funding_txid: txid,
@@ -131,6 +131,11 @@ pub async fn execute(
     let bk_tx =
         create_bk_tx_for_receiver(conn, &statechain_id, &statecoin, &checked_output_address)
             .await?;
+    let parsed_tx = consensus::deserialize::<Transaction>(&hex::decode(bk_tx.clone())?)?;
+    let locktime = match parsed_tx.lock_time {
+        LockTime::Seconds(s) => s.to_consensus_u32(),
+        LockTime::Blocks(_b) => return Err(anyhow!("Internal error: invalid locktime!")),
+    };
     let deposit_tx_clone = deposit_tx.clone();
     let broadcast_res = broadcast_tx(deposit_tx_clone).await?;
     println!("broad cast response: {:?}", broadcast_res);
@@ -152,7 +157,7 @@ pub async fn execute(
             vout,
             &deposit_tx,
             1,
-            0,
+            locktime,
             &bk_tx,
         )
         .await

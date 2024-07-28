@@ -14,14 +14,16 @@ import {
   ModalContent,
 } from "@chakra-ui/react";
 import { useStatecoinDetail } from "@/hooks/atoms/use-statecoin-detail";
-import { Layout, NavBar } from "@/components";
+import { Copier, Layout, Loading, NavBar } from "@/components";
 import QRCodeGenerator from "@/components/qr-code-generator";
 import { AppApi, StatechainApi } from "@/apis";
 import { StatecoinDetailDto } from "@/dtos";
 import { open } from "@tauri-apps/api/shell";
 import { FaCheckCircle, FaClock } from "react-icons/fa";
+import moment from "moment";
+
 export default function StatecoinDetail() {
-  const { deriv, statechainId, router } = useStatecoinDetail();
+  const { deriv, statechainId } = useStatecoinDetail();
   const [status, setStatus] = useState<boolean>(false);
   const [statecoin, setStatecoin] = useState<StatecoinDetailDto>();
   const getData = async (id: string) => {
@@ -37,9 +39,17 @@ export default function StatecoinDetail() {
     }
   }, [statechainId]);
 
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const { onClose } = useDisclosure();
   const [isError, setIsError] = useState<boolean>(false);
   const [withdrawError, setWithdrawError] = useState<string>("");
+
+  if (!statecoin) {
+    return (
+      <Layout>
+        <Loading content="Fetching info..." />
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -139,16 +149,14 @@ export default function StatecoinDetail() {
               Statechain ID:
             </Text>
             <Text isTruncated maxW="400px">
-              {statecoin?.statechain_id}
+              {statecoin.statechain_id}
             </Text>
           </Box>
           <Box>
             <Text fontSize={"larger"} fontWeight="bold">
               Deposit transaction ID:
             </Text>
-            <Text isTruncated maxW="400px">
-              {statecoin?.funding_txid}
-            </Text>
+            <Copier content={statecoin.funding_txid} />
           </Box>
           <Box>
             <Text fontSize={"larger"} fontWeight="bold">
@@ -173,15 +181,21 @@ export default function StatecoinDetail() {
           </Box>
           <Box>
             <Text fontSize={"larger"} fontWeight="bold">
-              Time to Live (n_lock_time):
+              Expired date:
             </Text>
-            <Text>{statecoin?.n_lock_time}</Text>
+            <Text>
+              {moment(statecoin.n_lock_time * 1000).format(
+                "HH:mm MMM DD, YYYY",
+              )}
+            </Text>
           </Box>
           <Box>
             <Text fontSize={"larger"} fontWeight="bold">
               Created At:
             </Text>
-            <Text>{statecoin?.created_at}</Text>
+            <Text>
+              {moment(statecoin.created_at).format("HH:mm MMM DD, YYYY")}
+            </Text>
           </Box>
           <Flex align="center" gap="10px">
             <Text fontSize={"larger"} fontWeight="bold">

@@ -1,10 +1,13 @@
 use anyhow::{anyhow, Result};
 use bitcoin::{
+    absolute::LockTime,
+    consensus,
     hex::DisplayHex,
     secp256k1::{PublicKey, SecretKey},
-    XOnlyPublicKey,
+    Transaction, XOnlyPublicKey,
 };
 use musig2::{BinaryEncoding, KeyAggContext};
+use serde::de::Error;
 use sqlx::{
     sqlite::{SqliteLockingMode, SqliteQueryResult},
     Executor, SqlitePool,
@@ -97,12 +100,17 @@ impl PoolWrapper {
         authkey: &str,
         aggregated_address: &str,
     ) -> Result<()> {
+        let parsed_tx = consensus::deserialize::<Transaction>(&hex::decode(bk_tx.clone())?)?;
+        let locktime = match parsed_tx.lock_time {
+            LockTime::Seconds(s) => s.to_consensus_u32(),
+            LockTime::Blocks(_b) => return Err(anyhow!("Internal error: invalid locktime!")),
+        };
         sqlite::update_unverifed_statecoin(
             &self.pool,
             statechain_id,
             &statecoin.signed_statechain_id,
-            statecoin.tx_n,
-            0,
+            statecoin.tx_n + 1,
+            locktime as i64,
             &statecoin.key_agg_ctx,
             &statecoin.aggregated_pubkey,
             aggregated_address,
@@ -154,7 +162,7 @@ impl PoolWrapper {
         funding_vout: u64,
         funding_tx: &str,
         txn: u64,
-        n_lock_time: u64,
+        n_lock_time: u32,
         backup_tx: &str,
     ) -> Result<SqliteQueryResult, sqlx::Error> {
         let amount_i64: i64 = amount as i64;
@@ -175,8 +183,8 @@ impl PoolWrapper {
             amount_i64,
             &auth_seckey_bytes,
             &auth_pubkey_bytes,
-            &aggregated_pubkey,
-            &aggregated_address,
+            aggregated_pubkey,
+            aggregated_address,
             &owner_seckey_bytes,
             &owner_pubkey_bytes,
             &serialized_key_agg_ctx,

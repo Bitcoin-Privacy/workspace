@@ -50,26 +50,13 @@ pub async fn execute(
         Err(e) => panic!("Invalid transfer message: {}", e),
     }
 
-    // //  let o2 = SecretKey::from_str(&o2)?;
-    // let auth_seckey = SecretKey::from_str(&auth_seckey)?;
-    // // let negated_o2 = o2.negate();
-    // let x1 = parsed_transfer_msg.x1;
-
-    // let t1 = hex::decode(t1)?;
-    // let t1: [u8; 32] = t1.try_into().unwrap();
-    // let t1_scalar = Scalar::from_be_bytes(t1)?;
-    // let t2 = negated_o2.add_tweak(&t1_scalar)?;
-    // let t2_str = t2.secret_bytes().to_lower_hex_string();
     let x1 = parsed_transfer_msg.x1;
 
-    // println!("t2 : {}", t2_str);
-    //let signed_msg = sign_message(&t2_str, &o2).to_string();
     let signed_msg = sign_message(&x1, &auth_seckey).to_string();
 
     let updatekey_res =
         statechain::update_new_key(conn, &x1, &signed_msg, &statechain_id, authkey).await?;
-    //let auth_secret_key = SecretKey::from_str(&auth_seckey)?;
-
+    
     let signed_statechain_id = sign_message(&statechain_id, &auth_seckey);
 
     let aggregated_pubkey = PublicKey::from_str(&parsed_transfer_msg.agg_pubkey)?;
@@ -80,33 +67,6 @@ pub async fn execute(
         None,
         Network::Testnet,
     );
-
-    // pub struct Statecoin {
-    //     pub tx_n: i64,
-    //     pub owner_seckey: String,
-    //     pub signed_statechain_id: String,
-    //     pub aggregated_pubkey: String,
-    //     pub aggregated_address: String,
-    //     pub funding_txid: String,
-    //     pub funding_vout: i64,
-    //     pub key_agg_ctx: String,
-    //     pub amount: i64,
-    //     pub account: String,
-    //     pub spend_key: String,
-    // }
-
-    // pub struct TransferMessage {
-    //     pub txn: u64,
-    //     pub backup_txs: String,
-    //     pub x1: String,
-    //     pub statechain_id: String,
-    //     pub agg_pubkey: String,
-    //     pub key_agg_ctx: String,
-    //     pub funding_txid: String,
-    //     pub funding_vout: u64,
-    //     pub amount: u64,
-    //     pub spend_key : String,
-    // }
 
     let statecoin = Statecoin {
         tx_n: parsed_transfer_msg.txn as i64,
@@ -120,7 +80,6 @@ pub async fn execute(
     };
 
     let bk = create_bk_tx_for_receiver(conn, &statechain_id, &statecoin, &account_address).await?;
-    println!("NEW backup transaction : {}", bk);
 
     pool.update_unverifed_statecoin(
         &statechain_id,
@@ -147,13 +106,13 @@ pub async fn verify_transfer_statecoin(
 
     let txn = transfer_message.txn;
     let n_lock_time = previous_tx.lock_time.to_consensus_u32();
-    println!("Reversed characters: {}", n_lock_time);
+
     let txn_n_lock_time = txn.to_string() + &n_lock_time.to_string();
     let mut hasher = Sha256::new();
     hasher.update(txn_n_lock_time.as_bytes());
     let client_commitment = hasher.finish().to_lower_hex_string();
 
-    println!("client commitment : {:#?}", client_commitment);
+    
     let res = statechain::get_verification_statecoin(conn, statechain_id, signed_id).await?;
 
     //check the previous transaction is valid and not spent

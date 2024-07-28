@@ -10,6 +10,7 @@ import {
   Avatar,
 } from "@chakra-ui/react";
 import { useClipboard } from "@chakra-ui/react";
+import moment from "moment";
 import { useRouter } from "next/router";
 import { FiCheck, FiCopy } from "react-icons/fi";
 import { IoIosArrowForward } from "react-icons/io";
@@ -70,7 +71,7 @@ export function StateChainCard(props: StateChainCardProps) {
               textAlign={"left"}
             >
               <Text fontSize="16" isTruncated>
-                TxId: {val.statechain_id}
+                Statecoin Id: {val.statechain_id}
               </Text>
             </Button>
           </VStack>
@@ -82,10 +83,12 @@ export function StateChainCard(props: StateChainCardProps) {
             alignItems={"end"}
           >
             <Box fontSize={"x-large"} fontWeight="800">
-              {" "}
               {val.amount} SAT
             </Box>
-            <Text> Due date: {val.n_lock_time}</Text>
+            <Text>
+              Expired date:{" "}
+              {moment(val.n_lock_time * 1000).format("MMM DD, YYYY")}
+            </Text>
           </Flex>
         </Flex>
       </Flex>
