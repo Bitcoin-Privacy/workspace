@@ -7,6 +7,7 @@ import {
   Flex,
   Button,
   Badge,
+  Avatar,
 } from "@chakra-ui/react";
 import { useClipboard } from "@chakra-ui/react";
 import { useRouter } from "next/router";
@@ -20,7 +21,7 @@ interface StateChainCardProps {
 }
 
 export function StateChainCard(props: StateChainCardProps) {
-  const { val, key, deriv } = props;
+  const { val, key } = props;
   const router = useRouter();
   const { onCopy, hasCopied } = useClipboard(val.statechain_id);
   const handleDetailButtonClick = () => {
@@ -41,11 +42,7 @@ export function StateChainCard(props: StateChainCardProps) {
       wrap={"wrap"}
     >
       <Flex justifyContent={"space-between"} mb={"6px"}>
-        <Image
-          borderRadius="full"
-          boxSize="9%"
-          src="https://i.ibb.co/R91rN3Q/statechain.png"
-        />
+        <Avatar h="54px" w="54px" src="/statecoin-icon.png" />
         <Flex
           w={"100%"}
           justifyContent={"space-between"}

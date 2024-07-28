@@ -1,13 +1,14 @@
-import { Box, Button, Text, Link } from "@chakra-ui/react";
+import { Box, Button, Text, Link, useToast } from "@chakra-ui/react";
 
 import { CoinJoinApi } from "@/apis";
 import { FC, useEffect } from "react";
 import moment from "moment";
 import TimeAgo from "timeago-react";
-import { useMutation, useQuery } from "react-query";
+import { useMutation, useQuery, useQueryClient } from "react-query";
 
 import { listen } from "@tauri-apps/api/event";
 import { CachePrefixKeys } from "@/consts";
+import { useNoti } from "@/hooks";
 
 interface ICoinjoinStatus {
   deriv: string;
@@ -21,10 +22,25 @@ interface ICoinjoinStatus {
 export const CoinjoinStatus: FC<ICoinjoinStatus> = (props) => {
   const { deriv, roomId, endOfDue1, endOfDue2, status, txid } = props;
   const now = moment().unix() * 1000;
+  const noti = useNoti();
+  const queryClient = useQueryClient();
 
   const { mutateAsync: onSignBtnClick, isLoading: isSigning } = useMutation(
     async (data: { deriv: string; roomId: string }) => {
-      await CoinJoinApi.signTxn(data.deriv, data.roomId);
+      try {
+        const res = await CoinJoinApi.signTxn(data.deriv, data.roomId);
+        console.log("[CJ] Sign transaction response:", JSON.stringify(res));
+        noti.success("Signed successfully");
+        queryClient.invalidateQueries([
+          CachePrefixKeys.RoomStatus,
+          deriv,
+          roomId,
+        ]);
+        queryClient.invalidateQueries([CachePrefixKeys.ListRooms]);
+      } catch (e) {
+        await CoinJoinApi.signTxn(data.deriv, data.roomId);
+        noti.error("Got an error", e as string);
+      }
     },
   );
 

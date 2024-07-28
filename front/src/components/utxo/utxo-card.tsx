@@ -32,11 +32,7 @@ export function UtxoCard(props: IUtxoCard) {
       justify="space-between"
       alignItems="center"
     >
-      <Image
-        borderRadius="full"
-        boxSize="54px"
-        src="https://i.ibb.co/M6xxyd6/istockphoto-905413264-612x612.jpg"
-      />
+      <Image borderRadius="full" boxSize="54px" src="/bitcoin-icon.jpg" />
       <HStack justify="space-between" ml="16px" alignItems="center" w="100%">
         <VStack spacing="8px" alignItems="start">
           <Badge

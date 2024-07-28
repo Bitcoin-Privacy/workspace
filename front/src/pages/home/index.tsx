@@ -6,7 +6,7 @@ import { useQuery } from "react-query";
 
 import { Layout } from "@/components";
 import { AppApi } from "@/apis";
-import { CachePrefixKeys, DEFAULT_AVATAR } from "@/consts";
+import { CachePrefixKeys } from "@/consts";
 import { derivBase64 } from "@/utils";
 
 export default function Home() {

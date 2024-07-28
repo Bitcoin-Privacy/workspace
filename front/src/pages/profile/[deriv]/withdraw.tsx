@@ -82,7 +82,7 @@ export default function Withdraw() {
                 />
               </HStack>
 
-              <HStack marginY={"36px"}>
+              <HStack w="full" justify="center">
                 <Button
                   p="10px 50px"
                   borderRadius="full"
