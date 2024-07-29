@@ -90,6 +90,20 @@ impl Mnemonic {
         Self::new(random.as_slice())
     }
 
+    pub fn new_from_seed_phrase(seed_phrase: Vec<String>) -> Result<Self, Error> {
+        let indices = seed_phrase
+            .iter()
+            .map(|word| {
+                MNEMONIC
+                    .iter()
+                    .position(|&w| w == word)
+                    .ok_or_else(|| Error::Mnemonic("Invalid seedphrase!"))
+            })
+            .collect::<Result<Vec<usize>, Error>>()?;
+
+        Ok(Mnemonic(indices))
+    }
+
     /// Create a mnemonic for some data
     pub fn new(data: &[u8]) -> Result<Mnemonic, Error> {
         if data.len() % 4 != 0 {

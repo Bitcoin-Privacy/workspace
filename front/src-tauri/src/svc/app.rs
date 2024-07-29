@@ -65,6 +65,17 @@ pub async fn create_master(pool: &PoolWrapper) -> Result<Vec<String>> {
     Ok(seed)
 }
 
+pub async fn import_master(pool: &PoolWrapper, seedphrase: Vec<String>) -> Result<Vec<String>> {
+    let mnemonic = Mnemonic::new_from_seed_phrase(seedphrase)?;
+    let seed = mnemonic.to_seed_phrase();
+
+    pool.set_seed(&seed.join(" ")).await?;
+
+    initialize_master_account(&mnemonic, 0, Network::Testnet, PASSPHRASE, None);
+
+    Ok(seed)
+}
+
 pub async fn add_account() {
     // println!("Add account");
     // let mut master = get_mut_master();

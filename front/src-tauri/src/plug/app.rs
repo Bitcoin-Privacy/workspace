@@ -19,6 +19,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             signup,
             signin,
             create_master,
+            import_master,
             add_account, // NOTE: not used yet
             create_txn,
             // Accessors
@@ -50,6 +51,16 @@ async fn signin(pool: State<'_, PoolWrapper>, password: &str) -> TResult<bool> {
 #[command]
 async fn create_master(pool: State<'_, PoolWrapper>) -> TResult<Vec<String>> {
     app::create_master(&pool).await.map_err(util::to_string)
+}
+
+#[command]
+async fn import_master(
+    pool: State<'_, PoolWrapper>,
+    seedphrase: Vec<String>,
+) -> TResult<Vec<String>> {
+    app::import_master(&pool, seedphrase)
+        .await
+        .map_err(util::to_string)
 }
 
 #[command]

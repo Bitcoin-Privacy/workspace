@@ -1,6 +1,5 @@
 import React, { useMemo } from "react";
-import { Box, Text, VStack, HStack, Avatar, Circle } from "@chakra-ui/react";
-import { FiPlus } from "react-icons/fi";
+import { Box, Text, VStack, HStack, Avatar } from "@chakra-ui/react";
 import { useRouter } from "next/router";
 import { useQuery } from "react-query";
 
@@ -56,22 +55,22 @@ export default function Home() {
               </Box>
             </HStack>
           ))}
-          <HStack
-            w="100%"
-            borderRadius="10px"
-            justify="start"
-            cursor="pointer"
-            p="10px"
-            _hover={{ bg: "#aaa5" }}
-            onClick={() => {
-              router.push("/seedphrase");
-            }}
-          >
-            <Circle size="36px" bg="white">
-              <FiPlus />
-            </Circle>
-            <Text color="white">Create new wallet</Text>
-          </HStack>
+          {/* <HStack */}
+          {/*   w="100%" */}
+          {/*   borderRadius="10px" */}
+          {/*   justify="start" */}
+          {/*   cursor="pointer" */}
+          {/*   p="10px" */}
+          {/*   _hover={{ bg: "#aaa5" }} */}
+          {/*   onClick={() => { */}
+          {/*     router.push("/seedphrase"); */}
+          {/*   }} */}
+          {/* > */}
+          {/*   <Circle size="36px" bg="white"> */}
+          {/*     <FiPlus /> */}
+          {/*   </Circle> */}
+          {/*   <Text color="white">Create new wallet</Text> */}
+          {/* </HStack> */}
         </VStack>
       </VStack>
     </Layout>
