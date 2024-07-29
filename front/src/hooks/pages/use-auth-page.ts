@@ -10,8 +10,8 @@ export const useAuthPage = () => {
   useEffect(() => {
     if (!appState.logged.get()) return;
     if (appState.setWallet.get()) router.push("/home");
-    else router.push("/seedphrase");
-  }, [appState.logged]);
+    else router.push("/setup");
+  }, [appState.logged, router, appState.setWallet]);
 
   const onSignin = useCallback(
     async (pw: string) => {
@@ -22,7 +22,7 @@ export const useAuthPage = () => {
         throw "The password is incorrect";
       }
     },
-    [appState.setWallet],
+    [appState],
   );
 
   const onSignup = useCallback(async (pw: string) => {

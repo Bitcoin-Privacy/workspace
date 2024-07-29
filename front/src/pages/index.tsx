@@ -15,7 +15,7 @@ export default function AuthPage() {
   const authForm = useMemo(() => {
     if (setPassword.get()) return <SignIn onSubmit={onSignin} />;
     else return <SignUp onSubmit={onSignup} />;
-  }, [setPassword]);
+  }, [setPassword, onSignup, onSignin]);
 
   return (
     <Layout>
