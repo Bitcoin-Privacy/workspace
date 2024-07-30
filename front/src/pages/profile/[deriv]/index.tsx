@@ -5,7 +5,13 @@ import { FiArrowDownLeft, FiArrowUpRight } from "react-icons/fi";
 import { FaPlus } from "react-icons/fa";
 import { IoMdSwap } from "react-icons/io";
 
-import { Copier, Layout, ProfilePannel } from "@/components";
+import {
+  Copier,
+  ExplorerLink,
+  ExplorerLinkType,
+  Layout,
+  ProfilePannel,
+} from "@/components";
 import { useProfilePage } from "@/hooks";
 
 export default function ProfilePage() {
@@ -63,14 +69,7 @@ export default function ProfilePage() {
                     Account {deriv.slice(0, deriv.indexOf("/"))}
                   </Text>
                   <Copier content={addr} />
-                  <Link
-                    display="block"
-                    href={`https://blockstream.info/testnet/address/${addr}`}
-                    rel="noopener noreferrer"
-                    target="_blank"
-                  >
-                    View on explorer
-                  </Link>
+                  <ExplorerLink id={addr} type={ExplorerLinkType.ADDRESS} />
                 </VStack>
               </HStack>
               <VStack

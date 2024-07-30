@@ -14,9 +14,10 @@ import {
   useDisclosure,
 } from "@chakra-ui/react";
 
-import { Layout, NavBar } from "@/components";
+import { Layout } from "@/components";
 import { useSendStateCoinPage } from "@/hooks/pages/use-send-statecoin-page";
 import { StatecoinToSendCard } from "@/components/statecoin-to-send-card";
+import { useRouter } from "next/router";
 
 const INPUT_WIDTH = "90%";
 
@@ -26,9 +27,10 @@ export default function SendStateCoin() {
     methods: { handleFormSubmit, setIsError },
   } = useSendStateCoinPage();
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const router = useRouter();
 
   return (
-    <Layout>
+    <Layout header title={"Account " + deriv.slice(0, deriv.indexOf("/"))}>
       <Modal closeOnOverlayClick={false} isOpen={isError} onClose={onClose}>
         <ModalOverlay />
         <ModalContent>
@@ -52,9 +54,6 @@ export default function SendStateCoin() {
       </Modal>
       <form onSubmit={handleFormSubmit}>
         <VStack textAlign="center" p="0px 16px" spacing="20px">
-          <HStack justify="start" w="100%">
-            <NavBar title={"Account " + deriv.slice(0, deriv.indexOf("/"))} />
-          </HStack>
           <Text color="white" fontWeight="700" fontSize="18px">
             Send Statecoin
           </Text>
@@ -107,9 +106,33 @@ export default function SendStateCoin() {
                 />
               </HStack>
 
-              <Button alignSelf={"center"} type="submit" isLoading={isLoading}>
-                Send Statecoin
-              </Button>
+              <HStack>
+                <Button
+                  p="10px 50px"
+                  w="180px"
+                  borderRadius="full"
+                  colorScheme="blackAlpha"
+                  flex="1"
+                  onClick={() => {
+                    router.back();
+                  }}
+                  isDisabled={isLoading}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  p="10px 50px"
+                  w="180px"
+                  borderRadius="full"
+                  isLoading={isLoading}
+                  isDisabled={
+                    !form.watch("address") || !form.watch("statechain_id")
+                  }
+                  type="submit"
+                >
+                  Send Statecoin
+                </Button>
+              </HStack>
             </VStack>
           </HStack>
         </VStack>

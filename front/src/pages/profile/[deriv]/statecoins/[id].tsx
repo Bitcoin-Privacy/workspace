@@ -1,31 +1,29 @@
-import React, { useEffect, useState } from "react";
-import {
-  Box,
-  Text,
-  Button,
-  Tooltip,
-  Flex,
-  useDisclosure,
-  Modal,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  ModalOverlay,
-  ModalContent,
-} from "@chakra-ui/react";
+import React, { useCallback, useEffect, useState } from "react";
+import { Box, Text, Button, Tooltip, Flex } from "@chakra-ui/react";
 import { useStatecoinDetail } from "@/hooks/atoms/use-statecoin-detail";
-import { Copier, Layout, Loading, NavBar } from "@/components";
+import {
+  Copier,
+  ExplorerLink,
+  ExplorerLinkType,
+  Layout,
+  Loading,
+} from "@/components";
 import QRCodeGenerator from "@/components/qr-code-generator";
 import { AppApi, StatechainApi } from "@/apis";
 import { StatecoinDetailDto } from "@/dtos";
 import { open } from "@tauri-apps/api/shell";
 import { FaCheckCircle, FaClock } from "react-icons/fa";
 import moment from "moment";
+import { useRouter } from "next/router";
+import { useNoti } from "@/hooks";
+import { profilePath } from "@/utils";
 
 export default function StatecoinDetail() {
   const { deriv, statechainId } = useStatecoinDetail();
   const [status, setStatus] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [statecoin, setStatecoin] = useState<StatecoinDetailDto>();
+  const router = useRouter();
   const getData = async (id: string) => {
     let res = await StatechainApi.getStatecoinDetailById(id);
     setStatecoin(res);
@@ -39,9 +37,25 @@ export default function StatecoinDetail() {
     }
   }, [statechainId]);
 
-  const { onClose } = useDisclosure();
-  const [isError, setIsError] = useState<boolean>(false);
-  const [withdrawError, setWithdrawError] = useState<string>("");
+  const noti = useNoti();
+
+  const onWithdrawBtnClick = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      let res = await StatechainApi.withdrawStatecoin(
+        statecoin?.statechain_id as string,
+        deriv,
+      );
+      console.log("Withdraw statecoin API response ", res);
+      noti.success("Withdraw successfully");
+      router.replace(profilePath(deriv, "?tab=STATECHAIN"));
+    } catch (error: any) {
+      console.log("Withdraw statecoin API error ", error);
+      noti.success("Got an error!", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [deriv, statecoin, noti, router]);
 
   if (!statecoin) {
     return (
@@ -52,28 +66,7 @@ export default function StatecoinDetail() {
   }
 
   return (
-    <Layout>
-      <Modal closeOnOverlayClick={false} isOpen={isError} onClose={onClose}>
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>ERROR !!!!</ModalHeader>
-
-          <ModalBody pb={6}>{withdrawError}</ModalBody>
-          <ModalFooter>
-            <Button
-              colorScheme="red"
-              onClick={() => {
-                onClose;
-                setIsError(false);
-              }}
-            >
-              Cancel
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-      <NavBar title={"Detail Page"} />
-
+    <Layout header title="Statecoin detail">
       <Flex
         mt="40px"
         h="full"
@@ -88,7 +81,7 @@ export default function StatecoinDetail() {
           p={"10px 10px"}
           alignItems={"center"}
           justifyContent={"center"}
-          w="full"
+          flex="1"
         >
           <QRCodeGenerator text={statecoin?.funding_txid} size="200px" />
           <Tooltip label="View transaction onchain" placement="auto-end">
@@ -114,32 +107,34 @@ export default function StatecoinDetail() {
             w="80%"
             maxW="80%"
             colorScheme="red"
-            onClick={async () => {
-              try {
-                let res = await StatechainApi.withdrawStatecoin(
-                  statecoin?.statechain_id as string,
-                  deriv,
-                );
-                console.log("Withdraw statecoin API response ", res);
-              } catch (error: any) {
-                setWithdrawError(error);
-                console.log("Withdraw statecoin API error ", error);
-                setIsError(true);
-              }
-            }}
+            onClick={onWithdrawBtnClick}
+            isLoading={isLoading}
+            isDisabled={isLoading}
           >
             Withdraw
           </Button>
-          <Button w="80%" maxW="80%" colorScheme="teal">
+          <Button w="80%" maxW="80%" colorScheme="teal" isDisabled={isLoading}>
             Broadcast backup transaction
           </Button>
+          <Button
+            w="80%"
+            maxW="80%"
+            variant="outline"
+            colorScheme="whiteAlpha"
+            isDisabled={isLoading}
+            onClick={() => {
+              router.back();
+            }}
+          >
+            Go back
+          </Button>
         </Flex>
-
         <Flex
           direction={"column"}
           gap={"24px"}
           alignItems="flex-start"
           p={6}
+          flex="1"
           alignSelf={"center"}
           bg={"gray.800"}
           borderRadius={"16px"}
@@ -157,6 +152,10 @@ export default function StatecoinDetail() {
               Deposit transaction ID:
             </Text>
             <Copier content={statecoin.funding_txid} />
+            <ExplorerLink
+              id={statecoin.funding_txid}
+              type={ExplorerLinkType.TRANSACTION}
+            />
           </Box>
           <Box>
             <Text fontSize={"larger"} fontWeight="bold">
@@ -168,9 +167,11 @@ export default function StatecoinDetail() {
             <Text fontSize={"larger"} fontWeight="bold">
               Aggregated Address:
             </Text>
-            <Text isTruncated maxW={"560px"} textOverflow={"ellipsis"}>
-              {statecoin?.aggregated_address}
-            </Text>
+            <Copier content={statecoin.aggregated_address} />
+            <ExplorerLink
+              id={statecoin.aggregated_address}
+              type={ExplorerLinkType.ADDRESS}
+            />
           </Box>
 
           <Box>

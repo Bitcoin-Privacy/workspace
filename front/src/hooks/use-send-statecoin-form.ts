@@ -1,6 +1,9 @@
 import { StatechainApi } from "@/apis";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
+import { useNoti } from "./atoms";
+import { useRouter } from "next/router";
+import { profilePath } from "@/utils";
 
 type SendStatecoinFromInput = {
   address: string;
@@ -11,6 +14,8 @@ export const useSendStateCoinForm = (deriv: string) => {
   const form = useForm<SendStatecoinFromInput>();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isError, setIsError] = useState<boolean>(false);
+  const noti = useNoti();
+  const router = useRouter();
 
   const handleFormSubmit = useMemo(
     () =>
@@ -23,17 +28,16 @@ export const useSendStateCoinForm = (deriv: string) => {
             data.statechain_id,
           );
           console.log("Send Statecoin form submit API response:", res);
+          noti.success("Send successfully!");
+          router.replace(profilePath(deriv, "?tab=STATECHAIN"));
         } catch (e: any) {
           console.log("Send Statecoin form submit API error:", e);
-          form.setError("root", {
-            message: e,
-          });
-          setIsError(true);
+          noti.error("Got an error!", e);
         } finally {
           setIsLoading(false);
         }
       }),
-    [deriv, form],
+    [deriv, form, noti, router],
   );
 
   return {

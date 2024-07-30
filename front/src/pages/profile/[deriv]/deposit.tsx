@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   Text,
   VStack,
@@ -9,7 +9,6 @@ import {
   InputRightAddon,
   FormControl,
   FormErrorMessage,
-  Center,
   useDisclosure,
   Modal,
   ModalOverlay,
@@ -21,10 +20,8 @@ import {
   Divider,
 } from "@chakra-ui/react";
 import { useRouter } from "next/router";
-import { FaLongArrowAltRight } from "react-icons/fa";
 import { Error, Layout, Loading } from "@/components";
 import { useDepositPage } from "@/hooks/pages/use-deposit-page";
-import QRCodeGenerator from "@/components/qr-code-generator";
 import { convertBtcToSats, convertSatsToBtc } from "@/utils";
 import { STATECOIN_FEE, STATECOIN_MIN } from "@/consts";
 
@@ -32,14 +29,12 @@ const INPUT_WIDTH = "75%";
 
 export default function Deposit() {
   const router = useRouter();
-  const { onOpen, onClose } = useDisclosure();
+  const { onClose } = useDisclosure();
 
   const {
-    states: { depositInfo, deriv, form, isLoading, balanceQuery, isError },
+    states: { deriv, form, isLoading, balanceQuery, isError },
     methods: { handleFormSubmit, setIsError },
   } = useDepositPage();
-
-  const [amount, setAmount] = useState<number>(0);
 
   if (balanceQuery.isLoading)
     return (
@@ -149,6 +144,7 @@ export default function Deposit() {
                 <Button
                   p="10px 50px"
                   borderRadius="full"
+                  w="180px"
                   colorScheme="blackAlpha"
                   flex="1"
                   onClick={() => {
@@ -161,13 +157,9 @@ export default function Deposit() {
                 <Button
                   p="10px 50px"
                   borderRadius="full"
+                  w="180px"
                   flex="1"
                   type="submit"
-                  onClick={() => {
-                    onOpen;
-                    setAmount(form.getValues("amount"));
-                    onClose;
-                  }}
                   isLoading={isLoading}
                   isDisabled={(() => {
                     let formc = form.watch();
@@ -179,65 +171,6 @@ export default function Deposit() {
               </HStack>
             </VStack>
           </VStack>
-          {depositInfo && (
-            <VStack
-              bg={"gray.900"}
-              borderRadius={"8px"}
-              p="20px 40px"
-              w="full"
-              spacing="24px"
-              color={"white"}
-            >
-              <HStack w="full" alignItems={"end"}>
-                <QRCodeGenerator
-                  text={depositInfo.aggregated_address}
-                  size="100px"
-                />
-
-                <VStack
-                  w="full"
-                  alignItems={"center"}
-                  p="px 16px"
-                  spacing="16px"
-                >
-                  <Text>
-                    The address below is the Multisig Address between you and SE
-                  </Text>
-                  <HStack spacing="8px" p="0px 8px">
-                    <Center
-                      w="30%"
-                      borderRadius={"16"}
-                      bg="gray.700"
-                      p="10px 15px"
-                    >
-                      {amount} BTC
-                    </Center>
-                    <Center>
-                      <FaLongArrowAltRight size="40px" />
-                    </Center>
-
-                    <Button
-                      //onClick={onCopy}
-                      bgColor={"gray.700"}
-                      //rightIcon={hasCopied ? <FiCheck /> : <FiCopy />}
-                      borderRadius={"16"}
-                    >
-                      <Text color={"white"} isTruncated maxW={"200px"} p="5px">
-                        {depositInfo.aggregated_address}
-                      </Text>
-                    </Button>
-                  </HStack>
-                </VStack>
-              </HStack>
-              <Button
-                onClick={() => {
-                  router.back();
-                }}
-              >
-                Close
-              </Button>
-            </VStack>
-          )}
         </VStack>
       </form>
     </Layout>

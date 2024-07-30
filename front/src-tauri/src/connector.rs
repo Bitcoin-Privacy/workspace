@@ -8,9 +8,9 @@ pub struct NodeConnector {
 
 #[derive(Error, Debug)]
 pub enum NodeConnErr {
-    #[error("failed to request to node")]
+    #[error("Failed to request to node")]
     RequestFailed(String),
-    #[error("failed to parse response to JSON")]
+    #[error("Failed to parse response to JSON")]
     ParseResponseFailed(String),
 }
 

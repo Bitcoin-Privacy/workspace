@@ -5,10 +5,11 @@ import { FiCheck, FiCopy } from "react-icons/fi";
 
 interface ICopier {
   content: string;
+  maxW?: string;
 }
 
 export const Copier: FC<ICopier> = (props) => {
-  const { content } = props;
+  const { content, maxW } = props;
 
   const { onCopy, hasCopied } = useClipboard(content);
 
@@ -23,7 +24,7 @@ export const Copier: FC<ICopier> = (props) => {
       rightIcon={hasCopied ? <FiCheck /> : <FiCopy />}
       colorScheme="white"
     >
-      <Text isTruncated maxW="320px">
+      <Text isTruncated maxW={maxW ?? "320px"}>
         {content}
       </Text>
     </Button>

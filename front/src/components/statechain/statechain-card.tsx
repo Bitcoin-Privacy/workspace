@@ -1,8 +1,8 @@
 import { StateCoinDto } from "@/dtos/statechain.dto";
+import { profilePath } from "@/utils";
 import {
   Box,
   Text,
-  Image,
   VStack,
   Flex,
   Button,
@@ -22,12 +22,12 @@ interface StateChainCardProps {
 }
 
 export function StateChainCard(props: StateChainCardProps) {
-  const { val, key } = props;
+  const { val, key, deriv } = props;
   const router = useRouter();
   const { onCopy, hasCopied } = useClipboard(val.statechain_id);
   const handleDetailButtonClick = () => {
     console.log(val.statechain_id);
-    router.push(`${router.asPath}/statecoins/${val.statechain_id}`);
+    router.push(profilePath(deriv, `/statecoins/${val.statechain_id}`));
   };
 
   return (

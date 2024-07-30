@@ -8,3 +8,4 @@ export * from "./utxo";
 export * from "./statechain";
 export * from "./copier";
 export * from "./edge-cases";
+export * from "./explorer-link";
