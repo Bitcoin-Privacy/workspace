@@ -7,6 +7,13 @@ import { AppApi } from "@/apis";
 
 export const useSeedPhrasePage = () => {
   const router = useRouter();
+  const {
+    onCopy,
+    value: mnemonicPhrases,
+    setValue: setMnemonicPhrases,
+    hasCopied,
+  } = useClipboard(" ");
+
   useEffect(() => {
     try {
       (async () => {
@@ -16,14 +23,7 @@ export const useSeedPhrasePage = () => {
     } catch (e) {
       console.log("Get error", e);
     }
-  }, []);
-
-  const {
-    onCopy,
-    value: mnemonicPhrases,
-    setValue: setMnemonicPhrases,
-    hasCopied,
-  } = useClipboard(" ");
+  }, [setMnemonicPhrases]);
 
   const onNextBtnClick = () => {
     router.push("/home");

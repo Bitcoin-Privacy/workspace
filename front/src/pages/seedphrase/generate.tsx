@@ -27,8 +27,8 @@ export default function SeedPhrase() {
   } = useSeedPhrasePage();
 
   return (
-    <Layout title="Generate Seed Phrases">
-      <VStack p="30px 16px" textColor={"whiteAlpha.800"}>
+    <Layout title="Setup your wallet" header>
+      <VStack p="30px 16px" textColor="whiteAlpha.800">
         <Stack justify="start">
           <List spacing={2}>
             <Text>Tips</Text>

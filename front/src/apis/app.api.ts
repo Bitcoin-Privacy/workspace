@@ -22,6 +22,11 @@ export const AppApi = Object.freeze({
       {},
     );
   },
+  async importMaster(seedphrase: string[]): Promise<string[]> {
+    return await TauriConnection.callAPI<string[]>(this.name("import_master"), {
+      seedphrase,
+    });
+  },
   async createTxn(
     deriv: string,
     receiver: string,
