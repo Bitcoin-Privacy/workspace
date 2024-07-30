@@ -29,10 +29,18 @@ pub fn initialize_master_account(
         let account_1 = Account::new(&mut unlocker, AddrType::P2WPKH, 1, 0, 10).unwrap();
         let account_2 = Account::new(&mut unlocker, AddrType::P2WPKH, 2, 0, 10).unwrap();
         let account_3 = Account::new(&mut unlocker, AddrType::P2WPKH, 3, 0, 10).unwrap();
+        let account_4 = Account::new(&mut unlocker, AddrType::P2WPKH, 4, 0, 10).unwrap();
+        let account_5 = Account::new(&mut unlocker, AddrType::P2WPKH, 5, 0, 10).unwrap();
+        let account_6 = Account::new(&mut unlocker, AddrType::P2WPKH, 6, 0, 10).unwrap();
+        let account_7 = Account::new(&mut unlocker, AddrType::P2WPKH, 7, 0, 10).unwrap();
         master.add_account(account_0);
         master.add_account(account_1);
         master.add_account(account_2);
         master.add_account(account_3);
+        master.add_account(account_4);
+        master.add_account(account_5);
+        master.add_account(account_6);
+        master.add_account(account_7);
         *singleton = Some(master);
     }
 }
